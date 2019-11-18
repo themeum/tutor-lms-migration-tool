@@ -8,7 +8,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function __construct() {
 			add_filter('tutor_tool_pages', array($this, 'tutor_tool_pages'));
 
-			add_action('wp_ajax_lp_migrate_course_to_tutor', array($this, 'lp_migrate_course_to_tutor'));
+			//add_action('wp_ajax_lp_migrate_course_to_tutor', array($this, 'lp_migrate_course_to_tutor'));
+
+			add_action('wp_ajax_lp_migrate_all_data_to_tutor', array($this, 'lp_migrate_all_data_to_tutor'));
+			add_action('wp_ajax_tlmt_reset_migrated_items_count', array($this, 'tlmt_reset_migrated_items_count'));
+
 			add_action('wp_ajax__get_lp_live_progress_course_migrating_info', array($this, '_get_lp_live_progress_course_migrating_info'));
 
 			add_action('tutor_action_migrate_lp_orders', array($this, 'migrate_lp_orders'));
@@ -22,26 +26,55 @@ if ( ! class_exists('LPtoTutorMigration')){
 			$hasLPdata = get_option('learnpress_version');
 
 			if ($hasLPdata){
-				$pages['migration_lp'] = array('title' =>  __('LearnPress Migration', 'move-to-tutor-lms'), 'view_path' => MTTL_PATH.'views/migration_lp.php');
+				$pages['migration_lp'] = array('title' =>  __('LearnPress Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_lp.php');
 			}
 
 			return $pages;
 		}
 
+		/**
+		 * Delete Item Count
+		 */
+		public function tlmt_reset_migrated_items_count(){
+			delete_option('_tutor_migrated_items_count');
+		}
+
+		public function lp_migrate_all_data_to_tutor(){
+			delete_option('_tutor_migrated_items_count');
+
+			if (isset($_POST['import']) && is_array($_POST['import'])){
+			    $i = 0;
+		        foreach ($_POST['import'] as $migrate_item_key => $value ){
+			        $i++;
+		            update_option('_tutor_migrated_items_count', $i);
+		            sleep(5);
+		            switch ($migrate_item_key){
+                        case 'courses':
+                            //$this->lp_migrate_course_to_tutor();
+                            break;
+			            case 'orders':
+			                //$this->migrate_lp_orders();
+				            break;
+			            case 'reviews':
+			                //$this->migrate_lp_reviews();
+				            break;
+                    }
+                }
+            }
+        }
+
 		public function lp_migrate_course_to_tutor(){
 			global $wpdb;
 
 			//$course_id = 1826;
-			update_option('_tutor_migrated_course_count', 0);
 
 			$lp_courses = $wpdb->get_results("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'lp_course';");
 			if (tutils()->count($lp_courses)){
-				$course_i = 0;
+				$course_i = (int) get_option('_tutor_migrated_items_count');
 				foreach ($lp_courses as $lp_course){
 					$course_i++;
-
 					$this->migrate_course($lp_course->ID);
-					update_option('_tutor_migrated_course_count', $course_i);
+					update_option('_tutor_migrated_items_count', $course_i);
 				}
 			}
 
@@ -54,10 +87,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 */
 
 		public function _get_lp_live_progress_course_migrating_info(){
-			$migrated_count = (int) get_option('_tutor_migrated_course_count');
-			$progress_text = sprintf(__('Migrated %s course', 'tutor'), $migrated_count);
-
-			wp_send_json_success(array('progress_text' => $progress_text, 'migrated_count' => $migrated_count ));
+			$migrated_count = (int) get_option('_tutor_migrated_items_count');
+			wp_send_json_success(array('migrated_count' => $migrated_count ));
 		}
 
 		public function migrate_course($course_id){
@@ -311,10 +342,12 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			$lp_orders = $wpdb->get_results("SELECT * FROM {$wpdb->posts} WHERE post_type = 'lp_order' AND post_status = 'lp-completed' ;");
 
+			$item_i = (int) get_option('_tutor_migrated_items_count');
 			foreach ($lp_orders as $lp_order){
+				$item_i++;
+				update_option('_tutor_migrated_items_count', $item_i);
 
 				$order_id = $lp_order->ID;
-
 				$migrate_order_data = array(
 					'ID'    => $order_id,
 					'post_status'    => 'wc-completed',
@@ -389,7 +422,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 
 			if (tutils()->count($lp_review_ids)){
+				$item_i = (int) get_option('_tutor_migrated_items_count');
 				foreach ($lp_review_ids as $lp_review_id){
+					$item_i++;
+					update_option('_tutor_migrated_items_count', $item_i);
+
 					$review_migrate_data = array(
 						'comment_approved'  => 'approved',
 						'comment_type'      => 'tutor_course_rating',
@@ -397,7 +434,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 					);
 
 					$wpdb->update($wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lp_review_id));
-
 					$wpdb->update($wpdb->commentmeta, array('meta_key' => 'tutor_rating'), array( 'comment_id' => $lp_review_id, 'meta_key' => '_lpr_rating' ));
 					$wpdb->delete($wpdb->commentmeta, array('comment_id' => $lp_review_id, 'meta_key' => '_lpr_review_title'));
 				}
@@ -599,7 +635,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 				<description><?php bloginfo_rss( 'description' ); ?></description>
 				<pubDate><?php echo date( 'D, d M Y H:i:s +0000' ); ?></pubDate>
 				<language><?php bloginfo_rss( 'language' ); ?></language>
-				<mttl_version><?php echo MTTL_VERSION; ?></mttl_version>
+				<tlmt_version><?php echo TLMT_VERSION; ?></tlmt_version>
 				<?php
 			$xml .= ob_get_clean();
 

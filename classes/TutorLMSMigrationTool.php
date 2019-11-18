@@ -3,7 +3,7 @@
 if ( ! defined( 'ABSPATH' ) )
 	exit;
 
-final class MoveToTutorLMS{
+final class TutorLMSMigrationTool{
 
 	/**
 	 * The single instance of the class.
@@ -14,7 +14,7 @@ final class MoveToTutorLMS{
 	protected $classes = array();
 
 	/**
-	 * @return MoveToTutorLMS|null
+	 * @return TutorLMSMigrationTool|null
 	 *
 	 * Run Main class
 	 */
@@ -30,10 +30,12 @@ final class MoveToTutorLMS{
 		$this->used_classes();
 		$this->classes_initialize();
 		$this->load_assets();
+
+		add_filter('plugin_action_links_' . plugin_basename(TLMT_FILE), array( $this, 'plugin_action_links' ) );
 	}
 
 	public function includes(){
-		include MTTL_PATH.'classes/LPtoTutorMigration.php';
+		include TLMT_PATH.'classes/LPtoTutorMigration.php';
 	}
 
 	public function used_classes(){
@@ -60,7 +62,13 @@ final class MoveToTutorLMS{
 
 	}
 	public function admin_scripts(){
-		wp_enqueue_style('mttl-admin', MTTL_URL.'assets/css/admin.css', array(), MTTL_VERSION);
+		wp_enqueue_style('tlmt-admin', TLMT_URL.'assets/css/admin.css', array(), TLMT_VERSION);
+		wp_enqueue_script('tlmt-admin', TLMT_URL.'assets/js/admin.js', array('jquery', 'tutor-admin'), TLMT_VERSION, true);
+	}
+
+	public function plugin_action_links($actions){
+		$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
+		return $actions;
 	}
 
 
