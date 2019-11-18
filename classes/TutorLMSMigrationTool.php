@@ -59,13 +59,11 @@ final class TutorLMSMigrationTool{
 
 	public function load_assets(){
 		add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
-
 	}
 	public function admin_scripts(){
 		wp_enqueue_style('tlmt-admin', TLMT_URL.'assets/css/admin.css', array(), TLMT_VERSION);
 		wp_enqueue_script('tlmt-admin', TLMT_URL.'assets/js/admin.js', array('jquery', 'tutor-admin'), TLMT_VERSION, true);
 	}
-
 	public function plugin_action_links($actions){
 		$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
 		return $actions;

@@ -66,8 +66,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function lp_migrate_course_to_tutor(){
 			global $wpdb;
 
-			//$course_id = 1826;
-
 			$lp_courses = $wpdb->get_results("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'lp_course';");
 			if (tutils()->count($lp_courses)){
 				$course_i = (int) get_option('_tutor_migrated_items_count');
@@ -77,7 +75,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 					update_option('_tutor_migrated_items_count', $course_i);
 				}
 			}
-
 			wp_send_json_success();
 		}
 

@@ -1,10 +1,8 @@
 <?php
 if ( ! defined( 'ABSPATH' ) )
 	exit;
-
 ?>
 <div class="tools-migration-lp-page">
-
     <?php
     global $wpdb;
 
@@ -29,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) )
                             <label for="courses">
                                 <div class="lp-migration-singlebox">
                                     <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[courses]" type="checkbox" id="courses" value="1">
+                                        <input name="import[courses]" type="checkbox" checked="checked" id="courses" value="1">
                                         <span class="checkmark"></span>
                                     </div>
                                     <div class="lp-migration-singlebox-desc">
@@ -43,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) )
                             <label for="sales-data">
                                 <div class="lp-migration-singlebox">
                                     <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[orders]" type="checkbox" id="sales-data">
+                                        <input name="import[orders]" type="checkbox" checked="checked" id="sales-data">
                                         <span class="checkmark"></span>
                                     </div>
                                     <div class="lp-migration-singlebox-desc">
@@ -57,7 +55,7 @@ if ( ! defined( 'ABSPATH' ) )
                             <label for="reviews">
                                 <div class="lp-migration-singlebox">
                                     <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[reviews]" type="checkbox" id="reviews">
+                                        <input name="import[reviews]" type="checkbox" checked="checked" id="reviews">
                                         <span class="checkmark"></span>
                                     </div>
                                     <div class="lp-migration-singlebox-desc">
