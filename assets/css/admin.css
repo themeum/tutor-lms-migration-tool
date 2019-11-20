@@ -274,17 +274,146 @@
 }
 
 
- /* danger modal */
- /* body {
-    background-color: rgba(0, 0, 0, 0.2);
-} */
+
+/* migration-modal */
+.lp-migration-modal-wrap {
+    position: absolute;
+    background: rgba(0,0,0, 0.3);
+    top: 0;
+    bottom: 0;
+    left: -180px;
+    right: 0;
+    display: none;
+    z-index: 9999;
+}
+.lp-migration-modal {
+    width: 730px;
+    height: 260px;
+    background: #fff;
+    box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.lp-migration-modal-wrap.active {
+    display: block;
+}
+.lp-migration-alert {
+    display: grid;
+    grid-template-columns: 20% 80%;
+}
+.lp-migration-modal .lp-migration-modal-icon {
+
+}
+.migration-modal-btn-group p {
+    font-size: 20px;
+    line-height: 36px;
+    letter-spacing: -0.4px;
+    color: #1F2949;
+    margin-bottom: 40px;
+    margin-right: 130px;
+}
+.migration-failed-btn:last-child {
+    margin-left: 30px;
+}
+.lp-migration-modal-icon img {
+    width: 80px;
+}
+.migration-modal-btn-group {
+
+}
+.migration-modal-btn-group .migration-later-btn,
+.migration-modal-btn-group .migration-start-btn{
+    text-decoration: none;
+    padding: 12px 35px 12px 35px;
+    border-radius: 2px;
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 19px;
+    font-weight: 600;
+}
+.migration-modal-btn-group .migration-later-btn{
+    color: #3057D5;
+    background: #fff;
+    border: 2px solid #3057D5;
+}
+.migration-modal-btn-group .migration-start-btn{
+    color: #fff;
+    background: #3057D5;
+    margin-left: 20px;
+    border: 2px solid #3057D5;
+}
+
+
+
+/* danger modal */
+.lp-modal-alert h4{
+    color: #1F2949;
+    font-size: 30px;
+    line-height: 36px;
+    letter-spacing: -0.6px;
+    font-weight: normal;
+    margin-top: 40px;
+}
+.lp-modal-alert p{
+    color: #46484A;
+    font-size: 16px;
+    line-height: 31px;
+    letter-spacing: -0.31px;
+    margin-top: 24px;
+    margin-bottom: 38px;
+}
+.migration-try-btn{
+    text-decoration: none;
+    padding: 12px 35px 12px 35px;
+    border-radius: 2px;
+    background: #3057D5;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 19px;
+    font-weight: normal;
+}
+.modal-close {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.modal-close-line {
+    position: absolute;
+    width: 3px;
+    height: 30px;
+    top: 32px;
+    background: #DADCE0;
+}
+.modal-close-line.error-close-line-one,
+.modal-close-line.success-close-line-one,
+.modal-close-line.migration-modal-close-line-one{
+    transform: rotate(42deg);
+}
+.modal-close-line.error-close-line-two,
+.modal-close-line.success-close-line-two,
+.modal-close-line.migration-modal-close-line-two{
+    transform: rotate(134deg);
+}
+
+
 .lp-modal-alert {
     background-color: white;
     box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     margin: 20px;
-    padding: 50px;
+    padding: 50px 90px 100px 90px;
     width: 730px;
+    text-align: center;
+    position: relative;
 }
 .lp-modal-alert .lp-modal-icon {
     border-radius: 50%;
@@ -296,7 +425,7 @@
     position: relative;
     width: 80px;
 }
-.lp-modal-alert .lp-modal-icon.lp-modal-error:after, 
+.lp-modal-alert .lp-modal-icon.lp-modal-error:after,
 .lp-modal-alert .lp-modal-icon.lp-modal-error:before {
     background: #fff;
     content: '';
@@ -369,10 +498,10 @@
     z-index: 2;
 }
 .lp-modal-alert .lp-modal-icon.lp-modal-error .lp-modal-placeholder {
-    border: 4px solid rgba(200, 0, 0, 0.2);
+    border: 4px solid #FF2624;
 }
 .lp-modal-alert .lp-modal-icon.lp-modal-error .lp-modal-line {
-    background-color: #F27474;
+    background-color: #FF2624;
     top: 37px;
     width: 47px;
 }
@@ -394,47 +523,467 @@
     animation: animateXRight .75s;
 }
 @keyframes rotatePlaceholder {
-  0%,5% {
-    transform: rotate(-45deg);
-  }
-  100%,12% {
-    transform: rotate(-405deg);
-  }
+    0%,5% {
+        transform: rotate(-45deg);
+    }
+    100%,12% {
+        transform: rotate(-405deg);
+    }
 }
 @keyframes animateXLeft {
-  0%,
-	65% {
-    left: 82px;
-    top: 95px;
-    width: 0;
-  }
-  84% {
-    left: 14px;
-    top: 33px;
-    width: 47px;
-  }
-  100% {
-    left: 17px;
-    top: 37px;
-    width: 47px;
-  }
+    0%,
+    65% {
+        left: 82px;
+        top: 95px;
+        width: 0;
+    }
+    84% {
+        left: 14px;
+        top: 33px;
+        width: 47px;
+    }
+    100% {
+        left: 17px;
+        top: 37px;
+        width: 47px;
+    }
 }
 @keyframes animateXRight {
-  0%,
-	65% {
-    right: 82px;
-    top: 95px;
-    width: 0;
-  }
-  84% {
-    right: 14px;
-    top: 33px;
-    width: 47px;
-  }
-  100% {
-    right: 16px;
-    top: 37px;
-    width: 47px;
-  }
+    0%,
+    65% {
+        right: 82px;
+        top: 95px;
+        width: 0;
+    }
+    84% {
+        right: 14px;
+        top: 33px;
+        width: 47px;
+    }
+    100% {
+        right: 16px;
+        top: 37px;
+        width: 47px;
+    }
 }
 
+
+
+
+/* modal success */
+.lp-error-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 999999;
+}
+.lp-success-modal {
+    width: 730px;
+    height: 500px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 999999;
+}
+.lp-error-modal.active,
+.lp-success-modal.active {
+    display: block;
+}
+.lp-modal-alert {
+    background-color: #fff;
+    box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.lp-modal-alert .lp-modal-icon {
+    border-radius: 50%;
+    border: 4px solid gray;
+    box-sizing: content-box;
+    height: 80px;
+    margin: 20px auto;
+    padding: 0;
+    position: relative;
+    width: 80px;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success{
+    border-color: #A5DC86;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success:after,
+.lp-modal-alert .lp-modal-icon.lp-modal-success:before{
+    background: #fff;
+    content: '';
+    height: 120px;
+    position: absolute;
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    width: 60px;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success:before{
+    border-radius: 120px 0 0 120px;
+    left: -33px;
+    top: -7px;
+    transform-origin: 60px 60px;
+    transform: rotate(-45deg);
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success:after{
+    border-radius: 0 120px 120px 0;
+    left: 30px;
+    top: -11px;
+    transform-origin: 0 60px;
+    transform: rotate(-45deg);
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success .lp-modal-placeholder{
+    border-radius: 50%;
+    border: 4px solid #5CC323;
+    box-sizing: content-box;
+    height: 80px;
+    left: -4px;
+    position: absolute;
+    top: -4px;
+    width: 80px;
+    z-index: 2;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success .lp-modal-fix{
+    background-color: #fff;
+    height: 90px;
+    left: 28px;
+    position: absolute;
+    top: 8px;
+    transform: rotate(-45deg);
+    width: 5px;
+    z-index: 1;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success .lp-modal-line{
+    background-color: #5CC323;
+    border-radius: 2px;
+    display: block;
+    height: 5px;
+    position: absolute;
+    z-index: 2;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success .lp-modal-line.lp-modal-tip{
+    left: 14px;
+    top: 46px;
+    transform: rotate(45deg);
+    width: 25px;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-success .lp-modal-line.lp-modal-long{
+    right: 8px;
+    top: 38px;
+    transform: rotate(-45deg);
+    width: 47px;
+}
+.lp-modal-alert .lp-modal-icon.lp-modal-warning:after {
+    background-color: #fff;
+    border-radius: 50%;
+    content: '';
+    display: block;
+    height: 100%;
+    position: absolute;
+    width: 100%;
+    z-index: 1;
+}
+.animateSuccessTip {
+    animation: animateSuccessTip .75s;
+}
+.animateSuccessLong {
+    animation: animateSuccessLong .75s;
+}
+.lp-modal-icon.lp-modal-success.animate:after {
+    animation: rotatePlaceholder 4.25s ease-in;
+}
+@keyframes animateSuccessTip {
+    0%,54% {
+        width: 0;
+        left: 1px;
+        top: 19px;
+    }
+    70% {
+        width: 50px;
+        left: -8px;
+        top: 37px;
+    }
+    84% {
+        width: 17px;
+        left: 21px;
+        top: 48px;
+    }
+    100% {
+        width: 25px;
+        left: 14px;
+        top: 45px;
+    }
+}
+@keyframes animateSuccessLong {
+    0%,65% {
+        width: 0;
+        right: 46px;
+        top: 54px;
+    }
+    84% {
+        width: 55px;
+        right: 0;
+        top: 35px;
+    }
+    100% {
+        width: 47px;
+        right: 8px;
+        top: 38px;
+    }
+}
+@keyframes rotatePlaceholder {
+    0%,5% {
+        -webkit-transform: rotate(-45deg);
+        transform: rotate(-45deg);
+    }
+    100%,12% {
+        -webkit-transform: rotate(-405deg);
+        transform: rotate(-405deg);
+    }
+}
+
+/* // Extra large devices (large desktops, 1200px and up) */
+@media (max-width: 1180px) {
+    .lp-container {
+        width: 100%;
+        margin: 0 auto;
+    }
+}
+
+/* // Large devices (desktops, 992px and up) */
+@media (max-width: 992px) {
+    .lp-container {
+        width: 100%;
+        margin: 0 auto;
+    }
+    .lp-grid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .lp {
+        background-color: #fff;
+        padding: 39px 15px 60px 15px;
+    }
+    .lp-migration-btn-group > span {
+        display: inline-block;
+    }
+    .lp-migration-heading > p {
+        font-size: 16px;
+        line-height: 28px;
+        color: #606265;
+        padding: 0px 0px 0px 0px;
+        margin-top: 9px;
+    }
+    .lp-export:not(:first-child) {
+        margin-top: 60px;
+    }
+    #lp-import-export-area .lp-grid {
+        display: grid;
+        grid-template-columns: repeat(1,1fr);
+        grid-column-gap: 0%;
+    }
+
+
+    .lp-migration-btn-group > span {
+        display: inline-block;
+    }
+
+    .lp-migration-btn-group {
+        margin-top: 40px;
+    }
+
+}
+
+/* // Medium devices (tablets, 768px and up) */
+@media (max-width: 768px) {
+    .lp-migratoin-right {
+        display: none;
+    }
+    .lp-success-modal,
+    .lp-error-modal{
+        width: 95%;
+    }
+    .lp-success-modal .lp-modal-alert,
+    .lp-error-modal .lp-modal-alert{
+        width: 95%;
+        height: 450px;
+        margin: 0 auto;
+    }
+    .lp-modal-alert {
+        background-color: white;
+        box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        margin: 0px;
+        padding: 47px 52px 76px 52px;
+        text-align: center;
+        position: relative;
+    }
+    .lp-migration-modal {
+        width: 95%;
+        box-shadow: 2px 30px 13px 9px rgba(0, 0, 0, 0.2);
+    }
+
+    .lp-migration-alert {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .lp-modal-alert h4 {
+        font-size: 25px;
+        line-height: 21px;
+        margin-top: 40px;
+    }
+    .lp-modal-alert p {
+        font-size: 14px;
+        line-height: 23px;
+        margin-top: 12px;
+        margin-bottom: 38px;
+    }
+    .lp-migration-modal-icon img {
+        width: 50px;
+    }
+    .migration-modal-btn-group p {
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: -0.4px;
+        color: #1F2949;
+        margin-bottom: 15px;
+        margin-right: 130px;
+    }
+    .migration-try-btn {
+        padding: 7px 25px 7px 25px;
+        font-size: 12px;
+        line-height: 18px;
+    }
+    .migration-modal-btn-group .migration-later-btn,
+    .migration-modal-btn-group .migration-start-btn {
+        text-decoration: none;
+        padding: 8px 25px 8px 25px;
+        border-radius: 2px;
+        font-size: 12px;
+        cursor: pointer;
+        line-height: 19px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .migration-modal-btn-group .migration-start-btn {
+        color: #fff;
+        background: #3057D5;
+        display: inline-block;
+    }
+    .migration-modal-btn-group .migration-start-btn {
+        color: #fff;
+        background: #3057D5;
+        margin-left: 8px;
+        border: 1px solid #3057D5;
+    }
+
+
+
+}
+/* // Medium devices (mobile, 768px and up) */
+@media (max-width: 576px) {
+    .lp-grid {
+        display: grid;
+        grid-template-columns: 100%;
+    }
+    .lp {
+        background-color: #fff;
+        padding: 39px 15px 60px 15px;
+    }
+    .lp-migratoin-right {
+        display: none;
+    }
+    .lp-migration-singlebox-desc {
+        margin: 0px 0px 0px 10px;
+    }
+    .lp-migration-heading > h3 {
+        font-size: 25px;
+        line-height: 52px;
+        font-weight: normal;
+        color: #1F2949;
+    }
+    .lp-migration-heading > p {
+        font-size: 14px;
+        line-height: 22px;
+        color: #606265;
+        padding: 0px 0px 0px 0px;
+        margin-top: 0px;
+    }
+    .lp-migration-btn-group button {
+        text-decoration: none;
+        padding: 8px 25px 8px 25px;
+        border-radius: 2px;
+        background-color: #3057D5;
+        color: #fff;
+        font-size: 12px;
+        line-height: 19px;
+        cursor: pointer;
+        font-weight: 600;
+        border: 0;
+    }
+    .lp-migration-btn-group > span {
+        display: block;
+        margin:10px 0px 0px 0px;
+    }
+
+    .lp-import-text p {
+        font-size: 14px;
+        line-height: 27px;
+        color: #606265;
+        margin-right: 0px;
+    }
+    .lp-import, .lp-export {
+        background: #fff;
+        padding: 48px 15px 46px 15px;
+    }
+
+    .lp-import-file-inner {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-direction: column;
+    }
+
+    .import-export-btn {
+        text-decoration: none;
+        padding: 8px 25px 8px 25px;
+        border-radius: 2px;
+        background: #3057D5;
+        color: #fff;
+        font-size: 12px;
+        cursor: pointer;
+        line-height: 19px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        margin-top: 20px;
+    }
+
+    .import-export-btn img {
+        margin: -4px 10px 0px 0px;
+        width: 15px;
+    }
+
+    .lp-export .import-export-btn {
+        background-color: #fff;
+        color: #3057D5;
+        border: 1px solid #3057D5;
+        margin-top: 0px;
+    }
+
+    #lp-import-export-area {
+        margin-top: 30px;
+        margin-bottom: 80px;
+    }
+    .lp-export:not(:first-child) {
+        margin-top: 30px;
+    }
+
+}
