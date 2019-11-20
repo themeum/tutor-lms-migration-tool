@@ -40,14 +40,15 @@ if ( ! class_exists('LPtoTutorMigration')){
 		}
 
 		public function lp_migrate_all_data_to_tutor(){
-			delete_option('_tutor_migrated_items_count');
+			//delete_option('_tutor_migrated_items_count');
 
+			/*
 			if (isset($_POST['import']) && is_array($_POST['import'])){
 			    $i = 0;
 		        foreach ($_POST['import'] as $migrate_item_key => $value ){
 			        $i++;
 		            update_option('_tutor_migrated_items_count', $i);
-		            sleep(5);
+		            sleep(2);
 		            switch ($migrate_item_key){
                         case 'courses':
                             //$this->lp_migrate_course_to_tutor();
@@ -61,6 +62,25 @@ if ( ! class_exists('LPtoTutorMigration')){
                     }
                 }
             }
+            */
+
+            if (isset($_POST['migrate_type'])){
+			    $migrate_type = sanitize_text_field($_POST['migrate_type']);
+
+	            switch ($migrate_type){
+		            case 'courses':
+			            //$this->lp_migrate_course_to_tutor();
+			            break;
+		            case 'orders':
+			            //$this->migrate_lp_orders();
+			            break;
+		            case 'reviews':
+			            //$this->migrate_lp_reviews();
+			            break;
+	            }
+	            wp_send_json_success();
+            }
+            wp_send_json_error();
         }
 
 		public function lp_migrate_course_to_tutor(){
@@ -612,7 +632,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 		public function tutor_lp_export_xml(){
 			header('Content-Type: application/octet-stream');
-			header('Content-Disposition: attachment; filename=tutorlms_data.xml');
+			header('Content-Disposition: attachment; filename=learnpress_data_for_tutor.xml');
 			header('Expires: 0');
 
 			echo $this->generate_xml_data();

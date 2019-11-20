@@ -8,8 +8,6 @@ jQuery(document).ready(function($){
 
     var checkProgress;
 
-
-
     function get_live_progress_course_migrating_info(){
         $.ajax({
             url : ajaxurl,
@@ -26,33 +24,143 @@ jQuery(document).ready(function($){
         });
     }
 
+    var countProgress;
+    function migration_progress_bar(cmplete){
+        var $progressBar = $('#sectionCourse').find('.tutor-progress');
+        var data_parcent = parseInt($progressBar.attr('data-percent'));
+
+        if (cmplete) {
+            $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 0);
+        } else {
+            data_parcent++;
+            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
+            countProgress = setTimeout(migration_progress_bar, 300, cmplete );
+        }
+    }
 
     $(document).on( 'submit', 'form#tlmt-lp-migrate-to-tutor-lms',  function( e ){
         e.preventDefault();
 
         var $that = $(this);
-        var data = $(this).serialize()+'&action=lp_migrate_all_data_to_tutor';
+        var $formData = $(this).serialize()+'&action=lp_migrate_all_data_to_tutor';
 
         $.ajax({
             url : ajaxurl,
             type : 'POST',
-            data : data,
+            data : $formData+'&migrate_type=courses',
             beforeSend: function (XMLHttpRequest) {
-                $that.find('.migrate-now-btn').addClass('tutor-updating-message');
+                $('.migrate-now-btn').addClass('tutor-updating-message');
+
                 get_live_progress_course_migrating_info();
+                $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
+                migration_progress_bar();
             },
             success: function (data) {
-                if (data.success) {
+                $('#sectionCourse').find('.j-spinner').addClass('tmtl_done');
 
-                }
+                migration_progress_bar(true);
+                migrate_orders($formData);
             },
             complete: function () {
+                clearTimeout(countProgress);
                 clearTimeout(checkProgress);
-                $that.find('.migrate-now-btn').removeClass('tutor-updating-message');
+                $('.migrate-now-btn').removeClass('tutor-updating-message');
+                $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
+
                 $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
             }
         });
     });
+
+    var countOrderProgress;
+    function order_migration_progress_bar(cmplete){
+        var $progressBar = $('#sectionOrders').find('.tutor-progress');
+        var data_parcent = parseInt($progressBar.attr('data-percent'));
+        
+        if (cmplete) {
+            $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 0);
+        } else {
+            data_parcent++;
+            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
+            countOrderProgress = setTimeout(order_migration_progress_bar, 300, cmplete );
+        }
+    }
+    function migrate_orders($formData){
+
+        $.ajax({
+            url : ajaxurl,
+            type : 'POST',
+            data : $formData+'&migrate_type=orders',
+            beforeSend: function (XMLHttpRequest) {
+                $('.migrate-now-btn').addClass('tutor-updating-message');
+                get_live_progress_course_migrating_info();
+                $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
+
+                order_migration_progress_bar();
+            },
+            success: function (data) {
+                $('#sectionOrders').find('.j-spinner').addClass('tmtl_done');
+
+                order_migration_progress_bar(true);
+                migrate_reviews($formData);
+            },
+            complete: function () {
+                clearTimeout(countOrderProgress);
+                clearTimeout(checkProgress);
+                $('.migrate-now-btn').removeClass('tutor-updating-message');
+                $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
+
+                $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
+            }
+        });
+    }
+
+
+    /**
+     * Migrate And Progress Reviews
+     */
+
+    var countReviewsProgress;
+    function reviews_migration_progress_bar(cmplete){
+        var $progressBar = $('#sectionReviews').find('.tutor-progress');
+        var data_parcent = parseInt($progressBar.attr('data-percent'));
+
+        if (cmplete) {
+            $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 0);
+        } else {
+            data_parcent++;
+            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
+            countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete );
+        }
+    }
+    function migrate_reviews($formData){
+        $.ajax({
+            url : ajaxurl,
+            type : 'POST',
+            data : $formData+'&migrate_type=reviews',
+            beforeSend: function (XMLHttpRequest) {
+                $('.migrate-now-btn').addClass('tutor-updating-message');
+                get_live_progress_course_migrating_info();
+                $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
+
+                reviews_migration_progress_bar();
+            },
+            success: function (data) {
+                $('#sectionReviews').find('.j-spinner').addClass('tmtl_done');
+                reviews_migration_progress_bar(true);
+            },
+            complete: function () {
+                clearTimeout(countReviewsProgress);
+                clearTimeout(checkProgress);
+                $('.migrate-now-btn').removeClass('tutor-updating-message');
+                $('#sectionReviews').find('.j-spinner').removeClass('tmtl_spin');
+                $('.tutor-progress').attr('data-percent', 0);
+
+                $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
+            }
+        });
+    }
+
 
 
     /*
@@ -79,6 +187,11 @@ jQuery(document).ready(function($){
         });
     });
     */
+
+
+    /**
+     * Modal JS
+     */
 
 
 

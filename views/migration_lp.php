@@ -24,48 +24,103 @@ if ( ! defined( 'ABSPATH' ) )
                     </div>
                     <form id="tlmt-lp-migrate-to-tutor-lms" action="" method="post">
                         <div class="lp-migration-checkbox">
-                            <label for="courses">
-                                <div class="lp-migration-singlebox">
-                                    <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[courses]" type="checkbox" checked="checked" id="courses" value="1">
-                                        <span class="checkmark"></span>
-                                    </div>
-                                    <div class="lp-migration-singlebox-desc">
-                                        <h6><?php _e('Courses', 'tutor-lms-migration-tool'); ?></h6>
-                                        <p>
-	                                        <?php _e('Explore our integrated online learning destination that helps need to compete successfully.', 'tutor-lms-migration-tool'); ?>
-                                        </p>
-                                    </div>
-                                </div>
-                            </label>
-                            <label for="sales-data">
-                                <div class="lp-migration-singlebox">
-                                    <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[orders]" type="checkbox" checked="checked" id="sales-data">
-                                        <span class="checkmark"></span>
-                                    </div>
-                                    <div class="lp-migration-singlebox-desc">
-                                        <h6>Sales Data</h6>
-                                        <p>
-                                            Explore our integrated online learning
-                                        </p>
-                                    </div>
-                                </div>
-                            </label>
-                            <label for="reviews">
-                                <div class="lp-migration-singlebox">
-                                    <div class="lp-migration-singlebox-checkbox">
-                                        <input name="import[reviews]" type="checkbox" checked="checked" id="reviews">
-                                        <span class="checkmark"></span>
-                                    </div>
-                                    <div class="lp-migration-singlebox-desc">
 
-                                        <h6> <?php _e('Reviews', 'tutor-lms-migration-tool'); ?> </h6>
-                                        <p>Explore our integrated online learning</p>
+                            <div id="sectionCourse">
+
+                                <label for="courses">
+                                    <div class="lp-migration-singlebox">
+                                        <div class="lp-migration-singlebox-checkbox">
+<!--
+											<input name="import[courses]" type="checkbox" checked="checked" id="courses" value="1">
+											<span class="checkmark"></span>
+-->
+                                            <span class="j-spinner"></span>
+
+                                            <!--<input type="hidden" name="migrate_data_type" value="course" />-->
+
+
+                                            <div id="courseLoadingDiv" class="etutor-updating-message"></div>
+                                        </div>
+                                        <div class="lp-migration-singlebox-desc">
+
+                                            <h6><?php _e('Courses', 'tutor-lms-migration-tool'); ?></h6>
+                                            <p>
+					                            <?php _e('Explore our integrated online learning destination that helps need to compete successfully.', 'tutor-lms-migration-tool'); ?>
+                                            </p>
+
+
+                                            <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
+
+                                        </div>
                                     </div>
-                                </div>
-                            </label>
+                                </label>
+
+                            </div>
+
+
+                            <div id="sectionOrders">
+
+
+                                <label for="sales-data">
+                                    <div class="lp-migration-singlebox">
+                                        <div class="lp-migration-singlebox-checkbox">
+
+<!--                                            <input name="import[orders]" type="checkbox" checked="checked" id="sales-data">-->
+<!--                                            <span class="checkmark"></span>-->
+
+                                            <span class="j-spinner"></span>
+
+
+                                            <!--<input type="hidden" name="migrate_data_type" value="orders" />-->
+
+
+                                        </div>
+                                        <div class="lp-migration-singlebox-desc">
+                                            <h6>Sales Data</h6>
+                                            <p>
+                                                Explore our integrated online learning
+                                            </p>
+
+                                            <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
+
+                                        </div>
+                                    </div>
+                                </label>
+
+                            </div>
+
+
+                            <div id="sectionReviews">
+                                <label for="reviews">
+                                    <div class="lp-migration-singlebox">
+                                        <div class="lp-migration-singlebox-checkbox">
+<!--                                            <input name="import[reviews]" type="checkbox" checked="checked" id="reviews">-->
+<!--                                            <span class="checkmark"></span>-->
+
+                                            <span class="j-spinner"></span>
+
+                                            <!--<input type="hidden" name="migrate_data_type" value="reviews" />-->
+
+
+                                        </div>
+                                        <div class="lp-migration-singlebox-desc">
+
+                                            <h6> <?php _e('Reviews', 'tutor-lms-migration-tool'); ?> </h6>
+                                            <p>Explore our integrated online learning</p>
+
+                                            <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
+
+                                        </div>
+                                    </div>
+                                </label>
+
+                            </div>
+
                         </div>
+
+
+                        <div id="progressCounter"></div>
+
                         <div class="lp-migration-btn-group">
                             <button type="submit" class="migrate-now-btn">
                                 MIGRATE NOW
@@ -100,9 +155,14 @@ if ( ! defined( 'ABSPATH' ) )
                             helps everyone gain the skills.</p>
                     </div>
                     <div class="lp-import-file">
-                        <form action="" method="get">
+
+
+
+
+                        <form method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
                             <div class="lp-import-file-inner">
-                                <input type="file" name="import-file">
+                                <input type="file" name="tutor_import_file">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/import.svg'; ?>" alt="import">
                                     <span>IMPORT FILE</span>
@@ -118,14 +178,24 @@ if ( ! defined( 'ABSPATH' ) )
                             helps everyone gain the skills.</p>
                     </div>
                     <div class="lp-import-file">
-                        <form action="" method="get">
+
+
+                        <form method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
+
+
+
+
                             <div class="lp-import-file-inner">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/export.svg'; ?>" alt="export">
                                     <span>EXPORT FILE</span>
                                 </button>
                             </div>
+
                         </form>
+
+
                     </div>
                 </div>
             </div>
@@ -133,41 +203,8 @@ if ( ! defined( 'ABSPATH' ) )
     </div>
 
 
-    <button id="migrate_lp_courses_btn" class="tutor-button tutor-button-primary">
-        <?php echo sprintf(__('Migrate %s courses', 'tutor'), $courses_count); ?>
-    </button>
-
-    <form method="post">
-        <input type="hidden" name="tutor_action" value="migrate_lp_orders">
-        <button type="submit" id="migrate_lp_orders_btn" class="tutor-button button-success">
-            <?php echo sprintf(__('Migrate %s orders', 'tutor'), $orders_count); ?>
-        </button>
-    </form>
-
-    <form method="post">
-        <input type="hidden" name="tutor_action" value="migrate_lp_reviews">
-        <button type="submit" id="migrate_lp_orders_btn" class="tutor-button button-success">
-            <?php echo sprintf(__('Migrate %s Reviews', 'tutor'), $reviews_count); ?>
-        </button>
-    </form>
-
     <div id="course_migration_progress" style="margin-top: 50px;"></div>
 
-    <form method="post" enctype="multipart/form-data">
-        <input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
-        <button type="submit" class="tutor-button button-success">
-			<?php echo sprintf(__('Export Data', 'tutor'), $reviews_count); ?>
-        </button>
-    </form>
-
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="tutor_import_file">
-
-        <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
-        <button type="submit" class="tutor-button button-success">
-		    <?php echo sprintf(__('Import', 'tutor'), $reviews_count); ?>
-        </button>
-    </form>
 
 
 

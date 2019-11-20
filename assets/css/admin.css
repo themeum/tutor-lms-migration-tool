@@ -10,7 +10,23 @@
     font-style: italic;
     color: #CCCCCC;
 }
-
+.tutor-progress{
+    height: 4px;
+    width: 100%;
+    background: #ddd;
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+}
+.tutor-progress::before{
+    content: '';
+    position: absolute;
+    background: var(--tutor-primary-color);
+    height: 100%;
+    width: var(--tutor-progress);
+    border-radius: 30px;
+    transition: 300ms;
+}
 .tools-migration-lp-page button:focus{
     outline: none;
 }
@@ -40,12 +56,62 @@
     margin-top: 44px;
 }
 .lp-migration-checkbox label {
-    cursor: pointer;
+    cursor: auto;
 }
 .lp-migration-singlebox {
     display: grid;
-    grid-template-columns: 5% 80%;
+    grid-template-columns: 3% 80%;
+    min-height: 100px;
+    margin-bottom: 30px;
 }
+
+
+
+/* css spinner */
+.j-spinner{
+    --spinner-size: 16px;
+    display: inline-block;
+    width: var(--spinner-size);
+    height: var(--spinner-size);
+    transform-origin: center;
+    margin: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    vertical-align: top;
+    border: 2px solid #ddd;
+    box-sizing: border-box;
+}
+
+.j-spinner.tmtl_done{
+    border: none;
+    animation: none;
+    background: var(--tutor-success-button-color);
+    background-size: 55%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9'%3E%3Cpath fill='%23FFF' fill-rule='evenodd' d='M4.571 8.8L0 4.569l1.28-1.184 3.291 3.046L11.52 0l1.28 1.185z'/%3E%3C/svg%3E");
+}
+
+.j-spinner.tmtl_spin{
+    border: none;
+    background-color: transparent;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='22 22 44 44'%3E%3Ccircle class='background' cx='44' cy='44' r='19' fill='none' stroke-width='6' stroke='%23dddddd'%3E%3C/circle%3E%3Ccircle class='spinner-circle-dash' cx='44' cy='44' r='19' fill='none' stroke-width='6' stroke='%231B52D8' stroke-dasharray='119.38052083641213' stroke-dashoffset='-80'%3E%3C/circle%3E%3C/svg%3E");
+    animation: spinner-circle-rotate .4s linear infinite;
+
+}
+
+@-webkit-keyframes spinner-circle-rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+
+
 
 .lp-migration-checkbox label:not(:first-child) .lp-migration-singlebox {
     margin-top: 20px;
@@ -53,6 +119,7 @@
 
 .lp-migration-singlebox-checkbox{
     position: relative;
+    margin-top: 4px;
 }
 .lp-migration-singlebox-checkbox input{
     position: absolute;
@@ -90,7 +157,6 @@
     background:#0352CC;
 }
 .lp-migration-singlebox-desc{
-    cursor: pointer;
     margin: 0px 70px 0px 10px;
 }
 .lp-migration-singlebox-desc h6{
@@ -162,12 +228,14 @@
     font-weight: normal;
     color: #1F2949;
     letter-spacing: -0.97px;
+    margin: 0;
 }
 .lp-import-text p{
     font-size: 14px;
     line-height: 27px;
     color: #606265;
     margin-right: 75px;
+    margin: 0;
 }
 .lp-import-file{
     margin-top: 29px;
