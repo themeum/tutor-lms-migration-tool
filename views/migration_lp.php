@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) )
                 <div class="lp-migratoin-left">
                     <div class="lp-migration-heading">
                         <h3>LearnPress <span> <?php _e('Migration', 'tutor-lms-migration-tool'); ?> </span> </h3>
-	                    <p><?php _e('Explore our integrated online learning destination that helps need to compete successfully.', 'tutor-lms-migration-tool'); ?></p>
+	                    <p><?php _e('Transfer everything from your LearnPress database to Tutor LMS hasslefree with just one-click.', 'tutor-lms-migration-tool'); ?></p>
                     </div>
                     <form id="tlmt-lp-migrate-to-tutor-lms" action="" method="post">
                         <div class="lp-migration-checkbox">
@@ -40,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) )
                                         <div class="lp-migration-singlebox-desc">
                                             <h6><?php _e('Courses', 'tutor-lms-migration-tool'); ?></h6>
                                             <p>
-					                            <?php _e('Explore our integrated online learning destination that helps need to compete successfully.', 'tutor-lms-migration-tool'); ?>
+					                            <?php _e('The courses and all the data files associated with LearnPress.', 'tutor-lms-migration-tool'); ?>
                                             </p>
                                             <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
                                         </div>
@@ -56,7 +56,7 @@ if ( ! defined( 'ABSPATH' ) )
                                         </div>
                                         <div class="lp-migration-singlebox-desc">
                                             <h6><?php _e('Sales Data','tutor-lms-migration-tool'); ?></h6>
-                                            <p><?php _e('Explore our integrated online learning','tutor-lms-migration-tool'); ?></p>
+                                            <p><?php _e('LearnPress sales data from your course purchases.','tutor-lms-migration-tool'); ?></p>
                                             <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
                                         </div>
                                     </div>
@@ -71,7 +71,7 @@ if ( ! defined( 'ABSPATH' ) )
                                         </div>
                                         <div class="lp-migration-singlebox-desc">
                                             <h6> <?php _e('Reviews', 'tutor-lms-migration-tool'); ?> </h6>
-                                            <p><?php _e('Explore our integrated online learning', 'tutor-lms-migration-tool'); ?></p>
+                                            <p><?php _e('Reviews left by your customers for your courses.', 'tutor-lms-migration-tool'); ?></p>
                                             <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
                                         </div>
                                     </div>
@@ -84,7 +84,7 @@ if ( ! defined( 'ABSPATH' ) )
 
                         <div class="lp-migration-btn-group">
                             <button type="submit" class="migrate-now-btn">
-	                            <?php _e('MIGRATE NOW', 'tutor-lms-migration-tool'); ?>
+	                            <?php _e('Start Migration', 'tutor-lms-migration-tool'); ?>
                             </button>
                             <span>
                                 <span id="total_items_migrate_counts"> 0 </span> / <?php echo $items_count; ?> <?php _e('Items Migrates'); ?>
@@ -111,7 +111,7 @@ if ( ! defined( 'ABSPATH' ) )
                 <div class="lp-import">
                     <div class="lp-import-text">
                         <h4><?php _e('Import File', 'tutor-lms-migration-tool'); ?></h4>
-                        <p><?php _e('Explore our integrated online learning destination that helps everyone gain the skills.', 'tutor-lms-migration-tool'); ?></p>
+                        <p><?php _e('Upload the XML format file to import.', 'tutor-lms-migration-tool'); ?></p>
                     </div>
                     <div class="lp-import-file">
                         <form method="post" enctype="multipart/form-data">
@@ -120,7 +120,7 @@ if ( ! defined( 'ABSPATH' ) )
                                 <input type="file" name="tutor_import_file">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/import.svg'; ?>" alt="import">
-                                    <span> <?php _e('IMPORT FILE', 'tutor-lms-migration-tool'); ?> </span>
+                                    <span> <?php _e('Import File', 'tutor-lms-migration-tool'); ?> </span>
                                 </button>
                             </div>
                         </form>
@@ -129,7 +129,7 @@ if ( ! defined( 'ABSPATH' ) )
                 <div class="lp-export">
                     <div class="lp-import-text">
                         <h4><?php _e('Export File', 'tutor-lms-migration-tool'); ?></h4>
-                        <p><?php _e('Explore our integrated online learning destination that helps everyone gain the skills.', 'tutor-lms-migration-tool'); ?></p>
+                        <p><?php _e('Export the information from your LearnPress.', 'tutor-lms-migration-tool'); ?></p>
                     </div>
                     <div class="lp-import-file">
                         <form method="post" enctype="multipart/form-data">
@@ -137,7 +137,7 @@ if ( ! defined( 'ABSPATH' ) )
                             <div class="lp-import-file-inner">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/export.svg'; ?>" alt="export">
-                                    <span> <?php _e('EXPORT FILE', 'tutor-lms-migration-tool'); ?> </span>
+                                    <span> <?php _e('Export File', 'tutor-lms-migration-tool'); ?> </span>
                                 </button>
                             </div>
                         </form>

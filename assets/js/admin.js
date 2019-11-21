@@ -189,15 +189,14 @@ jQuery(document).ready(function($){
     /**
      * Modal JS
      */
-});
 
 
-/**
- * Modal and other JS
- * @since v.1.0.0
- */
 
-$(document).ready(function() {
+
+    /**
+     * Modal and other JS
+     * @since v.1.0.0
+     */
 
     var migrateBtn = $(".migrate-now-btn");
     var migrateLaterBtn = $('.migration-later-btn');
@@ -216,18 +215,18 @@ $(document).ready(function() {
         removeItem.removeClass('active');
     }
 
-    // migrate now button click
+// migrate now button click
     $(migrateBtn).on('click',function(event){
         event.preventDefault();
         migrationModal.addClass('active');
     });
-    // migration later button click action
+// migration later button click action
     $(migrateLaterBtn).on('click', function(event){
         event.preventDefault();
         removeModal(migrationModal);
     });
 
-    // migration start button click action
+// migration start button click action
     $(migrateStartBtn).on('click', function(event){
         event.preventDefault();
 
@@ -240,21 +239,22 @@ $(document).ready(function() {
         removeModal(successModal);
     });
 
-    // successModal close button action
+// successModal close button action
     $(successModalClose).on('click', function(event){
         event.preventDefault();
         removeModal(successModal);
     });
-    // error modal close button click action
+// error modal close button click action
     $(migrateModalClose).on('click', function(event){
         event.preventDefault();
         removeModal(migrationModal);
     });
-    // error modal close button click action
+// error modal close button click action
     $(errorModalClose).on('click', function(event){
         event.preventDefault();
         removeModal(errorModal);
     });
 
-});
 
+
+});
