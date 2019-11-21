@@ -69,13 +69,13 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 	            switch ($migrate_type){
 		            case 'courses':
-			            //$this->lp_migrate_course_to_tutor();
+		                $this->lp_migrate_course_to_tutor();
 			            break;
 		            case 'orders':
-			            //$this->migrate_lp_orders();
+		                $this->migrate_lp_orders();
 			            break;
 		            case 'reviews':
-			            //$this->migrate_lp_reviews();
+		                $this->migrate_lp_reviews();
 			            break;
 	            }
 	            wp_send_json_success();
@@ -506,11 +506,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 					);
 
 					//Inserting Course
-					//$wpdb->insert($wpdb->posts, $course_data);
-
 					$course_id = wp_insert_post($course_data);
-
-					//$course_id = $wpdb->insert_id;
 
 					$course_meta = json_decode(json_encode($course->course_meta), true);
 					foreach ($course_meta as $course_meta_key => $course_meta_value){
@@ -519,8 +515,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 					    }
 					    $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
                     }
-
-
 
 					foreach ($course->topics as $topic){
 						$topic_data = array(
@@ -534,11 +528,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 						);
 
 						//Inserting Topics
-						//$wpdb->insert($wpdb->posts, $topic_data);
-						//$topic_id = $wpdb->insert_id;
-
 						$topic_id = wp_insert_post($topic_data);
-
 
 						$item_i = 0;
 						foreach ($topic->items as $item){
@@ -554,12 +544,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 								'menu_order'    => $item_i,
 							);
 
-							//Inserting Course Item, lessons/quiz
-							//$wpdb->insert($wpdb->posts, $item_data);
-							//$item_id = $wpdb->insert_id;
-
 							$item_id = wp_insert_post($item_data);
-
 
 							$item_metas = json_decode(json_encode($item->item_meta), true);
 							foreach ($item_metas as $item_meta_key => $item_meta_value){
@@ -591,9 +576,7 @@ if ( ! class_exists('LPtoTutorMigration')){
                         }
                     }
 
-
                     if (isset($course->reviews) && is_object($course->reviews) && count($course->reviews) ){
-
 					    foreach ($course->reviews as $review){
 						    $rating_data = array(
 							    'comment_post_ID'   => $course_id,
@@ -617,16 +600,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 						    );
 						    $wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
                         }
-
                     }
-
-
-
 				}
-
 			}
-
-
 		}
 
 
@@ -846,27 +822,21 @@ if ( ! class_exists('LPtoTutorMigration')){
 							//Close Topic Tag
 							$xml .= $this->close_element('topics');
 						}
-
 						//$xml .= $this->close_element('topics');
 					}
 
-
-
-
 					//$xml .= $this->start_element('reviews');
-
 					$lp_reviews = $wpdb->get_results("SELECT comments.comment_post_ID,
-comments.comment_post_ID,
-comments.comment_author,
-comments.comment_author_email,
-comments.comment_author_IP,
-comments.comment_date,
-comments.comment_date_gmt,
-comments.comment_content,
-comments.user_id,
-cm.meta_value as tutor_rating
- FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';", ARRAY_A);
-
+                    comments.comment_post_ID,
+                    comments.comment_author,
+                    comments.comment_author_email,
+                    comments.comment_author_IP,
+                    comments.comment_date,
+                    comments.comment_date_gmt,
+                    comments.comment_content,
+                    comments.user_id,
+                    cm.meta_value as tutor_rating
+                     FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';", ARRAY_A);
 
 					if (tutils()->count($lp_reviews)){
 						foreach ($lp_reviews as $lp_review){
@@ -883,27 +853,14 @@ cm.meta_value as tutor_rating
 					}
 
 					//$xml .= $this->close_element('reviews');
-
-
-
-
 					$xml .= $this->close_element('courses');
-
-
-
 				}
 			}
 
-
 			//$xml .= $this->close_element('courses');
-
-
-
 			$xml .= $this->close_element('channel');
 			return $xml;
 		}
-
-
 
 		public function start_element($element = ''){
 			return "\n<{$element}>\n";
@@ -911,7 +868,6 @@ cm.meta_value as tutor_rating
 		public function close_element($element = ''){
 			return "\n</{$element}>\n";
 		}
-
 
 		function xml_cdata( $str ) {
 			if ( ! seems_utf8( $str ) ) {
@@ -922,7 +878,6 @@ cm.meta_value as tutor_rating
 
 			return $str;
 		}
-
 
 		/**
 		 * @param $section_id
@@ -951,7 +906,5 @@ cm.meta_value as tutor_rating
 
 			return $wpdb->get_results( $query );
 		}
-
-
 	}
 }

@@ -107,7 +107,6 @@ jQuery(document).ready(function($){
                 clearTimeout(checkProgress);
 
                 $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
-
                 $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
             }
         });
@@ -162,8 +161,6 @@ jQuery(document).ready(function($){
         });
     }
 
-
-
     /*
     $(document).on( 'click', '#migrate_lp_courses_btn',  function( e ){
         e.preventDefault();
@@ -189,14 +186,9 @@ jQuery(document).ready(function($){
     });
     */
 
-
     /**
      * Modal JS
      */
-
-
-
-
 });
 
 
@@ -218,28 +210,16 @@ $(document).ready(function() {
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
 
     function activeModal(activeItem) {
-        if($(activeItem).hasClass('active')){
-            $(activeItem).addClass('active');
-        }else{
-            console.err("class not found!!");
-        }
+        $(activeItem).addClass('active');
     }
     function removeModal(removeItem) {
-        if($(removeItem).hasClass('active')){
-            $(removeItem).removeClass('active');
-        }else{
-            console.err("class not found!!");
-        }
+        removeItem.removeClass('active');
     }
 
     // migrate now button click
     $(migrateBtn).on('click',function(event){
         event.preventDefault();
-        if(! migrationModal.hasClass('active')) {
-            migrationModal.addClass('active');
-        }else{
-            console.error("class not found!!");
-        }
+        migrationModal.addClass('active');
     });
     // migration later button click action
     $(migrateLaterBtn).on('click', function(event){

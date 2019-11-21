@@ -38,15 +38,11 @@ if ( ! defined( 'ABSPATH' ) )
                                             <div id="courseLoadingDiv" class="etutor-updating-message"></div>
                                         </div>
                                         <div class="lp-migration-singlebox-desc">
-
                                             <h6><?php _e('Courses', 'tutor-lms-migration-tool'); ?></h6>
                                             <p>
 					                            <?php _e('Explore our integrated online learning destination that helps need to compete successfully.', 'tutor-lms-migration-tool'); ?>
                                             </p>
-
-
                                             <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
-
                                         </div>
                                     </div>
                                 </label>
@@ -124,7 +120,7 @@ if ( ! defined( 'ABSPATH' ) )
                                 <input type="file" name="tutor_import_file">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/import.svg'; ?>" alt="import">
-                                    <span>IMPORT FILE</span>
+                                    <span> <?php _e('IMPORT FILE', 'tutor-lms-migration-tool'); ?> </span>
                                 </button>
                             </div>
                         </form>
@@ -141,7 +137,7 @@ if ( ! defined( 'ABSPATH' ) )
                             <div class="lp-import-file-inner">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/export.svg'; ?>" alt="export">
-                                    <span>EXPORT FILE</span>
+                                    <span> <?php _e('EXPORT FILE', 'tutor-lms-migration-tool'); ?> </span>
                                 </button>
                             </div>
                         </form>
@@ -152,12 +148,7 @@ if ( ! defined( 'ABSPATH' ) )
     </div>
 
     <div id="course_migration_progress" style="margin-top: 50px;"></div>
-
 </div>
-
-
-
-
 
 <div class="lp-migration-modal-wrap">
 
@@ -168,14 +159,13 @@ if ( ! defined( 'ABSPATH' ) )
             </div>
             <div class="migration-modal-btn-group">
                 <p>
-                    Are you sure you want to migrate from
-                    LearnPress to Tutor LMS?
+                    <?php _e('Are you sure you want to migrate from LearnPress to Tutor LMS?', 'tutor-lms-migration-tool'); ?>
                 </p>
                 <a href="#" class="migration-later-btn">
-                    <span>NO, MAYBE LATER!</span>
+                    <span> <?php _e('NO, MAYBE LATER!', 'tutor-lms-migration-tool'); ?></span>
                 </a>
                 <a href="#" class="migration-start-btn">
-                    <span>YES, LET’S START</span>
+                    <span> <?php _e('YES, LET’S START', 'tutor-lms-migration-tool'); ?> </span>
                 </a>
             </div>
             <div class="modal-close migration-modal-close">
@@ -187,25 +177,28 @@ if ( ! defined( 'ABSPATH' ) )
 
 </div>
 
-<div class="lp-success-modal">
-    <div class="lp-modal-alert">
-        <div class="lp-modal-icon lp-modal-success animate">
-            <span class="lp-modal-line lp-modal-tip animateSuccessTip"></span>
-            <span class="lp-modal-line lp-modal-long animateSuccessLong"></span>
-            <div class="lp-modal-placeholder"></div>
-            <div class="lp-modal-fix"></div>
-        </div>
-        <div class="modal-close success-modal-close">
-            <span class="modal-close-line success-close-line-one"></span>
-            <span class="modal-close-line success-close-line-two"></span>
-        </div>
 
-        <h4> <?php _e('Migration Successful!', 'tutor-lms-migration-tool'); ?> </h4>
-        <p> <?php _e('The migration from LearnPress to Tutor LMS was successfully.', 'tutor-lms-migration-tool'); ?> </p>
+<div class="lp-success-modal-wrap">
+    <div class="lp-success-modal">
+        <div class="lp-modal-alert">
+            <div class="lp-modal-icon lp-modal-success animate">
+                <span class="lp-modal-line lp-modal-tip animateSuccessTip"></span>
+                <span class="lp-modal-line lp-modal-long animateSuccessLong"></span>
+                <div class="lp-modal-placeholder"></div>
+                <div class="lp-modal-fix"></div>
+            </div>
+            <div class="modal-close success-modal-close">
+                <span class="modal-close-line success-close-line-one"></span>
+                <span class="modal-close-line success-close-line-two"></span>
+            </div>
 
-        <a href="#" class="migration-try-btn migration-done-btn">
-            <span><?php _e('CLOSE', 'tutor-lms-migration-tool'); ?></span>
-        </a>
+            <h4> <?php _e('Migration Successful!', 'tutor-lms-migration-tool'); ?> </h4>
+            <p> <?php _e('The migration from LearnPress to Tutor LMS was successfully.', 'tutor-lms-migration-tool'); ?> </p>
+
+            <a href="#" class="migration-try-btn migration-done-btn">
+                <span><?php _e('CLOSE', 'tutor-lms-migration-tool'); ?></span>
+            </a>
+        </div>
     </div>
-</div>
 
+</div>
