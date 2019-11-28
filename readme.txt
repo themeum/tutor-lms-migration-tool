@@ -1,4 +1,4 @@
-=== Tutor LMS Migration Tool ===
+=== Tutor LMS - Migration Tool ===
 Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
@@ -81,7 +81,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 1.0.0 - 20 November, 2019 =
+= 1.0.0 - 28 November, 2019 =
 
 * Initial Release
 
