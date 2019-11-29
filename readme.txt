@@ -9,41 +9,46 @@ Stable tag: 1.0.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Move all your course, quiz, order data information and everything else from LearnPress to Tutor LMS by simply clicking a button
+Move all your course, quiz, order data information and everything else from your LMS to the better Tutor LMS by simply clicking a button.
 
 == Description ==
 
-If you want to transfer your LearnPress database which contains all the course, quiz and order data of your teaching site, with all your information intact to the better Tutor LMS plugin then this migration tool is the perfect option for you.
+If you want to transfer your existing database for your currently installed LMS plugin (which contains all the course, quizzes information, order data and so on of your teaching site) with all your information intact, to the better Tutor LMS then this migration plugin is the perfect option for you.
 
-No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool. With its simple one-click auto migration settings you can have all the information from your LearnPress plugin transferred without any database error.
+No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool with its easy user interface. With its simple one-click auto migration settings you can have all the information from your old LMS plugin transferred without any database error.
 
+= Future UPDATES =
+
+With the initial release of the Tutor LMS Migration Tool, we only introduced migration options from only one other LMS plugin to Tutor LMS. We have a roadmap to bring you compatibility support for migration with many other plugins in the future.
 
 = Pre-requisites =
 
 To get started with migrating all your information from LearnPress LMS to Tutor LMS in the easiest way you need to make sure you have the following plugins installed.
 
+**Note:** Currently the Tutor LMS Migration Tool supports migration from LearnPress to Tutor LMS. We are working hard to bring migration options from
+other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress the following plugins are required
+
+
   * Tutor LMS (Version 1.4.6 or later)
-  * LearnPress (Version 3.2.6.4 or later)
+  * The current LMS plugin you are using. (As this migration plugin currently supports only LearnPress (Version 3.2.6.4 or later) you need this plugin for the migration to work)
 
 
 = Get Started =
 
-After you install the migration plugin in your WordPress site you will find the LearnPress Migration option in the Tools section of Tutor LMS.
+After you install the migration plugin in your WordPress site you will find the migration option in the Tools section of Tutor LMS.
 
-In the LearnPress Migration tab, you will find the migration status bar. You will also find two checkboxes that will let you choose the specific data set that you want. Currently, you can choose
-
+In the LearnPress Migration tab, you will find the migration status bar. You will see a successful message for each dataset for a successful migration. You will see success messages for
 
   * Courses
   * Sales Data
   * Reviews
 
-
-Click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in LearnPress.
-
+Click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
 
 The whole process is so seamless that you will feel like you just opted-in for a better LMS without even changing anything at all.
 
 = Separate Import & Export Option =
+
 With Tutor LMS Migration Tool you can also separately export the data to your local folder or import the database file by uploading the XML format file.
 
 == Installation ==
