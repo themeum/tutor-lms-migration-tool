@@ -1079,16 +1079,19 @@ div#tutor-tools-page-wrap{
     .lp-migration-modal {
         height: 221px;
     }
+    .lp-import-file {
+        margin-top: 10px;
+    }
     .lp-import, .lp-export {
         background: #fff;
-        padding: 35px 16px 30px 29px;
+        padding: 35px 16px 50px 29px;
     }
 
     .lp-import-file-inner {
         display: flex;
         align-items: flex-start;
         justify-content: flex-start;
-        flex-direction: column;
+        flex-direction: column-reverse;
     }
 
     .lp-import-file-inner input{
@@ -1096,19 +1099,15 @@ div#tutor-tools-page-wrap{
     }
 
     .import-export-btn {
-        text-decoration: none;
         padding: 8px 25px 8px 25px;
-        border-radius: 2px;
-        background: #3057D5;
-        color: #fff;
         font-size: 12px;
-        cursor: pointer;
         line-height: 19px;
         font-weight: 600;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 0;
+        margin-top: 10px;
     }
 
     .import-export-btn img {
@@ -1130,6 +1129,4 @@ div#tutor-tools-page-wrap{
     .lp-export:not(:first-child) {
         margin-top: 30px;
     }
-
 }
-

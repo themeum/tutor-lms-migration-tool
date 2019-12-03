@@ -118,11 +118,11 @@ if ( ! defined( 'ABSPATH' ) )
                         <form method="post" enctype="multipart/form-data">
                             <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
                             <div class="lp-import-file-inner">
-                                <input type="file" name="tutor_import_file">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/import.svg'; ?>" alt="import">
                                     <span> <?php _e('Import File', 'tutor-lms-migration-tool'); ?> </span>
                                 </button>
+                                <input type="file" name="tutor_import_file">
                             </div>
                         </form>
                     </div>
