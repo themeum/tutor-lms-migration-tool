@@ -1,10 +1,26 @@
+div#tutor-tools-page-wrap{
+    margin-top: 20px;
+}
+@media(min-width: 1650px) {
+    div#tutor-tools-page-wrap{
+        margin-top: 25px;
+    }
+}
+.lp-container{
+
+}
+.lp-grid{
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
 .tools-migration-lp-page .lp-grid{
     display: grid;
     grid-template-columns: 50% 50%;
 }
-.tools-migration-lp-page .lp{
+
+.tools-migration-lp-page .lp {
     background-color: #fff;
-    padding: 43px 0px 70px 70px;
+    padding: 45px 0px 45px 45px;
 }
 .tools-migration-lp-page .lp-required-migrate-stats{
     font-style: italic;
@@ -31,16 +47,17 @@
     outline: none;
 }
 .lp-migratoin-left{
-    
+
 }
 .lp-migration-heading{
-    
+
 }
 .lp-migration-heading > h3{
     font-size: 30px;
-    line-height: 52px;
+    line-height: 40px;
     font-weight: normal;
     color: #1F2949;
+    margin: 0px;
 }
 .lp-migration-heading > h3 span{
     font-weight: bold;
@@ -49,7 +66,6 @@
     font-size: 16px;
     line-height: 28px;
     color: #606265;
-    padding: 0px 160px 0px 0px;
     margin-top: 9px;
 }
 .lp-migration-checkbox {
@@ -61,8 +77,7 @@
 .lp-migration-singlebox {
     display: grid;
     grid-template-columns: 3% 80%;
-    min-height: 100px;
-    margin-bottom: 30px;
+    min-height: 85px;
 }
 
 
@@ -157,7 +172,7 @@
     background:#0352CC;
 }
 .lp-migration-singlebox-desc{
-    margin: 0px 70px 0px 10px;
+    margin: 0px 70px 0px 20px;
 }
 .lp-migration-singlebox-desc h6{
     font-size: 16px;
@@ -176,13 +191,14 @@
 }
 
 .lp-migration-btn-group{
-    margin-top: 60px;
+    margin-top: 30px;
 }
 .lp-migration-btn-group button{
     text-decoration: none;
     padding: 14px 42px 14px 42px;
     border-radius: 2px;
     background-color: #3057D5;
+    border-color: #3057D5;
     color: #fff;
     font-size: 14px;
     line-height: 19px;
@@ -204,13 +220,12 @@
 .lp-migratoin-right img{}
 
 #lp-import-export-area{
-    margin-top: 60px;
-    margin-bottom: 80px;    
+    margin-top: 30px;
 }
 #lp-import-export-area .lp-grid{
     display: grid;
-    grid-template-columns: 48.5% 48.5%;
-    grid-column-gap: 3%;
+    grid-template-columns: 1fr 1fr;
+    grid-column-gap: 30px;
 }
 #lp-import-export-area{
 
@@ -219,7 +234,7 @@
 .lp-import ,
 .lp-export{
     background: #fff;
-    padding: 48px 32px 46px 50px;
+    padding: 40px 32px 50px 45px;
 }
 .lp-import-text{}
 .lp-import-text h4{
@@ -244,7 +259,6 @@
 .lp-import-file-inner{
     display: flex;
     align-items: center;
-    justify-content: space-between;
 }
 .lp-import-file-inner input {
     width: 180px;
@@ -264,6 +278,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-right: 30px;
+    border-color: #3057D5;
 }
 .import-export-btn img{
     margin-right: 10px;
@@ -576,7 +592,7 @@
 
 /* modal success */
 .lp-error-modal {
-    
+
 }
 .lp-success-modal {
     position: fixed;
@@ -751,12 +767,77 @@
 }
 
 
+@media (min-width: 1650px) {
 
- /* // Extra large devices (large desktops, 1200px and up) */
- @media (max-width: 1180px) { 
+    .tools-migration-lp-page {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        grid-column-gap: 30px;
+    }
+    #lp-import-export-area .lp-grid {
+        display: grid;
+        grid-template-columns: repeat(1,1fr);
+    }
+    .lp-import, .lp-export {
+        background: #fff;
+        padding: 60px 32px 84px 50px;
+        margin-top: 0px;
+    }
+    #lp-import-export-area {
+        margin-top: 0px;
+    }
+    .lp-export {
+        margin-top: 30px;
+    }
+
+    .lp-migratoin-right {
+        background-position: center center;
+    }
+    .lp-migration-singlebox-desc {
+        margin: 0px 0px 0px 20px;
+    }
+
+}
+
+
+@media (min-width: 1650px) and (max-width : 1880px) {
+    .lp-import, .lp-export {
+        padding: 61px 32px 85px 50px;
+        margin-top: 0px;
+    }
+    .lp-export {
+        margin-top: 30px;
+    }
+}
+
+@media (max-width: 1920px) {
+
+}
+@media (max-width: 1700px) {
+
+}
+
+@media (max-width: 1500px) {
+
+}
+
+@media (max-width: 1330px) {
+
+}
+
+/* // Extra large devices (large desktops, 1200px and up) */
+@media (max-width: 1180px) {
     .lp-container {
         width: 100%;
         margin: 0 auto;
+    }
+    #lp-import-export-area .lp-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-column-gap: 30px;
+    }
+    .lp-export:not(:first-child) {
+        margin-top: 30px;
     }
     .tools-migration-lp-page .lp-grid {
         display: grid;
@@ -765,13 +846,16 @@
     .lp-migratoin-right {
         display: none;
     }
-  }
-  
-  /* // Large devices (desktops, 992px and up) */
-  @media (max-width: 992px) { 
+    .lp-migration-heading > p {
+        padding: 0px 350px 0px 0px;
+    }
+}
+
+/* // Large devices (desktops, 992px and up) */
+@media (max-width: 992px) {
     .lp-container {
-      width: 100%;
-      margin: 0 auto;
+        width: 100%;
+        margin: 0 auto;
     }
     .tools-migration-lp-page .lp-grid {
         display: grid;
@@ -805,7 +889,7 @@
         margin: 0 auto;
     }
     .lp-migration-btn-group > span {
-    display: inline-block;
+        display: inline-block;
     }
     .lp-migration-heading > p {
         font-size: 16px;
@@ -815,7 +899,7 @@
         margin-top: 9px;
     }
     .lp-export:not(:first-child) {
-    margin-top: 60px;
+        margin-top: 30px;
     }
     #lp-import-export-area .lp-grid {
         display: grid;
@@ -825,18 +909,25 @@
     .lp-migration-btn-group > span {
         display: inline-block;
     }
-    
+
     .lp-migration-btn-group {
-        margin-top: 40px;
+        margin-top: 20px;
     }
-  
+
+    .import-export-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 30px;
+    }
+
 }
-  
-  /* // Medium devices (tablets, 768px and up) */
-  @media (max-width: 768px) { 
+
+/* // Medium devices (tablets, 768px and up) */
+@media (max-width: 768px) {
 
     .lp-migratoin-right {
-      display: none;
+        display: none;
     }
     .lp-success-modal,
     .lp-error-modal{
@@ -849,13 +940,13 @@
         margin: 0 auto;
     }
     .lp-modal-alert {
-      background-color: white;
-      box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
-      border-radius: 4px;
-      margin: 0px;
-      padding: 47px 52px 76px 52px;
-      text-align: center;
-      position: relative;
+        background-color: white;
+        box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        margin: 0px;
+        padding: 47px 52px 76px 52px;
+        text-align: center;
+        position: relative;
     }
     .lp-migration-modal {
         width: 95%;
@@ -864,9 +955,9 @@
 
     .tools-migration-lp-page .lp {
         background-color: #fff;
-        padding: 42px 0px 60px 29px;
+        padding: 20px 0px 30px 29px;
     }
-    
+
     .lp-migration-alert {
         display: grid;
         grid-template-columns: 1fr;
@@ -894,7 +985,7 @@
         letter-spacing: -0.4px;
         color: #1F2949;
         margin-bottom: 15px;
-        margin-right: 0px;  
+        margin-right: 0px;
     }
     .lp-migration-modal .lp-migration-modal-icon {
         text-align: center;
@@ -915,7 +1006,7 @@
         font-weight: 600;
         text-align: center;
     }
-    
+
     .migration-modal-btn-group .migration-start-btn {
         color: #fff;
         background: #3057D5;
@@ -927,73 +1018,83 @@
         margin-left: 8px;
         border: 1px solid #3057D5;
     }
-  
+
 }
-  /* // Medium devices (mobile, 768px and up) */ 
-  @media (max-width: 576px) { 
+/* // Medium devices (mobile, 768px and up) */
+@media (max-width: 576px) {
     .lp-grid {
-      display: grid;
-      grid-template-columns: 100%;
+        display: grid;
+        grid-template-columns: 100%;
     }
     .lp {
-      background-color: #fff;
-      padding: 39px 15px 60px 15px;
+        background-color: #fff;
+        padding: 39px 15px 60px 15px;
     }
     .lp-migratoin-right {
-      display: none;
+        display: none;
     }
     .lp-migration-singlebox-desc {
-      margin: 0px 0px 0px 10px;
+        margin: 0px 0px 0px 20px;
     }
     .lp-migration-heading > h3 {
-      font-size: 25px;
-      line-height: 52px;
-      font-weight: normal;
-      color: #1F2949;
+        font-size: 25px;
+        line-height: 52px;
+        font-weight: normal;
+        color: #1F2949;
     }
     .lp-migration-heading > p {
         font-size: 14px;
         line-height: 22px;
         color: #606265;
-        padding: 0px 90px 0px 0px;
+        padding: 0px 15px 0px 0px;
         margin-top: 0px;
     }
+    .lp-migration-checkbox {
+        margin-top: 30px;
+    }
     .lp-migration-btn-group button {
-      text-decoration: none;
-      padding: 8px 25px 8px 25px;
-      border-radius: 2px;
-      background-color: #3057D5;
-      color: #fff;
-      font-size: 12px;
-      line-height: 19px;
-      cursor: pointer;
-      font-weight: 600;
-      border: 0;
+        text-decoration: none;
+        padding: 8px 25px 8px 25px;
+        border-radius: 2px;
+        background-color: #3057D5;
+        color: #fff;
+        font-size: 12px;
+        line-height: 19px;
+        cursor: pointer;
+        font-weight: 600;
+        border: 0;
     }
     .lp-migration-btn-group > span {
         display: block;
         margin:10px 0px 0px 0px;
     }
 
-  
+
     .lp-import-text p {
         font-size: 14px;
         line-height: 27px;
         color: #606265;
         margin-right: 0px;
     }
+    .lp-migration-modal {
+        height: 221px;
+    }
     .lp-import, .lp-export {
         background: #fff;
-        padding: 48px 15px 46px 15px;
+        padding: 35px 16px 30px 29px;
     }
-  
+
     .lp-import-file-inner {
         display: flex;
         align-items: flex-start;
-        justify-content: space-between;
+        justify-content: flex-start;
         flex-direction: column;
     }
-    
+
+    .lp-import-file-inner input{
+        margin-top: 20px;
+    }
+
     .import-export-btn {
         text-decoration: none;
         padding: 8px 25px 8px 25px;
@@ -1008,21 +1109,20 @@
         align-items: center;
         justify-content: center;
         border: 0;
-        margin-top: 20px;
     }
-    
+
     .import-export-btn img {
         margin: -4px 10px 0px 0px;
         width: 15px;
     }
-    
+
     .lp-export .import-export-btn {
         background-color: #fff;
         color: #3057D5;
         border: 1px solid #3057D5;
         margin-top: 0px;
     }
-    
+
     #lp-import-export-area {
         margin-top: 30px;
         margin-bottom: 80px;
@@ -1030,6 +1130,6 @@
     .lp-export:not(:first-child) {
         margin-top: 30px;
     }
-  
-  }
+
+}
 

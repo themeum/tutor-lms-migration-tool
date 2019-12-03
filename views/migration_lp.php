@@ -19,7 +19,8 @@ if ( ! defined( 'ABSPATH' ) )
                 <div class="lp-migratoin-left">
                     <div class="lp-migration-heading">
                         <h3>LearnPress <span> <?php _e('Migration', 'tutor-lms-migration-tool'); ?> </span> </h3>
-	                    <p><?php _e('Transfer everything from your LearnPress database to Tutor LMS hasslefree with just one-click.', 'tutor-lms-migration-tool'); ?></p>
+	                    <p><?php echo sprintf(__('Transfer everything from your LearnPress database to %s Tutor LMS hasslefree with just one-click.',
+                                'tutor-lms-migration-tool'), '<br />'); ?></p>
                     </div>
                     <form id="tlmt-lp-migrate-to-tutor-lms" action="" method="post">
                         <div class="lp-migration-checkbox">
