@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) )
                                         <div class="lp-migration-singlebox-desc">
                                             <h6><?php _e('Courses', 'tutor-lms-migration-tool'); ?></h6>
                                             <p>
-					                            <?php _e('The courses and all the data files associated with LearnPress.', 'tutor-lms-migration-tool'); ?>
+					                            <?php _e('Course and it’s relevant informations in LearnPress.', 'tutor-lms-migration-tool'); ?>
                                             </p>
                                             <div class="tutor-progress" data-percent="0" style="--tutor-progress: 0%; display: none"></div>
                                         </div>
@@ -88,13 +88,13 @@ if ( ! defined( 'ABSPATH' ) )
 	                            <?php _e('Start Migration', 'tutor-lms-migration-tool'); ?>
                             </button>
                             <span>
-                                <span id="total_items_migrate_counts"> 0 </span> / <?php echo $items_count; ?> <?php _e('Items Migrates'); ?>
+                                <span id="total_items_migrate_counts"> 0 </span> / <?php echo $items_count; ?> <?php _e('Items to Migrate', 'tutor-lms-migration-tool'); ?>
                             </span>
                         </div>
 
                         <div class="lp-required-migrate-stats">
                             <p id="lp_required_migrate_stats">
-                                <?php echo sprintf( __('%s courses, %s Sales Data, %s reviews required migrate'), $courses_count, $orders_count, $reviews_count) ?>
+                                <?php echo sprintf( __('%s courses, %s sales data, %s reviews will be migrated', 'tutor-lms-migration-tool'), $courses_count, $orders_count, $reviews_count) ?>
                             </p>
                         </div>
                     </form>
