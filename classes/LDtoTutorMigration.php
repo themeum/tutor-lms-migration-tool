@@ -1070,7 +1070,7 @@ function xml_cdata( $str ) {
 
     return $str;
 }
-*/
+
 
             /**
              * @param $section_id

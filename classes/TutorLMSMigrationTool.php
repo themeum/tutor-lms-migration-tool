@@ -36,10 +36,12 @@ final class TutorLMSMigrationTool{
 
 	public function includes(){
 		include TLMT_PATH.'classes/LPtoTutorMigration.php';
+		include TLMT_PATH.'classes/LDtoTutorMigration.php';
 	}
 
 	public function used_classes(){
 		$this->classes[] = 'LPtoTutorMigration';
+		$this->classes[] = 'LDtoTutorMigration';
 	}
 
 	/**

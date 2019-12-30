@@ -42,7 +42,7 @@ jQuery(document).ready(function($){
         e.preventDefault();
 
         var $that = $(this);
-        var $formData = $(this).serialize()+'&action=lp_migrate_all_data_to_tutor';
+        var $formData = $(this).serialize()+'&action='+$that.attr('action');
 
         $.ajax({
             url : ajaxurl,

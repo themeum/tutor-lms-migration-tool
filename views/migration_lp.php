@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) )
 	                    <p><?php echo sprintf(__('Transfer everything from your LearnPress database to %s Tutor LMS hasslefree with just one-click.',
                                 'tutor-lms-migration-tool'), '<br />'); ?></p>
                     </div>
-                    <form id="tlmt-lp-migrate-to-tutor-lms" action="" method="post">
+                    <form id="tlmt-lp-migrate-to-tutor-lms" action="lp_migrate_all_data_to_tutor" method="post">
                         <div class="lp-migration-checkbox">
 
                             <div id="sectionCourse">
