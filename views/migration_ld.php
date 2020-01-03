@@ -119,7 +119,7 @@ if ( ! defined( 'ABSPATH' ) )
                     </div>
                     <div class="lp-import-file">
                         <form method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
+                            <input type="hidden" name="tutor_action" value="tutor_ld_export_xml">
                             <div class="lp-import-file-inner">
                                 <button type="submit" class="import-export-btn">
                                     <img src="<?php echo TLMT_URL.'assets/img/export.svg'; ?>" alt="export">
