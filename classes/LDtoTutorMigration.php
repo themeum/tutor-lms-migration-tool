@@ -326,7 +326,6 @@ if ( ! defined( 'ABSPATH' ) )
                     $i++;
                 }
 
-
                 if (!empty($total_data['sfwd-quiz'])) {
                     foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
                         $post_data = get_post($quiz_key);
@@ -337,6 +336,7 @@ if ( ! defined( 'ABSPATH' ) )
                         }
                     }
                 }
+
             }
         }
     }
