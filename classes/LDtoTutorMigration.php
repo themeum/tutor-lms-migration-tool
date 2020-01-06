@@ -1,6 +1,5 @@
 <?php
-if ( ! defined( 'ABSPATH' ) )
-	exit;
+defined( 'ABSPATH' ) || exit;
 
     if (! class_exists('LDtoTutorMigration')) {
         class LDtoTutorMigration
