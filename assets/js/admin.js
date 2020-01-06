@@ -8,11 +8,11 @@ jQuery(document).ready(function($){
 
     var checkProgress;
 
-    function get_live_progress_course_migrating_info(){
+    function get_live_progress_course_migrating_info(final_types='lp'){
         $.ajax({
             url : ajaxurl,
             type : 'POST',
-            data : {action : '_get_lp_live_progress_course_migrating_info' },
+            data : {action : '_get_'+final_types+'_live_progress_course_migrating_info' },
             success: function (data) {
                 if (data.success) {
                     if (data.data.migrated_count) {
@@ -44,6 +44,11 @@ jQuery(document).ready(function($){
         var $that = $(this);
         var $formData = $(this).serialize()+'&action='+$that.attr('action');
 
+        let final_types = 'lp';
+        if($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
+            final_types = 'ld';
+        }
+
         $.ajax({
             url : ajaxurl,
             type : 'POST',
@@ -51,7 +56,7 @@ jQuery(document).ready(function($){
             beforeSend: function (XMLHttpRequest) {
                 $('.migrate-now-btn').addClass('tutor-updating-message');
                 $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
-                get_live_progress_course_migrating_info();
+                get_live_progress_course_migrating_info(final_types);
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
                 migration_progress_bar();
             },
@@ -59,7 +64,7 @@ jQuery(document).ready(function($){
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_done');
 
                 migration_progress_bar(true);
-                migrate_orders($formData);
+                migrate_orders($formData, final_types);
             },
             complete: function () {
                 clearTimeout(countProgress);
@@ -84,7 +89,7 @@ jQuery(document).ready(function($){
             countOrderProgress = setTimeout(order_migration_progress_bar, 300, cmplete );
         }
     }
-    function migrate_orders($formData){
+    function migrate_orders($formData, final_types){
 
         $.ajax({
             url : ajaxurl,
@@ -94,7 +99,7 @@ jQuery(document).ready(function($){
                 get_live_progress_course_migrating_info();
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
 
-                order_migration_progress_bar();
+                order_migration_progress_bar(final_types);
             },
             success: function (data) {
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_done');

@@ -7,10 +7,10 @@ if ( ! defined( 'ABSPATH' ) )
     global $wpdb;
 
     $courses_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
-    $orders_count = 33; // (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'lp_order';");
-    $reviews_count = 44; // (int) $wpdb->get_var("SELECT COUNT(comments.comment_ID) FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';");
+    
+    $orders_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
 
-    $items_count = $courses_count + $orders_count + $reviews_count;
+    $items_count = $courses_count + $orders_count;
     ?>
 
     <div id="lp-area">
@@ -79,7 +79,7 @@ if ( ! defined( 'ABSPATH' ) )
 
                         <div class="lp-required-migrate-stats">
                             <p id="lp_required_migrate_stats">
-                                <?php echo sprintf( __('%s courses, %s sales data, %s reviews will be migrated', 'tutor-lms-migration-tool'), $courses_count, $orders_count, $reviews_count) ?>
+                                <?php echo sprintf( __('%s courses and %s sales data will be migrated', 'tutor-lms-migration-tool'), $courses_count, $orders_count) ?>
                             </p>
                         </div>
                     </form>
