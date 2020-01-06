@@ -53,8 +53,6 @@ if (! class_exists('LDtoTutorMigration')) {
 			global $wpdb;
 			$ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
 
-			die(print_r($ld_courses));
-
 			$course_type = tutor()->course_post_type;
 
 			if (tutils()->count($ld_courses)) {
@@ -328,7 +326,6 @@ if (! class_exists('LDtoTutorMigration')) {
 				$i++;
 			}
 
-
 			if (!empty($total_data['sfwd-quiz'])) {
 				foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
 					$post_data = get_post($quiz_key);
@@ -339,6 +336,7 @@ if (! class_exists('LDtoTutorMigration')) {
 					}
 				}
 			}
+
 		}
 	}
 }

@@ -10,7 +10,7 @@ if (! class_exists('LDtoTutorExport')) {
 
 
         public function __construct() {
-            // add_action('tutor_action_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
+            add_action('tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
             add_action('tutor_action_tutor_ld_export_xml', array($this, 'tutor_ld_export_xml'));
             // add_action('init', array($this, 'generate_xml_data'));
         }
@@ -150,6 +150,30 @@ if (! class_exists('LDtoTutorExport')) {
                                 $xml_inner[] = $xml_quiz;
                             }
                         }
+
+                        // echo '<pre>';
+                        // print_r($total_data);
+                        // echo '</pre>';
+
+                        if (!empty($total_data['sfwd-quiz'])) {
+                            foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
+                                $post_data = get_post($quiz_key);
+                                if ($post_data->ID) {
+                                    $xml_quiz = $this->start_element('items');
+                                        $xml_quiz .= "<item_id>{$post_data->ID}</item_id>\n";
+                                        $xml_quiz .= "<post_type>tutor_quiz</post_type>\n";
+                                        $xml_quiz .= "<post_author>{$author_id}</post_author>\n";
+                                        $xml_quiz .= "<post_date>{$post_data->post_date}</post_date>\n";
+                                        $xml_quiz .= "<post_title>{$post_data->post_title}</post_title>\n";
+                                        $xml_quiz .= "<post_content>{$this->xml_cdata($post_data->post_content)}</post_content>\n";
+                                        $xml_quiz .= "<post_parent>{$course_id}</post_parent>\n";
+                                        $xml_quiz .= $this->migrate_quiz($post_data->ID);
+                                    $xml_quiz .= $this->close_element('items');
+                                    $xml_inner[] = $xml_quiz;
+                                }
+                            }
+                        }
+
 
                         $heading = '';
                         $temp = '';
@@ -310,7 +334,7 @@ if (! class_exists('LDtoTutorExport')) {
          *
          * Import From XML
 		 */
-		public function tutor_import_from_xml(){
+		public function tutor_import_from_ld(){
 		    global $wpdb;
 
 			if (isset($_FILES['tutor_import_file'])){
