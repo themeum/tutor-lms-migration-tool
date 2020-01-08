@@ -82,9 +82,11 @@ if (! class_exists('LDtoTutorExport')) {
                         foreach ($total_data['sfwd-lessons'] as $lesson_key => $lesson_data) {
 
                             $check = $i == 0 ? 0 : $i+1;
-                            if ($section_heading[$section_count]['order'] == $check) {
-                                $xml_inner[] = 'topics';
-                                $section_count++;
+                            if (isset($section_heading[$section_count]['order'])) {
+                                if ($section_heading[$section_count]['order'] == $check) {
+                                    $xml_inner[] = 'topics';
+                                    $section_count++;
+                                }
                             }
                             $i++;
 
@@ -234,14 +236,16 @@ if (! class_exists('LDtoTutorExport')) {
 
         public function migrate_quiz($old_quiz_id)
         {
+            global $wpdb;
             $xml = '';
-            $question_id = get_post_meta($old_quiz_id, 'quiz_pro_id', true);
-
-            if ($question_id) {
-                global $wpdb;
-                $results = $wpdb->get_results("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where quiz_id = {$question_id}", ARRAY_A);
-                
-                foreach ($results as $result) {
+            $question_ids = get_post_meta($old_quiz_id, 'ld_quiz_questions', true);
+            if (!empty($question_ids)) {
+                $question_ids = array_keys($question_ids);
+                foreach ($question_ids as $question_single) {
+                    $question_id = get_post_meta($question_single, 'question_pro_id', true);
+                    
+                    $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                    
                     $question = array();
                     switch ($result['answer_type']) {
                         case 'single':
@@ -251,20 +255,32 @@ if (! class_exists('LDtoTutorExport')) {
                         case 'multiple':
                             $question['question_type'] = 'multiple_choice';
                             break;
+
+                        case 'sort_answer':
+                            $question['question_type'] = 'ordering';
+                            break;
+
+                        case 'essay':
+                            $question['question_type'] = 'open_ended';
+                            break;
+
+                        case 'cloze_answer':
+                            $question['question_type'] = 'fill_in_the_blank';
+                            break;
                         
                         default:
                             # code...
                             break;
                     }
                     if (isset($question['question_type'])) {
-
+                        $_points = get_post_meta($question_single, 'points', true);
                         $question['quiz_id'] = '{quiz_id}';
                         $question['question_title'] = $result['title'];
-                        $question['question_description'] = (string) $result['question'];
-                        $question['question_mark'] = $result['points'];
+                        $question['question_description'] = $result['question'];
+                        $question['question_mark'] = $_points;
                         $question['question_settings'] = maybe_serialize(array(
                             'question_type' => $result['answer_type'],
-                            'question_mark' => $result['points']
+                            'question_mark' => $_points
                         ));
 
                         $xml .= $this->start_element('questions');
@@ -279,13 +295,28 @@ if (! class_exists('LDtoTutorExport')) {
                                 foreach ((array)$value as $k => $val) {
                                     if ($i == 0) {
                                         $answer['answer_title'] = $val;
+                                        if ($result['answer_type'] == 'cloze_answer') {
+                                            $final_question = wp_strip_all_tags( $val );
+                                            preg_match_all('/{.*?\}/', $final_question, $matches);
+                                            if (isset($matches[0])) {
+                                                foreach ($matches[0] as $key => $v) {
+                                                    $v = explode( ']', $v );
+                                                    if (isset($v[0])) {
+                                                        $answer_str[] = str_replace(array('{[','{','}'), '', $v[0]);
+                                                    }
+                                                }
+                                                $final_question = str_replace($matches[0], '{dash}', $final_question);
+                                            }
+                                            $answer['answer_two_gap_match'] = implode('|', $answer_str);
+                                            $answer['answer_title'] = $final_question;
+                                        }
                                     } elseif ($i == 2) {
                                         $answer['is_correct'] = $val ? 0 : 1;
                                     } elseif ($i == 3) {
                                         $answer['belongs_question_id'] = $question_id;
                                         $answer['belongs_question_type'] = $question['question_type'];
                                         $answer['answer_view_format'] = 'text';
-                                        $answer['answer_order'] = $i;
+                                        $answer['answer_order'] = $i+1;
                                         $answer['image_id'] = 0;
                                     }
                                     $i++;
@@ -304,9 +335,9 @@ if (! class_exists('LDtoTutorExport')) {
 
                         $xml .= $this->close_element('questions');
                     }
+                    
                 }
             }
-
             return $xml;
         }
 
