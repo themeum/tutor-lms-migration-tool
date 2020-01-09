@@ -369,12 +369,19 @@ defined( 'ABSPATH' ) || exit;
                 global $wpdb;
                 $xml = '';
                 $question_ids = get_post_meta($old_quiz_id, 'ld_quiz_questions', true);
+                $is_table = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", "{$wpdb->prefix}learndash_pro_quiz_question" ) );
+
                 if (!empty($question_ids)) {
                     $question_ids = array_keys($question_ids);
                     foreach ($question_ids as $question_single) {
                         $question_id = get_post_meta($question_single, 'question_pro_id', true);
 
-                        $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                        $result = array();
+                        if ($is_table) {
+                            $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                        } else {
+                            $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                        }
                         
                         $question = array();
                         $question['quiz_id'] = $old_quiz_id;
@@ -412,9 +419,9 @@ defined( 'ABSPATH' ) || exit;
                             'question_mark' => $result['points']
                         ));
 
-                        echo '<pre>';
-                        print_r( $question );
-                        echo '</pre>';
+                        // echo '<pre>';
+                        // print_r( $question );
+                        // echo '</pre>';
                         $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
                         
                         // Will Return $questions
@@ -452,10 +459,10 @@ defined( 'ABSPATH' ) || exit;
                                     }
                                     $i++;
                                 }
-                                echo '<pre>';
-                                print_r( $answer );
-                                echo '</pre>';
-                                // $wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
+                                // echo '<pre>';
+                                // print_r( $answer );
+                                // echo '</pre>';
+                                $wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
                             }
                         }
                     }
