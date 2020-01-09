@@ -7,13 +7,8 @@ defined( 'ABSPATH' ) || exit;
             public function __construct()
             {
                 add_filter('tutor_tool_pages', array($this, 'ld_tool_pages'));
-    
                 add_action('wp_ajax_ld_migrate_all_data_to_tutor', array($this, 'ld_migrate_all_data_to_tutor'));
-
-                // $this->migrate_quiz(240);
-
                 add_action('wp_ajax_ld_reset_migrated_items_count', array($this, 'ld_reset_migrated_items_count'));
-    
                 add_action('wp_ajax__get_ld_live_progress_course_migrating_info', array($this, '_get_ld_live_progress_course_migrating_info'));
             }
 
@@ -462,9 +457,16 @@ defined( 'ABSPATH' ) || exit;
                                 // echo '<pre>';
                                 // print_r( $answer );
                                 // echo '</pre>';
-                                $wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
+                                $wpdb->insert( $wpdb->prefix.'tutor_quiz_question_answers', $answer );
                             }
                         }
+
+                        if ($is_table) {
+                            $wpdb->delete( $wpdb->prefix.'learndash_pro_quiz_question', array( 'id' => $result->id ) );
+                        } else {
+                            $wpdb->delete( $wpdb->prefix.'wp_pro_quiz_question', array( 'id' => $result->id ) );
+                        }
+
                     }
                 }
             }

@@ -236,7 +236,9 @@ jQuery(document).ready(function($){
         event.preventDefault();
 
         $(migrationModal).removeClass('active');
-        $('#tlmt-lp-migrate-to-tutor-lms').submit();
+        if ( $('#total_items_migrate_counts').data('count') ) {
+            $('#tlmt-lp-migrate-to-tutor-lms').submit();
+        }
     });
 
     $(document).on('click', '.migration-done-btn', function(event){

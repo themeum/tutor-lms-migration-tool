@@ -366,129 +366,106 @@ if (! class_exists('LDtoTutorExport')) {
          * Import From XML
 		 */
 		public function tutor_import_from_ld(){
-		    global $wpdb;
-
+            global $wpdb;
+            $notice = 'error';
 			if (isset($_FILES['tutor_import_file'])){
-				$course_post_type = tutor()->course_post_type;
+                $course_post_type = tutor()->course_post_type;
+                $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
-				$xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
-				$xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
-
-				$xml_data = simplexml_load_string($xmlContent);
-				$courses = $xml_data->courses;
-
-				foreach ($courses as $course){
-
-					$course_data = array(
-						'post_author'   => (string) $course->post_author,
-						'post_date'     => (string)$course->post_date,
-						'post_date_gmt' => (string) $course->post_date_gmt,
-						'post_content'  => (string) $course->post_content,
-						'post_title'    => (string) $course->post_title,
-						'post_status'   => 'publish',
-						'post_type'     =>  $course_post_type,
-					);
-
-					//Inserting Course
-					$course_id = wp_insert_post($course_data);
-
-					$course_meta = json_decode(json_encode($course->course_meta), true);
-					foreach ($course_meta as $course_meta_key => $course_meta_value){
-					    if ( is_array($course_meta_value)){
-						    $course_meta_value = json_encode($course_meta_value);
-					    }
-					    $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
-                    }
-
-					foreach ($course->topics as $topic){
-						$topic_data = array(
-							'post_type'     => 'topics',
-							'post_title'    => (string) $topic->post_title,
-							'post_content'  => (string) $topic->post_content,
-							'post_status'   => 'publish',
-							'post_author'   => (string) $topic->post_author,
-							'post_parent'   => $course_id,
-							'menu_order'    => (string) $topic->menu_order,
-						);
-
-						//Inserting Topics
-						$topic_id = wp_insert_post($topic_data);
-
-						$item_i = 0;
-						foreach ($topic->items as $item){
-							$item_i++;
-
-							$item_data = array(
-								'post_type'     => (string) $item->post_type,
-								'post_title'    => (string) $item->post_title,
-								'post_content'  => (string) $item->post_content,
-								'post_status'   => 'publish',
-								'post_author'   => (string) $item->post_author,
-								'post_parent'   => $topic_id,
-								'menu_order'    => $item_i,
-							);
-
-							$item_id = wp_insert_post($item_data);
-
-							$item_metas = json_decode(json_encode($item->item_meta), true);
-							foreach ($item_metas as $item_meta_key => $item_meta_value){
-								if ( is_array($item_meta_value)){
-									$item_meta_value = json_encode($item_meta_value);
-								}
-								$wpdb->insert($wpdb->postmeta, array('post_id' => $item_id, 'meta_key' => $item_meta_key, 'meta_value'=> (string) $item_meta_value));
-							}
-
-							if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
-								foreach ($item->questions as $question) {
-								    $answers = $question->answers;
-
-									$question = (array) $question;
-									$question['quiz_id'] = $item_id;
-									$question['question_description'] = (string) $question['question_description'];
-									unset($question['answers']);
-
-									$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
-									$question_id = $wpdb->insert_id;
-
-									foreach ($answers as $answer){
-										$answer = (array) $answer;
-										$answer['belongs_question_id'] = $question_id;
-										$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
-									}
-								}
+                if( $_FILES['tutor_import_file']['tmp_name'] ) {
+                    $xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
+                    $xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
+                    $xml_data = simplexml_load_string($xmlContent);
+                    $courses = $xml_data->courses;
+    
+                    foreach ($courses as $course){
+    
+                        $course_data = array(
+                            'post_author'   => (string) $course->post_author,
+                            'post_date'     => (string)$course->post_date,
+                            'post_date_gmt' => (string) $course->post_date_gmt,
+                            'post_content'  => (string) $course->post_content,
+                            'post_title'    => (string) $course->post_title,
+                            'post_status'   => 'publish',
+                            'post_type'     =>  $course_post_type,
+                        );
+    
+                        //Inserting Course
+                        $course_id = wp_insert_post($course_data);
+    
+                        $course_meta = json_decode(json_encode($course->course_meta), true);
+                        foreach ($course_meta as $course_meta_key => $course_meta_value){
+                            if ( is_array($course_meta_value)){
+                                $course_meta_value = json_encode($course_meta_value);
+                            }
+                            $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+                        }
+    
+                        foreach ($course->topics as $topic){
+                            $topic_data = array(
+                                'post_type'     => 'topics',
+                                'post_title'    => (string) $topic->post_title,
+                                'post_content'  => (string) $topic->post_content,
+                                'post_status'   => 'publish',
+                                'post_author'   => (string) $topic->post_author,
+                                'post_parent'   => $course_id,
+                                'menu_order'    => (string) $topic->menu_order,
+                            );
+    
+                            //Inserting Topics
+                            $topic_id = wp_insert_post($topic_data);
+    
+                            $item_i = 0;
+                            foreach ($topic->items as $item){
+                                $item_i++;
+    
+                                $item_data = array(
+                                    'post_type'     => (string) $item->post_type,
+                                    'post_title'    => (string) $item->post_title,
+                                    'post_content'  => (string) $item->post_content,
+                                    'post_status'   => 'publish',
+                                    'post_author'   => (string) $item->post_author,
+                                    'post_parent'   => $topic_id,
+                                    'menu_order'    => $item_i,
+                                );
+    
+                                $item_id = wp_insert_post($item_data);
+    
+                                $item_metas = json_decode(json_encode($item->item_meta), true);
+                                foreach ($item_metas as $item_meta_key => $item_meta_value){
+                                    if ( is_array($item_meta_value)){
+                                        $item_meta_value = json_encode($item_meta_value);
+                                    }
+                                    $wpdb->insert($wpdb->postmeta, array('post_id' => $item_id, 'meta_key' => $item_meta_key, 'meta_value'=> (string) $item_meta_value));
+                                }
+    
+                                if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
+                                    foreach ($item->questions as $question) {
+                                        $answers = $question->answers;
+    
+                                        $question = (array) $question;
+                                        $question['quiz_id'] = $item_id;
+                                        $question['question_description'] = (string) $question['question_description'];
+                                        unset($question['answers']);
+    
+                                        $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
+                                        $question_id = $wpdb->insert_id;
+    
+                                        foreach ($answers as $answer){
+                                            $answer = (array) $answer;
+                                            $answer['belongs_question_id'] = $question_id;
+                                            $wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-
-                    if (isset($course->reviews) && is_object($course->reviews) && count($course->reviews) ){
-					    foreach ($course->reviews as $review){
-						    $rating_data = array(
-							    'comment_post_ID'   => $course_id,
-							    'comment_approved'  => 'approved',
-							    'comment_type'      => 'tutor_course_rating',
-							    'comment_date'      => (string) $review->comment_date,
-							    'comment_date_gmt'  => (string) $review->comment_date,
-							    'comment_content'   => (string) $review->comment_content,
-							    'user_id'           => (string) $review->user_id,
-							    'comment_author'    => (string) $review->comment_author,
-							    'comment_agent'     => 'TutorLMSPlugin',
-						    );
-
-						    $wpdb->insert($wpdb->comments, $rating_data);
-						    $comment_id = (int) $wpdb->insert_id;
-
-						    $rating_meta_data = array(
-							    'comment_id' => $comment_id,
-							    'meta_key' => 'tutor_rating',
-							    'meta_value' => (string) $review->tutor_rating
-						    );
-						    $wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
-                        }
-                    }
-				}
-			}
+                    $notice = 'success';
+                }
+            }
+            wp_redirect( $actual_link . '&notice=' . $notice );
 		}
-
         
     }
     new LDtoTutorExport();

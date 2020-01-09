@@ -17,6 +17,20 @@ if ( ! defined( 'ABSPATH' ) )
         <div class="lp-container">
             <div class="lp-grid lp">
                 <div class="lp-migratoin-left">
+                    
+                    <?php if ( isset( $_GET['notice'] ) ) { ?>
+                        <?php if ( $_GET['notice'] == 'success' ) { ?>
+                            <div class="notice notice-success is-dismissible">
+                                <p><?php _e('LearnDash to Tutor Migration Done!', 'tutor-lms-migration-tool'); ?></p>
+                            </div>
+                        <?php } ?>
+                        <?php if ( $_GET['notice'] == 'error' ) { ?>
+                            <div class="notice notice-error is-dismissible">
+                                <p><?php _e('Migration Error Occured: Try Again.', 'tutor-lms-migration-tool'); ?></p>
+                            </div>
+                        <?php } ?>
+                    <?php } ?>
+
                     <div class="lp-migration-heading">
                         <h3>LearnDash <span> <?php _e('Migration', 'tutor-lms-migration-tool'); ?> </span> </h3>
 	                    <p><?php echo sprintf(__('Transfer everything from your LearnDash database to %s Tutor LMS hasslefree with just one-click.',
@@ -73,7 +87,7 @@ if ( ! defined( 'ABSPATH' ) )
 	                            <?php _e('Start Migration', 'tutor-lms-migration-tool'); ?>
                             </button>
                             <span>
-                                <span id="total_items_migrate_counts"> 0 </span> / <?php echo $items_count; ?> <?php _e('Items to Migrate', 'tutor-lms-migration-tool'); ?>
+                                <span id="total_items_migrate_counts" data-count="<?php echo $items_count; ?>"> 0 </span> / <?php echo $items_count; ?> <?php _e('Items to Migrate', 'tutor-lms-migration-tool'); ?>
                             </span>
                         </div>
 
@@ -151,13 +165,25 @@ if ( ! defined( 'ABSPATH' ) )
                     <span> <?php _e('NO, MAYBE LATER!', 'tutor-lms-migration-tool'); ?></span>
                 </a>
                 <a href="#" class="migration-start-btn">
-                    <span> <?php _e('YES, LET’S START', 'tutor-lms-migration-tool'); ?> </span>
+                    <span> 
+                        <?php 
+                            if ($items_count) {
+                                _e('YES, LET’S START', 'tutor-lms-migration-tool');
+                            } else {
+                                _e('NO, COURSE FOUND (CLOSE)', 'tutor-lms-migration-tool');
+                            }
+                        ?>
+                    </span>
                 </a>
             </div>
             <div class="modal-close migration-modal-close">
                 <span class="modal-close-line migration-modal-close-line-one"></span>
                 <span class="modal-close-line migration-modal-close-line-two"></span>
             </div>
+        </div>
+        <div class="migration-backup-alert">
+            <span><img src="<?php echo TLMT_URL.'assets/img/warning.svg' ?>" alt="warning"/> <?php _e('Please take a complete a backup for safety.', 'tutor-lms-migration-tool'); ?></span>
+            <span class="migration-backup-link"><a target="_blank" href="https://www.themeum.com/how-to-backup-and-restore-wordpress-site/"><?php _e('Backup Now', 'tutor-lms-migration-tool'); ?></a></span>
         </div>
     </div>
 

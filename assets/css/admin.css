@@ -256,16 +256,32 @@ a.migration-try-btn.migration-done-btn:hover {
     grid-template-columns: 1fr 1fr;
     grid-column-gap: 30px;
 }
-#lp-import-export-area{
-
+.migration-backup-alert{
+    background-color: #fdf3f4;
+    padding: 18px 23px 19px;
+    color: #8c1c2a;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
 }
-
+.migration-backup-alert span:first-child{
+    margin-right: auto;
+    display: flex;
+}
+.migration-backup-alert img{
+    margin-right: 10px;
+    width: 20px;
+}
+.migration-backup-alert a{
+    font-weight: 600;
+    color: #8c1c2a;
+    text-decoration: underline;
+}
 .lp-import ,
 .lp-export{
     background: #fff;
     padding: 55px 32px 50px 45px;
 }
-.lp-import-text{}
 .lp-import-text h4{
     font-size: 24px;
     line-height: 52px;

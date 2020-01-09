@@ -37,9 +37,7 @@ final class TutorLMSMigrationTool{
 	public function includes(){
 		include TLMT_PATH.'classes/LPtoTutorMigration.php';
 		include TLMT_PATH.'classes/LDtoTutorMigration.php';
-
 		include TLMT_PATH.'classes/LDtoTutorExport.php';
-		
 	}
 
 	public function used_classes(){
@@ -70,9 +68,16 @@ final class TutorLMSMigrationTool{
 		wp_enqueue_script('tlmt-admin', TLMT_URL.'assets/js/admin.js', array('jquery', 'tutor-admin'), TLMT_VERSION, true);
 	}
 	public function plugin_action_links($actions){
-		$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
+		if ( defined( 'LP_PLUGIN_FILE' ) ) {
+			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
+		} else {
+			if ( defined( 'LEARNDASH_VERSION' ) ) {
+				$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_ld">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
+			} else {
+				$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=tutor_pages">' . __('Settings', 'tutor-lms-migration-tool') . '</a>';
+			}
+		}
 		return $actions;
 	}
-
 
 }
