@@ -21,12 +21,12 @@ if ( ! defined( 'ABSPATH' ) )
                     <?php if ( isset( $_GET['notice'] ) ) { ?>
                         <?php if ( $_GET['notice'] == 'success' ) { ?>
                             <div class="notice notice-success is-dismissible">
-                                <p><?php _e('LearnDash to Tutor Migration Done!', 'tutor-lms-migration-tool'); ?></p>
+                                <p><?php _e('LearnDash to Tutor LMS Migration Complete.', 'tutor-lms-migration-tool'); ?></p>
                             </div>
                         <?php } ?>
                         <?php if ( $_GET['notice'] == 'error' ) { ?>
                             <div class="notice notice-error is-dismissible">
-                                <p><?php _e('Migration Error Occured: Try Again.', 'tutor-lms-migration-tool'); ?></p>
+                                <p><?php _e('Could Not Complete Migration. Please Try Again.', 'tutor-lms-migration-tool'); ?></p>
                             </div>
                         <?php } ?>
                     <?php } ?>
@@ -170,7 +170,7 @@ if ( ! defined( 'ABSPATH' ) )
                             if ($items_count) {
                                 _e('YES, LET’S START', 'tutor-lms-migration-tool');
                             } else {
-                                _e('NO, COURSE FOUND (CLOSE)', 'tutor-lms-migration-tool');
+                                _e('NO COURSE FOUND (CLOSE)', 'tutor-lms-migration-tool');
                             }
                         ?>
                     </span>
@@ -183,7 +183,7 @@ if ( ! defined( 'ABSPATH' ) )
         </div>
         <div class="migration-backup-alert">
             <span><img src="<?php echo TLMT_URL.'assets/img/warning.svg' ?>" alt="warning"/> <?php _e('Please take a complete a backup for safety.', 'tutor-lms-migration-tool'); ?></span>
-            <span class="migration-backup-link"><a target="_blank" href="https://www.themeum.com/how-to-backup-and-restore-wordpress-site/"><?php _e('Backup Now', 'tutor-lms-migration-tool'); ?></a></span>
+            <span class="migration-backup-link"><a target="_blank" href="https://www.themeum.com/how-to-backup-and-restore-wordpress-site/"><?php _e('Read Backup Tutorial', 'tutor-lms-migration-tool'); ?></a></span>
         </div>
     </div>
 

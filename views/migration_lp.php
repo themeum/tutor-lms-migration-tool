@@ -171,7 +171,7 @@ if ( ! defined( 'ABSPATH' ) )
                             if ($items_count) {
                                 _e('YES, LET’S START', 'tutor-lms-migration-tool');
                             } else {
-                                _e('NO, COURSE FOUND (CLOSE)', 'tutor-lms-migration-tool');
+                                _e('NO COURSE FOUND (CLOSE)', 'tutor-lms-migration-tool');
                             }
                         ?>
                     </span>
@@ -184,7 +184,7 @@ if ( ! defined( 'ABSPATH' ) )
         </div>
         <div class="migration-backup-alert">
             <span><img src="<?php echo TLMT_URL.'assets/img/warning.svg' ?>" alt="warning"/> <?php _e('Please take a complete a backup for safety.', 'tutor-lms-migration-tool'); ?></span>
-            <span class="migration-backup-link"><a target="_blank" href="https://www.themeum.com/how-to-backup-and-restore-wordpress-site/"><?php _e('Backup Now', 'tutor-lms-migration-tool'); ?></a></span>
+            <span class="migration-backup-link"><a target="_blank" href="https://www.themeum.com/how-to-backup-and-restore-wordpress-site/"><?php _e('Read Backup Tutorial', 'tutor-lms-migration-tool'); ?></a></span>
         </div>
     </div>
 
