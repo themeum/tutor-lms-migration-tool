@@ -250,6 +250,7 @@ defined( 'ABSPATH' ) || exit;
              */
             public function attached_product($course_id, $course_title)
             {
+                update_post_meta($course_id, '_tutor_course_price_type', 'free');
                 if (tutils()->has_wc() && $monetize_by == 'wc') {
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
                     if ($_ld_price['sfwd-courses_course_price']) {

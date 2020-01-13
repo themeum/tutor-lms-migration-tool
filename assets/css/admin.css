@@ -17,6 +17,9 @@ div#tutor-tools-page-wrap{
     display: grid;
     grid-template-columns: 50% 50%;
 }
+.tutor-tools-page-wrap .lp-area{
+    background-color: #ffffff;
+}
 
 .tools-migration-lp-page .lp {
     background-color: #fff;
