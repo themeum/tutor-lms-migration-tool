@@ -1206,3 +1206,53 @@ button.import-export-btn:hover img {
         margin-top: 0px;
     }
 }
+
+
+.tutor-install-notice {
+	padding: 20px;
+	display: block
+}
+.tutor-install-notice .tutor-install-notice-inner {
+	min-height: 64px
+}
+.notice.notice-error.tutor-install-notice .tutor-install-notice-icon {
+	float: left;
+	width: 65px
+}
+.tutor-install-notice-button {
+	float: right
+}
+.tutor-install-notice-icon img {
+	width: 64px;
+	border-radius: 4px;
+	display: block
+}
+.tutor-install-notice-content h2 {
+	margin-top: 0;
+	margin-bottom: 5px
+}
+.tutor-install-notice-content p {
+	margin-top: 3px;
+	margin-bottom: 3px;
+	padding: 0
+}
+.tutor-install-notice-content {
+	flex-grow: 1;
+	padding-left: 20px;
+	padding-right: 20px;
+	display: inline-block
+}
+.tutor-install-notice-button .button {
+	padding: 6px 30px;
+	height: auto;
+	line-height: 20px;
+	text-transform: capitalize
+}
+.tutor-install-notice-button {
+	margin-top: 14px
+}
+@media (max-width:1320px) {
+	.tutor-install-notice-button {
+		float: inherit
+	}
+}

@@ -92,6 +92,7 @@ defined( 'ABSPATH' ) || exit;
                             '_line_subtotal_tax' => 0,
                             '_line_total'        => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
                             '_line_tax'          => 0,
+                            '_order_total'       => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
                             '_line_tax_data'     => maybe_serialize( array( 'total' => array(), 'subtotal' => array() ) ),
                         );
                         foreach ($wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ){
@@ -251,6 +252,7 @@ defined( 'ABSPATH' ) || exit;
             public function attached_product($course_id, $course_title)
             {
                 update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                $monetize_by = tutils()->get_option('monetize_by');
                 if (tutils()->has_wc() && $monetize_by == 'wc') {
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
                     if ($_ld_price['sfwd-courses_course_price']) {
@@ -266,7 +268,7 @@ defined( 'ABSPATH' ) || exit;
                                 '_stock_status'      => 'instock',
                                 'total_sales'        => '0',
                                 '_regular_price'     => '',
-                                '_sale_price'        => '',
+                                '_sale_price'        => $_ld_price['sfwd-courses_course_price'],
                                 '_price'             => $_ld_price['sfwd-courses_course_price'],
                                 '_sold_individually' => 'no',
                                 '_manage_stock'      => 'no',

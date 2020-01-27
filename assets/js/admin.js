@@ -1,6 +1,28 @@
 jQuery(document).ready(function($){
     'use strict';
 
+    
+    $(document).on("click", ".install-tutor-button", function(t) {
+        t.preventDefault();
+        var select = $(this);
+        $.ajax({
+            type: "POST",
+            url: ajaxurl,
+            data: { install_plugin: "tutor", action: "install_tutor_plugin" },
+            beforeSend: function() {
+                select.addClass("updating-message");
+            },
+            success: function(t) {
+                $(".install-qubely-button").remove(),
+                $("#qubely_install_msg").html(t);
+            },
+            complete: function() {
+                select.removeClass("updating-message");
+                location.reload();
+            }
+        });
+    });
+
     /**
      * LP Migration
      * Since v.1.4.6

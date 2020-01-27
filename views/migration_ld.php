@@ -205,7 +205,7 @@ if ( ! defined( 'ABSPATH' ) )
             </div>
 
             <h4> <?php _e('Migration Successful!', 'tutor-lms-migration-tool'); ?> </h4>
-            <p> <?php _e('The migration from LearnDash to Tutor LMS was successfully.', 'tutor-lms-migration-tool'); ?> </p>
+            <p> <?php _e('The migration from LearnDash to Tutor LMS is successfully done.', 'tutor-lms-migration-tool'); ?> </p>
 
             <a href="#" class="migration-try-btn migration-done-btn">
                 <span><?php _e('CLOSE', 'tutor-lms-migration-tool'); ?></span>
