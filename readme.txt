@@ -5,7 +5,7 @@ Tags: lms, migration, course, elearning, education
 Requires at least: 4.5
 Tested up to: 5.3
 Requires PHP: 5.4.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -88,6 +88,10 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 1.0.4 - 30 January, 2020 =
+
+* Added: LearnDash to Tutor LMS Migration Tool
 
 = 1.0.3 - 04 December, 2019 =
 
