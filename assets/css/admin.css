@@ -244,13 +244,18 @@ a.migration-try-btn.migration-done-btn:hover {
 }
 
 .lp-migratoin-right{
-    background-image: url(../img/migration-illustration.svg);
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center center;
+    background-color: #EDF0F4;
 }
 .lp-migratoin-right img{}
-
+.ld-migration-bg{
+    background-image: url(../img/learndash-migration.svg);
+}
+.lp-migration-bg{
+    background-image: url(../img/learnpress-migration.svg);
+}
 #lp-import-export-area{
     margin-top: 30px;
 }

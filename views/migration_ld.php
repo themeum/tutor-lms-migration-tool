@@ -98,7 +98,7 @@ if ( ! defined( 'ABSPATH' ) )
                         </div>
                     </form>
                 </div>
-                <div class="lp-migratoin-right">
+                <div class="lp-migratoin-right ld-migration-bg">
                     <!-- <img src="img/migration-illustration.svg" alt=""> -->
                 </div>
             </div>
