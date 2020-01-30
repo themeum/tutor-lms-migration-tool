@@ -13,24 +13,35 @@ Move all your course, quiz, order data information and everything else from your
 
 == Description ==
 
-If you want to transfer your existing database for your currently installed LMS plugin (which contains all the course, quizzes information, order data and so on of your teaching site) with all your information intact, to the better Tutor LMS then this migration plugin is the perfect option for you.
+If you want to transfer your existing database from your currently installed LMS plugin (which contains all the course, quizzes information, order data and so on of your teaching site) with all your information intact, to the better Tutor LMS then the Tutor LMS Migration Tool plugin is the perfect choice for you.
 
 No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool with its easy user interface. With its simple one-click auto migration settings you can have all the information from your old LMS plugin transferred without any database error.
 
 = Future UPDATES =
 
-With the initial release of the Tutor LMS Migration Tool, we only introduced migration options from only one other LMS plugin to Tutor LMS. We have a roadmap to bring you compatibility support for migration with many other plugins in the future.
+With the initial release of the Tutor LMS Migration Tool, we are introducing migration options from two other LMS plugin to Tutor LMS. We have a roadmap to bring you compatibility support for migration with many other plugins in the future.
+
+Currently Tutor LMS Migration support migration options from
+
+* LearnPress
+* LearnDash
+
 
 = Pre-requisites =
 
-To get started with migrating all your information from LearnPress LMS to Tutor LMS in the easiest way you need to make sure you have the following plugins installed.
+To get started with migrating your information from LearnPress/LearnDash LMS to Tutor LMS in the easiest way, you need to make sure you have the following plugins installed.
 
-**Note:** Currently the Tutor LMS Migration Tool supports migration from LearnPress to Tutor LMS. We are working hard to bring migration options from
-other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress the following plugins are required
+**Note:** Note: Currently the Tutor LMS Migration Tool supports migration from LearnPress/LearnDash to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
 
+  * Tutor LMS (Version 1.4.6 or later) for migration from LearnPress
+  * Tutor LMS (Version 1.5.0 or later) for migrating from LearnDash
 
-  * Tutor LMS (Version 1.4.6 or later)
-  * The current LMS plugin you are using. (As this migration plugin currently supports only LearnPress (Version 3.2.6.4 or later) you need this plugin for the migration to work)
+  And the following plugins for their respective migrations
+
+  * For LearnPress (Version 3.2.6.4 or later)
+  * For LearnDash ( Version 3.1.1 or later)
+
+  You need the mentioned versions or later of the plugin for the migration to work properly.
 
 
 = Get Started =
@@ -43,13 +54,18 @@ In the LearnPress Migration tab, you will find the migration status bar. You wil
   * Sales Data
   * Reviews
 
-Click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
+  And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
+
+ * Courses
+ * Sales data
+
+For both migrations, click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
 
 The whole process is so seamless that you will feel like you just opted-in for a better LMS without even changing anything at all.
 
 = Separate Import & Export Option =
 
-With Tutor LMS Migration Tool you can also separately export the data to your local folder or import the database file by uploading the XML format file.
+With Tutor LMS Migration Tool you can also separately export the data to your local folder or import the database file by uploading the XML format file. The manual export/import option is available for both the LearnPress & LearnDash migration.
 
 == Installation ==
 
