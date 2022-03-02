@@ -35,7 +35,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 					'desc'     => __( 'LearnPress Migration', 'tutor' ),
 					'template' => 'migration_lp',
 					'view_path'     => TLMT_PATH . 'views/',
-					'icon'     => 'tutor-icon-review-line',
+					'icon'     => 'tutor-icon-learnpress-filled',
 					'blocks'   => array(
 						'block' => array(),
 					),
