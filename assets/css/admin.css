@@ -126,7 +126,7 @@ div#tutor-tools-page-wrap{
 }
 
 div#sectionCourse {
-    
+
 }
 
 @-webkit-keyframes spinner-circle-rotate {
@@ -227,10 +227,10 @@ a.migration-later-btn:hover {
     color: #fff;
 }
 button.import-export-btn:hover {
-    
+
 }
 button.import-export-btn:hover img{
-    
+
 }
 a.migration-try-btn.migration-done-btn:hover {
     background: #2348bf;
@@ -838,14 +838,11 @@ button.import-export-btn:hover img {
     .tutor-progress {
         width: 80%;
     }
-    .tools-migration-lp-page {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        grid-column-gap: 30px;
-    }
     #lp-import-export-area .lp-grid {
         display: grid;
-        grid-template-columns: repeat(1,1fr);
+        grid-template-columns: repeat(2,1fr);
+        gap: 30px;
+        margin-top: 30px;
     }
     .lp-import, .lp-export {
         background: #fff;
@@ -855,9 +852,9 @@ button.import-export-btn:hover img {
     #lp-import-export-area {
         margin-top: 0px;
     }
-    .lp-export {
+    /* .lp-export {
         margin-top: 30px;
-    }
+    } */
 
     .lp-migratoin-right {
         background-position: center center;
@@ -875,7 +872,7 @@ button.import-export-btn:hover img {
         margin-top: 0px;
     }
     .lp-export {
-        margin-top: 30px;
+        /* margin-top: 30px; */
     }
 }
 

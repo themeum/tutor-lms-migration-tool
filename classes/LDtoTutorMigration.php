@@ -15,8 +15,20 @@ defined( 'ABSPATH' ) || exit;
 
             public function ld_tool_pages($pages)
             {
-                if (defined('LEARNDASH_VERSION')) {
-                    $pages['migration_ld'] = array('title' =>  __('LearnDash Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_ld.php');
+                // if (defined('LEARNDASH_VERSION') && !defined('LEARNPRESS_VERSION') ) {
+                if (defined('LEARNDASH_VERSION') ) {
+                    // $pages['migration_ld'] = array('title' =>  __('LearnDash Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_ld.php');
+                    $pages['migration_ld'] = array(
+                        'label'    => __( 'LearnDash Migration', 'tutor' ),
+                        'slug'     => 'migration_ld',
+                        'desc'     => __( 'LearnDash Migration', 'tutor' ),
+                        'template' => 'migration_ld',
+                        'view_path'     => TLMT_PATH . 'views/',
+                        'icon'     => 'tutor-icon-review-line',
+                        'blocks'   => array(
+                            'block' => array(),
+                        ),
+                    );
                 }
                 return $pages;
             }
@@ -49,21 +61,21 @@ defined( 'ABSPATH' ) || exit;
             }
 
 
-            // Order 
+            // Order
             public function ld_order_migrate(){
                 global $wpdb;
-                
+
                 $monetize_by = tutils()->get_option('monetize_by');
 
                 $ld_orders = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
                 $item_i = (int) get_option('_tutor_migrated_items_count');
 
                 if (tutils()->has_wc() && $monetize_by == 'wc') {
-                    
+
                     foreach ($ld_orders as $order) {
                         $item_i++;
                         update_option('_tutor_migrated_items_count', $item_i);
-                
+
                         $migrate_order_data = array(
                             'ID'            => $order->ID,
                             'post_status'   => 'wc-completed',
@@ -71,7 +83,7 @@ defined( 'ABSPATH' ) || exit;
                         );
                         wp_update_post($migrate_order_data);
 
-                        // Order Item 
+                        // Order Item
                         $course_id = get_post_meta($order->ID, 'course_id', true);
                         $item_data = array(
                             'order_item_name'   => get_the_title($course_id),
@@ -112,7 +124,7 @@ defined( 'ABSPATH' ) || exit;
                 }
 
                 if ( tutils()->has_edd() && $monetize_by == 'edd' ) {
-                    
+
                     foreach ($ld_orders as $order) {
                         $item_i++;
                         update_option('_tutor_migrated_items_count', $item_i);
@@ -219,13 +231,13 @@ defined( 'ABSPATH' ) || exit;
             {
                 global $wpdb;
                 $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}usermeta WHERE meta_key = 'course_{$course_id}_access_from'");
-    
+
                 foreach ($ld_enrollments as $ld_enrollment) {
                     $user_id = $ld_enrollment->user_id;
-    
+
                     if (! tutils()->is_enrolled($course_id, $user_id)) {
                         $order_time = strtotime($ld_enrollment->meta_value);
-    
+
                         $title = __('Course Enrolled', 'tutor')." &ndash; ".date(get_option('date_format'), $order_time).' @ '.date(get_option('time_format'), $order_time);
                         $tutor_enrollment_data = array(
                             'post_type'   => 'tutor_enrolled',
@@ -234,9 +246,9 @@ defined( 'ABSPATH' ) || exit;
                             'post_author' => $user_id,
                             'post_parent' => $course_id,
                         );
-    
+
                         $isEnrolled = wp_insert_post($tutor_enrollment_data);
-    
+
                         if ($isEnrolled) {
                             //Mark Current User as Students with user meta data
                             update_user_meta($user_id, '_is_tutor_student', $order_time);
@@ -359,7 +371,7 @@ defined( 'ABSPATH' ) || exit;
                 $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}posts SET post_type=%s, post_parent=%s, menu_order=%s WHERE ID=%s", $post_type, $post_parent, $menu_order, $post_id));
                 return $post_id;
             }
-            
+
 
 
             public function migrate_quiz($old_quiz_id)
@@ -380,7 +392,7 @@ defined( 'ABSPATH' ) || exit;
                         } else {
                             $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = {$question_id}", ARRAY_A);
                         }
-                        
+
                         $question = array();
                         $question['quiz_id'] = $old_quiz_id;
                         $question['question_title'] = $result['title'];
@@ -406,12 +418,12 @@ defined( 'ABSPATH' ) || exit;
                             case 'cloze_answer':
                                 $question['question_type'] = 'fill_in_the_blank';
                                 break;
-                            
+
                             default:
                                 # code...
                                 break;
                         }
-                        
+
                         $question['question_settings'] = maybe_serialize(array(
                             'question_type' => $result['answer_type'],
                             'question_mark' => $result['points']
@@ -421,7 +433,7 @@ defined( 'ABSPATH' ) || exit;
                         // print_r( $question );
                         // echo '</pre>';
                         $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
-                        
+
                         // Will Return $questions
                         $question_id = $wpdb->insert_id;
                         if ($question_id) {

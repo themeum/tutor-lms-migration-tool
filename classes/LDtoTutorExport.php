@@ -2,9 +2,9 @@
 if ( ! defined( 'ABSPATH' ) )
     exit;
 
-    
+
 if (! class_exists('LDtoTutorExport')) {
-    
+
     class LDtoTutorExport
     {
 
@@ -13,14 +13,17 @@ if (! class_exists('LDtoTutorExport')) {
             add_action('tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
             add_action('tutor_action_tutor_ld_export_xml', array($this, 'tutor_ld_export_xml'));
             // add_action('init', array($this, 'generate_xml_data'));
+
         }
+
+
 
 
         public function tutor_ld_export_xml(){
             header('Content-Type: application/octet-stream');
             header('Content-Disposition: attachment; filename=LearnDash_Data_for_Tutor.xml');
             header('Expires: 0');
-        
+
             echo $this->generate_xml_data();
             exit;
         }
@@ -66,7 +69,7 @@ if (! class_exists('LDtoTutorExport')) {
 
                         $total_data = LDLMS_Factory_Post::course_steps($course_id);
                         $total_data = $total_data->get_steps();
-        
+
                         if (empty($total_data)) {
                             return;
                         }
@@ -102,7 +105,7 @@ if (! class_exists('LDtoTutorExport')) {
                             $xml_lesson .= $this->close_element('items');
                             $xml_inner[] = $xml_lesson;
 
-                            
+
                             // Item
                             foreach ($lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner) {
                                 $ld_lessons = get_post($lesson_inner_key);
@@ -196,7 +199,7 @@ if (! class_exists('LDtoTutorExport')) {
                             } else if ($xml_inner[$i] == 'topics') {
                                 $xml .= $heading;
                                 $xml .= $this->close_element('topics');
-                                
+
                                 $xml .= $this->start_element('topics');
                                 $xml .= "<post_type>topics</post_type>\n";
                                 $topics_title = $section_heading[$j]['post_title'];
@@ -223,9 +226,9 @@ if (! class_exists('LDtoTutorExport')) {
                 }
             }
 
-            
+
             $xml .= $this->close_element('channel');
-            
+
             // echo '<code>';
             // print_r($xml);
             // echo '</code>';
@@ -243,9 +246,9 @@ if (! class_exists('LDtoTutorExport')) {
                 $question_ids = array_keys($question_ids);
                 foreach ($question_ids as $question_single) {
                     $question_id = get_post_meta($question_single, 'question_pro_id', true);
-                    
+
                     $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
-                    
+
                     $question = array();
                     switch ($result['answer_type']) {
                         case 'single':
@@ -267,7 +270,7 @@ if (! class_exists('LDtoTutorExport')) {
                         case 'cloze_answer':
                             $question['question_type'] = 'fill_in_the_blank';
                             break;
-                        
+
                         default:
                             # code...
                             break;
@@ -335,7 +338,7 @@ if (! class_exists('LDtoTutorExport')) {
 
                         $xml .= $this->close_element('questions');
                     }
-                    
+
                 }
             }
             return $xml;
@@ -345,12 +348,12 @@ if (! class_exists('LDtoTutorExport')) {
         public function start_element($element = ''){
 			return "\n<{$element}>\n";
         }
-        
+
 
 		public function close_element($element = ''){
 			return "\n</{$element}>\n";
         }
-        
+
 
         function xml_cdata( $str ) {
 			if ( ! seems_utf8( $str ) ) {
@@ -359,7 +362,7 @@ if (! class_exists('LDtoTutorExport')) {
 			$str = '<![CDATA[' . str_replace( ']]>', ']]]]><![CDATA[>', $str ) . ']]>';
 			return $str;
         }
-        
+
 
         /**
          *
@@ -377,9 +380,9 @@ if (! class_exists('LDtoTutorExport')) {
                     $xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
                     $xml_data = simplexml_load_string($xmlContent);
                     $courses = $xml_data->courses;
-    
+
                     foreach ($courses as $course){
-    
+
                         $course_data = array(
                             'post_author'   => (string) $course->post_author,
                             'post_date'     => (string)$course->post_date,
@@ -389,10 +392,10 @@ if (! class_exists('LDtoTutorExport')) {
                             'post_status'   => 'publish',
                             'post_type'     =>  $course_post_type,
                         );
-    
+
                         //Inserting Course
                         $course_id = wp_insert_post($course_data);
-    
+
                         $course_meta = json_decode(json_encode($course->course_meta), true);
                         foreach ($course_meta as $course_meta_key => $course_meta_value){
                             if ( is_array($course_meta_value)){
@@ -400,7 +403,7 @@ if (! class_exists('LDtoTutorExport')) {
                             }
                             $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
                         }
-    
+
                         foreach ($course->topics as $topic){
                             $topic_data = array(
                                 'post_type'     => 'topics',
@@ -411,14 +414,14 @@ if (! class_exists('LDtoTutorExport')) {
                                 'post_parent'   => $course_id,
                                 'menu_order'    => (string) $topic->menu_order,
                             );
-    
+
                             //Inserting Topics
                             $topic_id = wp_insert_post($topic_data);
-    
+
                             $item_i = 0;
                             foreach ($topic->items as $item){
                                 $item_i++;
-    
+
                                 $item_data = array(
                                     'post_type'     => (string) $item->post_type,
                                     'post_title'    => (string) $item->post_title,
@@ -428,9 +431,9 @@ if (! class_exists('LDtoTutorExport')) {
                                     'post_parent'   => $topic_id,
                                     'menu_order'    => $item_i,
                                 );
-    
+
                                 $item_id = wp_insert_post($item_data);
-    
+
                                 $item_metas = json_decode(json_encode($item->item_meta), true);
                                 foreach ($item_metas as $item_meta_key => $item_meta_value){
                                     if ( is_array($item_meta_value)){
@@ -438,19 +441,19 @@ if (! class_exists('LDtoTutorExport')) {
                                     }
                                     $wpdb->insert($wpdb->postmeta, array('post_id' => $item_id, 'meta_key' => $item_meta_key, 'meta_value'=> (string) $item_meta_value));
                                 }
-    
+
                                 if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
                                     foreach ($item->questions as $question) {
                                         $answers = $question->answers;
-    
+
                                         $question = (array) $question;
                                         $question['quiz_id'] = $item_id;
                                         $question['question_description'] = (string) $question['question_description'];
                                         unset($question['answers']);
-    
+
                                         $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
                                         $question_id = $wpdb->insert_id;
-    
+
                                         foreach ($answers as $answer){
                                             $answer = (array) $answer;
                                             $answer['belongs_question_id'] = $question_id;
@@ -466,7 +469,7 @@ if (! class_exists('LDtoTutorExport')) {
             }
             wp_redirect( $actual_link . '&notice=' . $notice );
 		}
-        
+
     }
     new LDtoTutorExport();
 }
