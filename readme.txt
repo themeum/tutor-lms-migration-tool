@@ -105,7 +105,11 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 1.1.0 - 30 January, 2020 =
+= 1.1.0 - 2 March, 2022 =
+
+* Added: Compatibility added for the Tutor LMS v2.0 plugin
+
+= 1.0.4 - 30 January, 2020 =
 
 * Added: LearnDash to Tutor LMS Migration Tool
 
