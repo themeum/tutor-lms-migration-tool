@@ -339,7 +339,7 @@ a.migration-try-btn.migration-done-btn:hover {
     margin-right: 10px;
 }
 .import-export-btn span{
-
+    white-space: nowrap;
 }
 .lp-export .import-export-btn{
     background-color: #fff;
