@@ -187,6 +187,7 @@ defined( 'ABSPATH' ) || exit;
                         $course_id = $this->update_post($course_type, $ld_course->ID, 0, '');
                         if ($course_id) {
                             $this->migrate_course($ld_course->ID, $course_id);
+
                             update_option('_tutor_migrated_items_count', $course_i);
 
                             // Attached Product
@@ -508,7 +509,6 @@ defined( 'ABSPATH' ) || exit;
                 $i = 0;
                 $section_count = 0;
                 $topic_id = 0;
-
                 foreach ($total_data['sfwd-lessons'] as $lesson_key => $lesson_data) {
                     $author_id = get_post_field('post_author', $course_id);
 
