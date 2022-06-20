@@ -32,6 +32,29 @@ define('TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool');
 define('TLMT_TUTOR_CORE_REQ_VERSION', '2.0.0-rc');
 define('TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.0-rc');
 
+register_activation_hook(__FILE__, 'activate');
+
+function activate () {
+	global $wpdb;
+
+	$charset_collate = $wpdb->get_charset_collate();
+
+	$schema = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}tutor_migration` (
+		`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+		`migration_type` varchar(48) NOT NULL DEFAULT '',
+		`migration_vendor` varchar(48) NOT NULL DEFAULT '',
+		`created_by` bigint(20) unsigned NOT NULL,
+		`created_at` datetime NOT NULL,
+		PRIMARY KEY (`id`)
+	) $charset_collate";
+
+	if(!function_exists('dbDelta')) {
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	}
+
+	dbDelta($schema);
+}
+
 if ( ! class_exists('TutorLMSMigrationTool')){
 
 	$dependency = new Dependency;

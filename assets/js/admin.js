@@ -1,22 +1,21 @@
-jQuery(document).ready(function($){
+jQuery(document).ready(function ($) {
     'use strict';
 
-    
-    $(document).on("click", ".install-tutor-button", function(t) {
+    $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
         $.ajax({
             type: "POST",
             url: ajaxurl,
             data: { install_plugin: "tutor", action: "install_tutor_plugin" },
-            beforeSend: function() {
+            beforeSend: function () {
                 select.addClass("updating-message");
             },
-            success: function(t) {
+            success: function (t) {
                 $(".install-qubely-button").remove(),
-                $("#qubely_install_msg").html(t);
+                    $("#qubely_install_msg").html(t);
             },
-            complete: function() {
+            complete: function () {
                 select.removeClass("updating-message");
                 location.reload();
             }
@@ -30,12 +29,13 @@ jQuery(document).ready(function($){
 
     var checkProgress;
 
-    function get_live_progress_course_migrating_info(final_types='lp'){
+    function get_live_progress_course_migrating_info(final_types = 'lp') {
         $.ajax({
-            url : ajaxurl,
-            type : 'POST',
-            data : {action : '_get_'+final_types+'_live_progress_course_migrating_info' },
+            url: ajaxurl,
+            type: 'POST',
+            data: { action: '_get_' + final_types + '_live_progress_course_migrating_info' },
             success: function (data) {
+                console.log(data);
                 if (data.success) {
                     if (data.data.migrated_count) {
                         $('#total_items_migrate_counts').html(data.data.migrated_count);
@@ -47,7 +47,7 @@ jQuery(document).ready(function($){
     }
 
     var countProgress;
-    function migration_progress_bar(cmplete){
+    function migration_progress_bar(cmplete) {
         var $progressBar = $('#sectionCourse').find('.tutor-progress');
         var data_parcent = parseInt($progressBar.attr('data-percent'));
 
@@ -55,28 +55,30 @@ jQuery(document).ready(function($){
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
-            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
-            countProgress = setTimeout(migration_progress_bar, 300, cmplete );
+            $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
+            countProgress = setTimeout(migration_progress_bar, 300, cmplete);
         }
     }
-
-    $(document).on( 'submit', 'form#tlmt-lp-migrate-to-tutor-lms',  function( e ){
+    var migration_vendor = 'lp';
+    $(document).on('submit', 'form#tlmt-lp-migrate-to-tutor-lms', function (e) {
         e.preventDefault();
 
         var $that = $(this);
-        var $formData = $(this).serialize()+'&action='+$that.attr('action');
+        var $formData = $(this).serialize() + '&action=' + $that.attr('action');
 
         let final_types = 'lp';
-        if($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
+        if ($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
             final_types = 'ld';
+            migration_vendor = 'ld';
         }
 
         $.ajax({
-            url : ajaxurl,
-            type : 'POST',
-            data : $formData+'&migrate_type=courses',
+            url: ajaxurl,
+            type: 'POST',
+            data: $formData + '&migrate_type=courses',
             beforeSend: function (XMLHttpRequest) {
-                $('.migrate-now-btn').addClass('tutor-updating-message');
+                migrateBtn.attr('disabled', 'disabled');
+                // $('.migrate-now-btn').addClass('tutor-updating-message');
                 $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
                 get_live_progress_course_migrating_info(final_types);
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
@@ -87,36 +89,38 @@ jQuery(document).ready(function($){
 
                 migration_progress_bar(true);
                 migrate_orders($formData, final_types);
+                
             },
             complete: function () {
-                clearTimeout(countProgress);
+                clearTimeout(countReviewsProgress);
                 clearTimeout(checkProgress);
+                clearTimeout(countProgress);
                 $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
 
-                $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
+                $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
             }
         });
     });
 
     var countOrderProgress;
-    function order_migration_progress_bar(cmplete){
+    function order_migration_progress_bar(cmplete) {
         var $progressBar = $('#sectionOrders').find('.tutor-progress');
         var data_parcent = parseInt($progressBar.attr('data-percent'));
-        
+
         if (cmplete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
-            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
-            countOrderProgress = setTimeout(order_migration_progress_bar, 300, cmplete );
+            $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
+            countOrderProgress = setTimeout(order_migration_progress_bar, 300, cmplete);
         }
     }
-    function migrate_orders($formData, final_types){
+    function migrate_orders($formData, final_types) {
 
         $.ajax({
-            url : ajaxurl,
-            type : 'POST',
-            data : $formData+'&migrate_type=orders',
+            url: ajaxurl,
+            type: 'POST',
+            data: $formData + '&migrate_type=orders',
             beforeSend: function (XMLHttpRequest) {
                 get_live_progress_course_migrating_info();
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
@@ -130,11 +134,11 @@ jQuery(document).ready(function($){
                 migrate_reviews($formData);
             },
             complete: function () {
-                clearTimeout(countOrderProgress);
+                clearTimeout(countReviewsProgress);
                 clearTimeout(checkProgress);
-
+                clearTimeout(countProgress);
                 $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
-                $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
+                $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
             }
         });
     }
@@ -145,7 +149,7 @@ jQuery(document).ready(function($){
      */
 
     var countReviewsProgress;
-    function reviews_migration_progress_bar(cmplete){
+    function reviews_migration_progress_bar(cmplete) {
         var $progressBar = $('#sectionReviews').find('.tutor-progress');
         var data_parcent = parseInt($progressBar.attr('data-percent'));
 
@@ -153,15 +157,15 @@ jQuery(document).ready(function($){
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
-            $progressBar.show().attr('style', '--tutor-progress : '+data_parcent+'% ').attr('data-percent', data_parcent);
-            countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete );
+            $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
+            countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete);
         }
     }
-    function migrate_reviews($formData){
+    function migrate_reviews($formData) {
         $.ajax({
-            url : ajaxurl,
-            type : 'POST',
-            data : $formData+'&migrate_type=reviews',
+            url: ajaxurl,
+            type: 'POST',
+            data: $formData + '&migrate_type=reviews',
             beforeSend: function (XMLHttpRequest) {
 
                 get_live_progress_course_migrating_info();
@@ -173,7 +177,15 @@ jQuery(document).ready(function($){
                 $('#sectionReviews').find('.j-spinner').addClass('tmtl_done');
                 reviews_migration_progress_bar(true);
 
-                if (data.success){
+                if (data.success) {
+                    clearTimeout(countReviewsProgress);
+                    clearTimeout(checkProgress);
+                    clearTimeout(countProgress);
+                    $.post(ajaxurl, { 
+                        migration_type : 'Imported',
+                        migration_vendor : migration_vendor,
+                        action: 'insert_tutor_migration_data'
+                    });
                     $('.lp-success-modal').addClass('active');
                 }
 
@@ -181,9 +193,10 @@ jQuery(document).ready(function($){
             complete: function () {
                 clearTimeout(countReviewsProgress);
                 clearTimeout(checkProgress);
+                clearTimeout(countProgress);
                 $('.migrate-now-btn').removeClass('tutor-updating-message');
                 $('#sectionReviews').find('.j-spinner').removeClass('tmtl_spin');
-                $.post( ajaxurl, {action: 'tlmt_reset_migrated_items_count'} );
+                $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
             }
         });
     }
@@ -234,6 +247,9 @@ jQuery(document).ready(function($){
     var successModalClose = $('.modal-close.success-modal-close');
     var migrateModalClose = $('.modal-close.migration-modal-close');
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
+    var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
+
+    var tutorMigrationUploadArea = $('.tutor-migration-upload-area');
 
     function activeModal(activeItem) {
         $(activeItem).addClass('active');
@@ -242,48 +258,161 @@ jQuery(document).ready(function($){
         removeItem.removeClass('active');
     }
 
-// migrate now button click
-    $(migrateBtn).on('click',function(event){
+    
+    // migrate now button click
+    $(migrateBtn).on('click', function (event) {
         event.preventDefault();
-        migrationModal.addClass('active');
+        if (totalItemsMigrateCounts > 0) {
+            migrationModal.addClass('active');
+        }
+        //  else {
+        //     if (!event.detail || event.detail == 1) {
+        //         tutor_toast('Warning', 'Nothing to migrate from ' + document.querySelector('.lp-migration-heading h3').innerText.split(' ')[0], 'warning');
+        //     }
+        // }
     });
-// migration later button click action
-    $(migrateLaterBtn).on('click', function(event){
+    
+    // migrate now button click
+    $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
-        removeModal(migrationModal);
-    });
-
-// migration start button click action
-    $(migrateStartBtn).on('click', function(event){
-        event.preventDefault();
-
-        $(migrationModal).removeClass('active');
-        if ( $('#total_items_migrate_counts').data('count') ) {
+        if (totalItemsMigrateCounts > 0) {
+            migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
         }
     });
 
-    $(document).on('click', '.migration-done-btn', function(event){
+
+    // migration later button click action
+    $(migrateLaterBtn).on('click', function (event) {
+        event.preventDefault();
+        removeModal(migrationModal);
+    });
+
+    // migration start button click action
+    // $(migrateBtn).on('click', function (event) {
+    //     event.preventDefault();
+
+    //     $('#tlmt-lp-migrate-to-tutor-lms').submit();
+
+    //     if (totalItemsMigrateCounts > 0) {
+    //         $(migrationModal).removeClass('active');
+    //         if ($('#total_items_migrate_counts').data('count')) {
+    //             $('#tlmt-lp-migrate-to-tutor-lms').submit();
+    //             $(migrateBtn).prop("disabled", true);
+    //         }
+    //     }
+    // });
+
+    $(document).on('click', '.migration-done-btn', function (event) {
         event.preventDefault();
         removeModal(successModal);
     });
 
-// successModal close button action
-    $(successModalClose).on('click', function(event){
+    // successModal close button action
+    $(successModalClose).on('click', function (event) {
         event.preventDefault();
         removeModal(successModal);
     });
-// error modal close button click action
-    $(migrateModalClose).on('click', function(event){
+    // error modal close button click action
+    $(migrateModalClose).on('click', function (event) {
         event.preventDefault();
         removeModal(migrationModal);
     });
-// error modal close button click action
-    $(errorModalClose).on('click', function(event){
+    // error modal close button click action
+    $(errorModalClose).on('click', function (event) {
         event.preventDefault();
         removeModal(errorModal);
     });
 
 
 
-});
+    var tutorMigrationBrowseFile = $('#tutor-migration-browse-file-link');
+    var tutorMigrationBrowseFileInput = $('#tutor-migration-browse-file');
+    var tutorManualMigrateForm = $('#tutor-manual-migrate-form');
+    var manualMigrateNowBtn = $('#manual-migrate-now-btn');
+
+    $(document).on('click', '#tutor-migration-browse-file-link a', function(event) {
+        event.preventDefault();
+        $('#tutor-migration-browse-file').click();
+    });
+
+    $(document).on('change', '#tutor-migration-browse-file', function(event){
+        if(this.files[0]) {
+            manualMigrateNowBtn.removeAttr('disabled');
+        } else {
+            manualMigrateNowBtn.attr('disabled', 'disabled');
+        }
+    });
+
+    $(document).on('click', '.backup-now-btn', function(event) {
+        event.preventDefault();
+        $.post(ajaxurl, { 
+            migration_type : 'Exported',
+            migration_vendor : $('#tutor_migration_vendor').val(),
+            action: 'insert_tutor_migration_data'
+        });
+        $('form#tutor_migration_export_form').submit();
+    })
+
+    // $(document).on('click', '.backup-now-btn', function(event) {
+    //     event.preventDefault();
+    //     // $('form#tutor_migration_export_form').submit();
+    //     var formData = new FormData();
+    //     formData.append("tutor_migration_vendor", $('input[name="tutor_migration_vendor"]').val());
+    //     formData.append("action", 'tutor_action_tutor_ld_export_xml');
+    //     console.log(formData); return;
+
+    //     $.ajax({
+    //         type: "POST",
+    //         url: ajaxurl,
+    //         data: formData,
+    //         success: function (res) {
+    //             if(res.success) {
+    //                 console.log(res);
+    //                 $.post(ajaxurl, { 
+    //                     migration_type : 'Exported',
+    //                     migration_vendor : $('#tutor_migration_vendor').val(),
+    //                     action: 'insert_tutor_migration_data'
+    //                 });
+    //                 // $('form#tutor_migration_export_form').submit();
+    //             }
+    //         },
+    //     });
+    // });
+
+    $(document).on('click', '#manual-migrate-now-btn', function(event) {
+        var formData = new FormData();
+        formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
+        // formData.append("tutor_action", $('input[name="tutor_action"]').val());
+        formData.append("tutor_migration_vendor", $('input[name="tutor_migration_vendor"]').val());
+        formData.append("action", 'tutor_action_tutor_import_from_ld');
+        $.ajax({
+            type: "POST",
+            url: ajaxurl,
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (res) {
+                if(res.success) {
+                    $('.lp-success-modal').addClass('active');
+                    $.post(ajaxurl, { 
+                        migration_type : 'Imported',
+                        migration_vendor : $('#tutor_migration_vendor').val(),
+                        action: 'insert_tutor_migration_data'
+                    });
+                    manualMigrateNowBtn.attr('disabled', 'disabled');
+                    $('.tutor-migration-upload-area.file-attached').removeClass('file-attached');
+                    $('.file-info').html('');
+                }
+            },
+        });
+    });
+
+    $('.tutor-migration-upload-area').on({
+        drop: function(e) {
+            event.preventDefault();
+            $('#tutor-migration-browse-file').change();
+        }
+    });
+
+}); /* ./ jQuery */

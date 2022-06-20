@@ -10,13 +10,12 @@ if (! class_exists('LDtoTutorExport')) {
 
 
         public function __construct() {
-            add_action('tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
+            // add_action('tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
+            add_action('wp_ajax_tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
             add_action('tutor_action_tutor_ld_export_xml', array($this, 'tutor_ld_export_xml'));
             // add_action('init', array($this, 'generate_xml_data'));
 
         }
-
-
 
 
         public function tutor_ld_export_xml(){
@@ -232,7 +231,6 @@ if (! class_exists('LDtoTutorExport')) {
             // echo '<code>';
             // print_r($xml);
             // echo '</code>';
-
             return $xml;
         }
 
@@ -370,7 +368,8 @@ if (! class_exists('LDtoTutorExport')) {
 		 */
 		public function tutor_import_from_ld(){
             global $wpdb;
-            $notice = 'error';
+            $error = true;
+
 			if (isset($_FILES['tutor_import_file'])){
                 $course_post_type = tutor()->course_post_type;
                 $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
@@ -464,10 +463,26 @@ if (! class_exists('LDtoTutorExport')) {
                             }
                         }
                     }
-                    $notice = 'success';
+                    // $notice = 'success';
+                    $error = false;
                 }
             }
-            wp_redirect( $actual_link . '&notice=' . $notice );
+            
+            if($error) {
+                wp_send_json([
+                    'success' => false,
+                    'message' => 'Migration not '
+                ]);
+            } else {
+                $responce = [
+                    'success' => true,
+                    'message' => 'Migration successfull'
+                ];
+                wp_send_json($responce);
+            }
+            // $_SESSION['tutor-migration-success'] = 'tutor-migration-success';
+            // wp_safe_redirect( $actual_link );
+            // wp_redirect( $actual_link . '&notice=' . $notice );
 		}
 
     }

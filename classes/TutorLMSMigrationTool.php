@@ -29,6 +29,10 @@ final class TutorLMSMigrationTool {
 	function __construct() {
 		include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
+		// add_action('plugin_loaded', [$this, 'activate']);
+
+		// register_activation_hook(__FILE__, [$this, 'activate']);
+
 		$this->load_assets();
 		add_filter( 'plugin_action_links_' . plugin_basename( TLMT_FILE ), array( $this, 'plugin_action_links' ) );
 
@@ -42,6 +46,27 @@ final class TutorLMSMigrationTool {
 		}
 		add_action( 'admin_notices', array( $this, 'check_if_ld_lp_is_activated' ) );
 	}
+
+	// public function activate(){
+	// 	global $wpdb;
+
+	// 	$charset_collate = $wpdb->get_charset_collate();
+
+	// 	$schema = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}tutor_migration` (
+	// 		`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	// 		`migration_type` varchar(48) NOT NULL DEFAULT '',
+	// 		`created_by` bigint(20) unsigned NOT NULL,
+	// 		`created_at` datetime NOT NULL,
+	// 		PRIMARY KEY (`id`)
+	// 	) $charset_collate";
+
+	// 	if(!function_exists('dbDelta')) {
+	// 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	// 	}
+
+	// 	dbDelta($schema);
+	// }
+
 
 	public function check_if_ld_lp_is_activated() {
 

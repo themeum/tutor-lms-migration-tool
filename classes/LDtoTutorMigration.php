@@ -7,9 +7,25 @@ defined( 'ABSPATH' ) || exit;
             public function __construct()
             {
                 add_filter('tutor_tool_pages', array($this, 'ld_tool_pages'));
+                add_action('wp_ajax_insert_tutor_migration_data', array($this, 'insert_tutor_migration_data'));
                 add_action('wp_ajax_ld_migrate_all_data_to_tutor', array($this, 'ld_migrate_all_data_to_tutor'));
                 add_action('wp_ajax_ld_reset_migrated_items_count', array($this, 'ld_reset_migrated_items_count'));
                 add_action('wp_ajax__get_ld_live_progress_course_migrating_info', array($this, '_get_ld_live_progress_course_migrating_info'));
+            }
+
+            public function insert_tutor_migration_data(){
+                global $wpdb;
+                $tutor_migration_table_data = [
+                    'migration_type' => $_POST['migration_type'],
+                    'migration_vendor' => $_POST['migration_vendor'],
+                    'created_by' => get_current_user_id(),
+                    'created_at' => current_time('mysql'),
+                ];
+
+                $wpdb->insert(
+                    $wpdb->prefix . 'tutor_migration',
+                    $tutor_migration_table_data
+                );
             }
 
 
@@ -55,6 +71,13 @@ defined( 'ABSPATH' ) || exit;
                             break;
                     }
 
+                    // $item_data = array(
+                    //     'order_item_name'   => get_the_title($course_id),
+                    //     'order_item_type'   => 'line_item',
+                    //     'order_id'          => $course_id,
+                    // );
+                    // $wpdb->insert($wpdb->prefix.'woocommerce_order_items', $item_data);
+                    
                     wp_send_json_success();
                 }
                 wp_send_json_error();

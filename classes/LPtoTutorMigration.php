@@ -625,6 +625,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			header('Expires: 0');
 
 			echo $this->generate_xml_data();
+			// return 'yo';
 			exit;
 		}
 
@@ -686,154 +687,156 @@ if ( ! class_exists('LPtoTutorMigration')){
 						$i            = 0;
 
 						//$xml .= $this->start_element('topics');
-						foreach ( $curriculum as $section ) {
-							$i ++;
+						if($curriculum) {
+							foreach ( $curriculum as $section ) {
+								$i ++;
 
-							$xml .= $this->start_element('topics');
+								$xml .= $this->start_element('topics');
 
-							/**
-							 * Topic
-							 */
-							$xml .= "<post_type>topics</post_type>\n";
-							$xml .= "<post_title>{$section->get_title()}</post_title>\n";
+								/**
+								 * Topic
+								 */
+								$xml .= "<post_type>topics</post_type>\n";
+								$xml .= "<post_title>{$section->get_title()}</post_title>\n";
 
-							$topic_content = ! empty($section->get_description()) ? $this->xml_cdata($section->get_description()) : '';
+								$topic_content = ! empty($section->get_description()) ? $this->xml_cdata($section->get_description()) : '';
 
-							$xml .= "<post_content>{$topic_content}</post_content>\n";
-							$xml .= "<post_status>publish</post_status>\n";
-							$xml .= "<post_author>{$course->get_author( 'id' )}</post_author>\n";
-							$xml .= "<post_parent>{$course_id}</post_parent>";
-							$xml .= "<menu_order>{$i}</menu_order>\n";
+								$xml .= "<post_content>{$topic_content}</post_content>\n";
+								$xml .= "<post_status>publish</post_status>\n";
+								$xml .= "<post_author>{$course->get_author( 'id' )}</post_author>\n";
+								$xml .= "<post_parent>{$course_id}</post_parent>";
+								$xml .= "<menu_order>{$i}</menu_order>\n";
 
-							/**
-							 * Lessons
-							 */
-							//$xml .= $this->start_element('items');
+								/**
+								 * Lessons
+								 */
+								//$xml .= $this->start_element('items');
 
-							$lessons = $this->get_lp_section_items($section->get_id());
+								$lessons = $this->get_lp_section_items($section->get_id());
 
-							foreach ( $lessons as $lesson ) {
-								//print_r($lesson);
-								$item_post_type = $lesson->item_type;
+								foreach ( $lessons as $lesson ) {
+									//print_r($lesson);
+									$item_post_type = $lesson->item_type;
 
-								if ( $item_post_type !== 'lp_lesson' ) {
-									if ( $item_post_type === 'lp_quiz' ) {
-										$lesson_post_type = 'tutor_quiz';
+									if ( $item_post_type !== 'lp_lesson' ) {
+										if ( $item_post_type === 'lp_quiz' ) {
+											$lesson_post_type = 'tutor_quiz';
+										}
 									}
-								}
 
-								//Item
-								$xml .= $this->start_element('items');
+									//Item
+									$xml .= $this->start_element('items');
 
-								$xml .= "<item_id>{$lesson->id}</item_id>\n";
-								$xml .= "<post_type>{$lesson_post_type}</post_type>\n";
-								$xml .= "<post_author>{$lesson->post_author}</post_author>\n";
-								$xml .= "<post_date>{$lesson->post_date}</post_date>\n";
-								$xml .= "<post_title>{$lesson->post_title}</post_title>\n";
-								$xml .= "<post_content>{$this->xml_cdata($lesson->post_content)}</post_content>\n";
-								$xml .= "<post_parent>{topic_id}</post_parent>\n";
+									$xml .= "<item_id>{$lesson->id}</item_id>\n";
+									$xml .= "<post_type>{$lesson_post_type}</post_type>\n";
+									$xml .= "<post_author>{$lesson->post_author}</post_author>\n";
+									$xml .= "<post_date>{$lesson->post_date}</post_date>\n";
+									$xml .= "<post_title>{$lesson->post_title}</post_title>\n";
+									$xml .= "<post_content>{$this->xml_cdata($lesson->post_content)}</post_content>\n";
+									$xml .= "<post_parent>{topic_id}</post_parent>\n";
 
-								$xml .= $this->start_element('item_meta');
+									$xml .= $this->start_element('item_meta');
 
-								$item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} ");
+									$item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} ");
 
-								if (is_array($item_metas) && count($item_metas)){
-								    foreach ($item_metas as $item_meta){
-									    $xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
-								    }
-                                }
-								//print_r($item_metas);
+									if (is_array($item_metas) && count($item_metas)){
+										foreach ($item_metas as $item_meta){
+											$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
+										}
+									}
+									//print_r($item_metas);
 
-								$xml .= $this->close_element('item_meta');
-								//$xml .= $this->start_element('questions');
+									$xml .= $this->close_element('item_meta');
+									//$xml .= $this->start_element('questions');
 
-								if ($lesson_post_type === 'tutor_quiz'){
-									$quiz_id = $lesson->id;
+									if ($lesson_post_type === 'tutor_quiz'){
+										$quiz_id = $lesson->id;
 
-									$questions = $wpdb->get_results("SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
-						FROM {$wpdb->prefix}learnpress_quiz_questions
-						LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
-						LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
-						LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
-						WHERE quiz_id = {$quiz_id}  ");
+										$questions = $wpdb->get_results("SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
+										FROM {$wpdb->prefix}learnpress_quiz_questions
+										LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
+										LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
+										LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
+										WHERE quiz_id = {$quiz_id}  ");
 
-									if (tutils()->count($questions)){
+										if (tutils()->count($questions)){
 
-										foreach ($questions as $question) {
+											foreach ($questions as $question) {
 
-											$question_type = null;
-											if ($question->question_type === 'true_or_false'){
-												$question_type = 'true_false';
-											}
-											if ($question->question_type === 'single_choice'){
-												$question_type = 'single_choice';
-											}
-											if ($question->question_type === 'multi_choice'){
-												$question_type = 'multiple_choice';
-											}
-
-											if ($question_type) {
-												$xml .= $this->start_element('questions');
-												$new_question_data = array(
-													'quiz_id'              => '{quiz_id}',
-													'question_title'       => $question->post_title,
-													'question_description' => $question->post_content,
-													'question_type'        => $question_type,
-													'question_mark'        => $question->question_mark,
-													'question_settings'    => maybe_serialize( array() ),
-													'question_order'       => $question->question_order,
-												);
-
-												foreach ($new_question_data as $question_key => $question_value){
-													$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
+												$question_type = null;
+												if ($question->question_type === 'true_or_false'){
+													$question_type = 'true_false';
+												}
+												if ($question->question_type === 'single_choice'){
+													$question_type = 'single_choice';
+												}
+												if ($question->question_type === 'multi_choice'){
+													$question_type = 'multiple_choice';
 												}
 
-												//$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $new_question_data);
-												//$question_id = $wpdb->insert_id;
-												$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
+												if ($question_type) {
+													$xml .= $this->start_element('questions');
+													$new_question_data = array(
+														'quiz_id'              => '{quiz_id}',
+														'question_title'       => $question->post_title,
+														'question_description' => $question->post_content,
+														'question_type'        => $question_type,
+														'question_mark'        => $question->question_mark,
+														'question_settings'    => maybe_serialize( array() ),
+														'question_order'       => $question->question_order,
+													);
 
-												//$xml .= $this->start_element('answers');
-
-												if (tutils()->count($answer_items)){
-													foreach ($answer_items as $answer_item){
-														$answer_data = maybe_unserialize($answer_item->answer_data);
-
-														$answer_data = array(
-															'belongs_question_id'   => '{question_id}',
-															'belongs_question_type' => $question_type,
-															'answer_title'          => tutils()->array_get('text', $answer_data),
-															'is_correct'            => tutils()->array_get('is_true', $answer_data) == 'yes' ? 1 : 0,
-															'answer_order'          => $answer_item->answer_order,
-														);
-
-														$xml .= $this->start_element('answers');
-
-														foreach ($answer_data as $answers_key => $answers_value){
-															$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
-														}
-														$xml .= $this->close_element('answers');
-
-														//$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer_data);
+													foreach ($new_question_data as $question_key => $question_value){
+														$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
 													}
-												}
-												//$xml .= $this->close_element('answers');
 
-												$xml .= $this->close_element('questions');
+													//$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $new_question_data);
+													//$question_id = $wpdb->insert_id;
+													$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
+
+													//$xml .= $this->start_element('answers');
+
+													if (tutils()->count($answer_items)){
+														foreach ($answer_items as $answer_item){
+															$answer_data = maybe_unserialize($answer_item->answer_data);
+
+															$answer_data = array(
+																'belongs_question_id'   => '{question_id}',
+																'belongs_question_type' => $question_type,
+																'answer_title'          => tutils()->array_get('text', $answer_data),
+																'is_correct'            => tutils()->array_get('is_true', $answer_data) == 'yes' ? 1 : 0,
+																'answer_order'          => $answer_item->answer_order,
+															);
+
+															$xml .= $this->start_element('answers');
+
+															foreach ($answer_data as $answers_key => $answers_value){
+																$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
+															}
+															$xml .= $this->close_element('answers');
+
+															//$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer_data);
+														}
+													}
+													//$xml .= $this->close_element('answers');
+
+													$xml .= $this->close_element('questions');
+												}
 											}
 										}
 									}
+
+									//$xml .= $this->close_element('questions');
+
+									$xml .= $this->close_element('items');
 								}
 
-								//$xml .= $this->close_element('questions');
+								//Close Lessons Tag
+								//$xml .= $this->close_element('items');
 
-								$xml .= $this->close_element('items');
+								//Close Topic Tag
+								$xml .= $this->close_element('topics');
 							}
-
-							//Close Lessons Tag
-							//$xml .= $this->close_element('items');
-
-							//Close Topic Tag
-							$xml .= $this->close_element('topics');
 						}
 						//$xml .= $this->close_element('topics');
 					}
