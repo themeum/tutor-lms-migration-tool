@@ -40,7 +40,7 @@ defined( 'ABSPATH' ) || exit;
                         'desc'     => __( 'LearnDash Migration', 'tutor' ),
                         'template' => 'migration_ld',
                         'view_path'     => TLMT_PATH . 'views/',
-                        'icon'     => 'tutor-icon-learndash-filled',
+                        'icon'     => 'tutor-icon-brand-learndash',
                         'blocks'   => array(
                             'block' => array(),
                         ),

@@ -6,8 +6,9 @@ Description: A migration toolkit that allows you to migrate data from other LMS 
 Author: Themeum
 Version: 2.0.0
 Author URI: http://themeum.com
-Requires at least: 4.5
-Tested up to: 5.3
+Requires at least: 5.3
+Tested up to: 6.0
+Requires PHP: 7.2
 License: GPLv2 or later
 Text Domain: tutor-lms-migration-tool
 */
