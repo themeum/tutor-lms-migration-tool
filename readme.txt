@@ -3,9 +3,9 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
 Requires at least: 4.5
-Tested up to: 5.6
-Requires PHP: 5.4.0
-Stable tag: 1.0.4
+Tested up to: 6.0
+Requires PHP: 7.2
+Stable tag: 2.0.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -103,6 +103,10 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.0.0 - 2 March, 2022 =
+
+* Added: Compatibility added for the Tutor LMS v2.0 plugin
 
 = 1.0.4 - 30 January, 2020 =
 
