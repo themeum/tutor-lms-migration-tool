@@ -18,8 +18,8 @@ from
 other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress the following plugins are required
 
 
-  * Tutor LMS (Version 1.4.6 or later)
-  * The current LMS plugin you are using. (As this migration plugin currently supports only LearnPress (Version 3.2.6.4 or later) you need this plugin for the migration to work)
+  * Tutor LMS (Version 2.0.0 or later)
+  * The current LMS plugin you are using. (As this migration plugin currently supports only LearnPress (Version 4.0 or later) you need this plugin for the migration to work)
 
 
 #### Get Started
@@ -43,7 +43,7 @@ With Tutor LMS Migration Tool you can also separately export the data to your lo
 
 ##### Minimum Requirements
 
-* PHP version 5.6.0 or greater (PHP 7.1 or greater is recommended)
+* PHP version 7.2 or greater (PHP 7.4 or greater is recommended)
 * MySQL version 5.0 or greater (MySQL 5.6 or greater is recommended)
 
 ##### Automatic installation

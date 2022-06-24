@@ -2,7 +2,7 @@
 Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
-Requires at least: 4.5
+Requires at least: 5.0
 Tested up to: 6.0
 Requires PHP: 7.2
 Stable tag: 2.0.0
@@ -33,13 +33,13 @@ To get started with migrating your information from LearnPress/LearnDash LMS to 
 
 **Note:** Note: Currently the Tutor LMS Migration Tool supports migration from LearnPress/LearnDash to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
 
-  * Tutor LMS (Version 1.4.6 or later) for migration from LearnPress
-  * Tutor LMS (Version 1.5.0 or later) for migrating from LearnDash
+  * Tutor LMS (Version 2.0.0 or later) for migration from LearnPress
+  * Tutor LMS (Version 2.0.0 or later) for migrating from LearnDash
 
   And the following plugins for their respective migrations
 
-  * For LearnPress (Version 3.2.6.4 or later)
-  * For LearnDash ( Version 3.1.1 or later)
+  * For LearnPress (Version 4.0 or later)
+  * For LearnDash ( Version 4.0 or later)
 
 You need the mentioned versions or later of the plugin for the migration to work properly.
 
@@ -70,7 +70,7 @@ With Tutor LMS Migration Tool you can also separately export the data to your lo
 
 = Minimum Requirements =
 
-* PHP version 5.6.0 or greater (PHP 7.1 or greater is recommended)
+* PHP version 7.2 or greater (PHP 7.4 or greater is recommended)
 * MySQL version 5.0 or greater (MySQL 5.6 or greater is recommended)
 
 = Automatic installation =
