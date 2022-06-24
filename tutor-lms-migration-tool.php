@@ -33,9 +33,9 @@ define('TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool');
 define('TLMT_TUTOR_CORE_REQ_VERSION', '2.0.0-rc');
 define('TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.0-rc');
 
-register_activation_hook(__FILE__, 'activate');
+register_activation_hook(__FILE__, 'tutor_migration_tool_activate');
 
-function activate () {
+function tutor_migration_tool_activate () {
 	global $wpdb;
 
 	$charset_collate = $wpdb->get_charset_collate();
@@ -55,6 +55,17 @@ function activate () {
 
 	dbDelta($schema);
 }
+
+function tutor_migration_tool_deleted(){
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'tutor_migration';
+		$query = "DROP TABLE IF EXISTS {$table_name}";
+		$wpdb->query($query);
+}
+
+register_uninstall_hook(__FILE__, 'tutor_migration_tool_deleted');
+
+
 
 if ( ! class_exists('TutorLMSMigrationTool')){
 

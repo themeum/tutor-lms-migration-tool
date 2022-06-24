@@ -625,7 +625,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 			header('Expires: 0');
 
 			echo $this->generate_xml_data();
-			// return 'yo';
 			exit;
 		}
 
