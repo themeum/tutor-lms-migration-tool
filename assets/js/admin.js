@@ -35,7 +35,6 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             data: { action: '_get_' + final_types + '_live_progress_course_migrating_info' },
             success: function (data) {
-                console.log(data);
                 if (data.success) {
                     if (data.data.migrated_count) {
                         $('#total_items_migrate_counts').html(data.data.migrated_count);
@@ -300,14 +299,27 @@ jQuery(document).ready(function ($) {
         event.preventDefault();
         $('#tutor-migration-browse-file').click();
     });
-
+    var dropZone = $('.tutor-migration-drag-drop-zone');
     $(document).on('change', '#tutor-migration-browse-file', function(event){
+        var inputEl = $('#tutor-migration-browse-file');
         if(this.files[0]) {
             manualMigrateNowBtn.removeAttr('disabled');
+            getFilesAndUpdateDOM(this.files[0], inputEl);
         } else {
             manualMigrateNowBtn.attr('disabled', 'disabled');
         }
     });
+
+    var getFilesAndUpdateDOM = (files, inputEl) => {
+        if (files) {
+        	inputEl.files = files;
+        	dropZone.addClass('file-attached');
+        	dropZone.find('.file-info').html(`File attached - ${files.name}`);
+        } else {
+        	dropZone.removeClass('file-attached');
+        	dropZone.find('.file-info').html('');
+        }
+    };
 
     $(document).on('click', '.backup-now-btn', function(event) {
         event.preventDefault();
@@ -354,11 +366,50 @@ jQuery(document).ready(function ($) {
         });
     });
 
-    $('.tutor-migration-upload-area').on({
-        drop: function(e) {
-            event.preventDefault();
-            $('#tutor-migration-browse-file').change();
-        }
-    });
-
 }); /* ./ jQuery */
+
+
+
+const dropZoneInputs = document.querySelectorAll('.tutor-migration-drag-drop-zone input[type=file]');
+
+dropZoneInputs.forEach((inputEl) => {
+	const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
+
+	['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
+		if (dragEvent === 'dragover') {
+			dropZone.addEventListener(dragEvent, (e) => {
+				e.preventDefault();
+				dropZone.classList.add('dragover');
+			});
+		} else {
+			dropZone.addEventListener(dragEvent, (e) => {
+				dropZone.classList.remove('dragover');
+			});
+		}
+	});
+
+	dropZone.addEventListener('drop', (e) => {
+		e.preventDefault();
+		const files = e.dataTransfer.files;
+		getFilesAndUpdateDOM(files, inputEl, dropZone);
+		dropZone.classList.remove('dragover');
+	});
+
+	// inputEl.addEventListener('change', (e) => {
+    //     const files = e.target.files;
+	// 	getFilesAndUpdateDOM(files, inputEl, dropZone);
+	// });
+	
+});
+
+const getFilesAndUpdateDOM = (files, inputEl, dropZone) => {
+	if (files.length) {
+		inputEl.files = files;
+		dropZone.classList.add('file-attached');
+		dropZone.querySelector('.file-info').innerHTML = `File attached - ${files[0].name}`;
+        document.querySelector('#manual-migrate-now-btn').removeAttribute('disabled');
+	} else {
+		dropZone.classList.remove('file-attached');
+		dropZone.querySelector('.file-info').innerHTML = '';
+	}
+};

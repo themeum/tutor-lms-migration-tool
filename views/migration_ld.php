@@ -24,7 +24,6 @@ if ( ! defined( 'ABSPATH' ) )
         <div class="tutor-migration-area">
             <div class="tutor-migration-top tutor-px-48 tutor-pt-32 tutor-pb-40">
                 <div class=""> 
-                    <!-- <?php echo $tutor_migration_history; ?> -->
                     <div class="tutor-fs-3 tutor-fw-medium tutor-color-black tutor-course-content-title">
                         <?php _e('Migration','tutor-lms-migration-tool'); ?>
                     </div>
@@ -144,7 +143,7 @@ if ( ! defined( 'ABSPATH' ) )
                 </div>
                 <div id="tutor-manual-migrate-tab" class="tutor-tab-item">
                     <div class="tutor-tab-item-wrap tutor-p-48">
-                        <div class="tutor-migration-upload-area drag-drop-zone flex-center tutor-px-48 tutor-py-68">
+                        <div class="tutor-migration-upload-area tutor-migration-drag-drop-zone flex-center tutor-px-48 tutor-py-68">
                             <div class="tutor-migration-upload-circle tutor-mb-16 flex-center">
                                 <span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
                             </div>
