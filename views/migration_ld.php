@@ -7,19 +7,15 @@ if ( ! defined( 'ABSPATH' ) )
     <?php
     global $wpdb;
 
-    $tutor_migration_history = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT  * FROM {$wpdb->prefix}tutor_migration
-            WHERE `migration_vendor` = %s
-            ORDER BY ID DESC
-            LIMIT %d, %d",
-            'ld', 0, 20
-        )
-    );
+    $utils = new Utils;
 
-    $courses_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
+    $tutor_migration_history = $utils->fetch_history('ld');
+
+    // $courses_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
+    $courses_count = $utils->ld_course_count();
     
-    $orders_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
+    $orders_count = $utils->ld_orders_count();
+    // $orders_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
 
     $items_count = $courses_count + $orders_count;
     ?>
@@ -27,7 +23,8 @@ if ( ! defined( 'ABSPATH' ) )
     <div id="tutor-migration-wrapper">
         <div class="tutor-migration-area">
             <div class="tutor-migration-top tutor-px-48 tutor-pt-32 tutor-pb-40">
-                <div class="">
+                <div class=""> 
+                    <!-- <?php echo $tutor_migration_history; ?> -->
                     <div class="tutor-fs-3 tutor-fw-medium tutor-color-black tutor-course-content-title">
                         <?php _e('Migration','tutor-lms-migration-tool'); ?>
                     </div>
@@ -37,7 +34,6 @@ if ( ! defined( 'ABSPATH' ) )
                 </div>
                 <div class="tutor-d-flex tutor-justify-end tutor-align-center">
                     <img style src="<?php echo TLMT_URL.'assets/img/learndash.jpg'; ?>" alt="import">
-                    <!-- <img style src="<?php echo TLMT_URL.'assets/img/learnpress-logo.svg'; ?>" alt="import"> -->
                 </div>
             </div>
 
@@ -157,7 +153,7 @@ if ( ! defined( 'ABSPATH' ) )
                                 <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
                                 <input type="hidden" name="tutor_action" value="tutor_import_from_ld">
                                 <div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
-                                    <div class="tutor-color-black"> <?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?></div>
+                                    <div class="tutor-color-black"> <?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?> </div>
                                     or <a href="" class="tutor-color-primary"> <?php _e('Browse File','tutor-lms-migration-tool'); ?> </a>
                                 </div>
                                 <input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
@@ -191,63 +187,60 @@ if ( ! defined( 'ABSPATH' ) )
         </div>
 
         <!-- migration history area -->
+        <?php if(count($tutor_migration_history)) : ?>
         <div class="tutor-migration-history">
             <div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
                 <?php _e('Settings History','tutor-lms-migration-tool'); ?>
             </div>
-            
             <div class="tutor-table-responsive">
-                <?php if(count($tutor_migration_history)) : ?>
-                    <table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
-                        <thead>
-                            <tr>
-                                <th class="tutor-table-rows-sorting" style="padding-left: 38px;">
-                                    <?php _e('Date','tutor-lms-migration-tool'); ?>
-                                </th>
-                                <th class="tutor-table-rows-sorting">
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($tutor_migration_history as $tutor_history) : ?>
-                            <tr>
-                                <td>
-                                    <div class="tutor-migration-history-time tutor-fs-6 tutor-pl-24 tutor-fw-normal">
-                                        <?php 
-                                            echo esc_html( tutor_get_formated_date( get_option( 'date_format' ), $tutor_history->created_at ) ); 
-                                            echo ', ' . date('h:i A', strtotime($tutor_history->created_at)); 
-                                        ?> 
-                                    </div>
-                                </td>
-                                <td>
+                <table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
+                    <thead>
+                        <tr>
+                            <th class="tutor-table-rows-sorting" style="padding-left: 38px;">
+                                <?php _e('Date','tutor-lms-migration-tool'); ?>
+                            </th>
+                            <th class="tutor-table-rows-sorting">
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($tutor_migration_history as $tutor_history) : ?>
+                        <tr>
+                            <td>
+                                <div class="tutor-migration-history-time tutor-fs-6 tutor-pl-24 tutor-fw-normal">
                                     <?php 
-                                        $migration_type_class = '';
-                                        if($tutor_history->migration_type == 'Imported') {
-                                            $migration_type_class = 'success';
-                                        } else if ($tutor_history->migration_type == 'Exported') {
-                                            $migration_type_class = 'warning';
-                                        }
-                                    ?>
-                                    <div class="tutor-d-flex tutor-justify-end tutor-pr-32">
-                                        <span class="tutor-badge-label label-<?php echo $migration_type_class; ?>">
-                                            <?php echo $tutor_history->migration_type; ?>
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+                                        echo esc_html( tutor_get_formated_date( get_option( 'date_format' ), $tutor_history->created_at ) ); 
+                                        echo ', ' . date('h:i A', strtotime($tutor_history->created_at)); 
+                                    ?> 
+                                </div>
+                            </td>
+                            <td>
+                                <?php 
+                                    $migration_type_class = '';
+                                    if($tutor_history->migration_type == 'Imported') {
+                                        $migration_type_class = 'success';
+                                    } else if ($tutor_history->migration_type == 'Exported') {
+                                        $migration_type_class = 'warning';
+                                    }
+                                ?>
+                                <div class="tutor-d-flex tutor-justify-end tutor-pr-32">
+                                    <span class="tutor-badge-label label-<?php echo $migration_type_class; ?>">
+                                        <?php echo $tutor_history->migration_type; ?>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
+        <?php endif; ?>
         <!-- ./ tutor-migration-history -->
     </div>
 </div>
 
-
 <div class="lp-migration-modal-wrap">
-
 	<div class="lp-migration-modal">
 		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
 			<div class="lp-migration-modal-icon">
@@ -276,12 +269,11 @@ if ( ! defined( 'ABSPATH' ) )
 			</div>
 		</div>
 	</div>
-
 </div>
 
 
 <div class="lp-success-modal-wrap">
-	<div class="lp-success-modal <?php if ( isset( $_SESSION["tutor-migration-success"] ) ) { echo ' active';  } ?>" >
+	<div class="lp-success-modal">
 		<div class="lp-modal-alert tutor-p-40">
 			<div class="lp-modal-icon lp-modal-success animate tutor-p-60">
 				<span class="lp-modal-line lp-modal-tip animateSuccessTip"></span>
@@ -293,15 +285,13 @@ if ( ! defined( 'ABSPATH' ) )
 				<span class="modal-close-line success-close-line-one"></span>
 				<span class="modal-close-line success-close-line-two"></span>
 			</div>
-
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> 
                 <?php _e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?> 
             </div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> 
-                <?php _e( 'Migration from LearnPress to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?> 
+                <?php _e( 'Migration from LearnDash to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?> 
             </div>
-
-			<a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
+			<a href="<?php echo esc_url(admin_url()); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
 				<?php _e( 'Go to dashboard', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>

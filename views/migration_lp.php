@@ -7,19 +7,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<?php
 	global $wpdb;
 
-    $tutor_migration_history = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT  * FROM {$wpdb->prefix}tutor_migration
-            WHERE `migration_vendor` = %s
-            ORDER BY ID DESC
-            LIMIT %d, %d",
-            'lp', 0, 20
-        )
-    );
+    $utils = new Utils;
 
-	$courses_count = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'lp_course' AND post_status = 'publish';" );
-	$orders_count  = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'lp_order';" );
-	$reviews_count = (int) $wpdb->get_var( "SELECT COUNT(comments.comment_ID) FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';" );
+    $tutor_migration_history = $utils->fetch_history('lp');
+
+	$courses_count = $utils->lp_course_count();
+	$orders_count  = $utils->lp_orders_count();
+	$reviews_count = $utils->lp_reviews_count();
 
 	$items_count = $courses_count + $orders_count + $reviews_count;
 	?>
@@ -145,7 +139,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
                                 <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
                                 <div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
-                                    <div class="tutor-color-black"><?php _e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' ); ; ?></div>
+                                    <div class="tutor-color-black"><?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?></div>
                                     or <a href="" class="tutor-color-primary"><?php _e('Browse File','tutor-lms-migration-tool'); ?></a>
                                 </div>
                                 <input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
@@ -175,13 +169,13 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
 
         <!-- migration history area -->
+        <?php if(count($tutor_migration_history)) : ?>
         <div class="tutor-migration-history">
             <div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
                 <?php _e('Settings History','tutor-lms-migration-tool'); ?>
             </div>
             
             <div class="tutor-table-responsive">
-                <?php if(count($tutor_migration_history)) : ?>
                     <table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
                         <thead>
                             <tr>
@@ -222,9 +216,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                <?php endif; ?>
             </div>
         </div>
+        <?php endif; ?>
         <!-- ./ tutor-migration-history -->
 
 	</div>
@@ -237,13 +231,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="lp-migration-modal-wrap">
 
 	<div class="lp-migration-modal">
-		<div class="lp-migration-alert lp-import tutor-p-60">
+        <div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
 			<div class="lp-migration-modal-icon">
 				<img src="<?php echo TLMT_URL . 'assets/img/yes_no.svg'; ?>" alt="export">
 			</div>
-			<div class="migration-modal-btn-group">
-				<div class="tutor-fs-5 tutor-fw-mediumd tutor-color-black tutor-mb-32 tutor-mr-60">
-					<?php _e( 'Are you sure you want to migrate from LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+			<div class="migration-modal-btn-group flex-center tutor-flex-column">
+                <div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
+					<?php _e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
+                    <br>
+                    <?php _e( 'LearnPress to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
 				</div>
                 <div class="tutor-d-flex">
                     <a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
@@ -283,7 +279,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> <?php _e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?> </div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> <?php _e( 'The migration from LearnPress to Tutor LMS is successfully done.', 'tutor-lms-migration-tool' ); ?> </div>
 
-			<a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-md tutor-mt-40">
+			<a href="<?php echo esc_url(admin_url()); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-40">
 				<?php _e( 'Go to dashboard', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>

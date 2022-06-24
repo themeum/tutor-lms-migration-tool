@@ -78,7 +78,6 @@ jQuery(document).ready(function ($) {
             data: $formData + '&migrate_type=courses',
             beforeSend: function (XMLHttpRequest) {
                 migrateBtn.attr('disabled', 'disabled');
-                // $('.migrate-now-btn').addClass('tutor-updating-message');
                 $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
                 get_live_progress_course_migrating_info(final_types);
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
@@ -226,18 +225,6 @@ jQuery(document).ready(function ($) {
     });
     */
 
-    /**
-     * Modal JS
-     */
-
-
-
-
-    /**
-     * Modal and other JS
-     * @since v.1.0.0
-     */
-
     var migrateBtn = $(".migrate-now-btn");
     var migrateLaterBtn = $('.migration-later-btn');
     var migrateStartBtn = $('.migration-start-btn');
@@ -288,26 +275,6 @@ jQuery(document).ready(function ($) {
         removeModal(migrationModal);
     });
 
-    // migration start button click action
-    // $(migrateBtn).on('click', function (event) {
-    //     event.preventDefault();
-
-    //     $('#tlmt-lp-migrate-to-tutor-lms').submit();
-
-    //     if (totalItemsMigrateCounts > 0) {
-    //         $(migrationModal).removeClass('active');
-    //         if ($('#total_items_migrate_counts').data('count')) {
-    //             $('#tlmt-lp-migrate-to-tutor-lms').submit();
-    //             $(migrateBtn).prop("disabled", true);
-    //         }
-    //     }
-    // });
-
-    $(document).on('click', '.migration-done-btn', function (event) {
-        event.preventDefault();
-        removeModal(successModal);
-    });
-
     // successModal close button action
     $(successModalClose).on('click', function (event) {
         event.preventDefault();
@@ -323,8 +290,6 @@ jQuery(document).ready(function ($) {
         event.preventDefault();
         removeModal(errorModal);
     });
-
-
 
     var tutorMigrationBrowseFile = $('#tutor-migration-browse-file-link');
     var tutorMigrationBrowseFileInput = $('#tutor-migration-browse-file');
@@ -354,32 +319,6 @@ jQuery(document).ready(function ($) {
         $('form#tutor_migration_export_form').submit();
     })
 
-    // $(document).on('click', '.backup-now-btn', function(event) {
-    //     event.preventDefault();
-    //     // $('form#tutor_migration_export_form').submit();
-    //     var formData = new FormData();
-    //     formData.append("tutor_migration_vendor", $('input[name="tutor_migration_vendor"]').val());
-    //     formData.append("action", 'tutor_action_tutor_ld_export_xml');
-    //     console.log(formData); return;
-
-    //     $.ajax({
-    //         type: "POST",
-    //         url: ajaxurl,
-    //         data: formData,
-    //         success: function (res) {
-    //             if(res.success) {
-    //                 console.log(res);
-    //                 $.post(ajaxurl, { 
-    //                     migration_type : 'Exported',
-    //                     migration_vendor : $('#tutor_migration_vendor').val(),
-    //                     action: 'insert_tutor_migration_data'
-    //                 });
-    //                 // $('form#tutor_migration_export_form').submit();
-    //             }
-    //         },
-    //     });
-    // });
-
     $(document).on('click', '#manual-migrate-now-btn', function(event) {
         var formData = new FormData();
         formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
@@ -398,7 +337,7 @@ jQuery(document).ready(function ($) {
             contentType: false,
             processData: false,
             success: function (res) {
-                if(res.success) {
+                if (res.success) {
                     $('.lp-success-modal').addClass('active');
                     $.post(ajaxurl, { 
                         migration_type : 'Imported',
@@ -408,6 +347,8 @@ jQuery(document).ready(function ($) {
                     manualMigrateNowBtn.attr('disabled', 'disabled');
                     $('.tutor-migration-upload-area.file-attached').removeClass('file-attached');
                     $('.file-info').html('');
+                } else {
+                    alert('Not valid xml data!!!');
                 }
             },
         });

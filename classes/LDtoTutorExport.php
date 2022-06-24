@@ -228,9 +228,6 @@ if (! class_exists('LDtoTutorExport')) {
 
             $xml .= $this->close_element('channel');
 
-            // echo '<code>';
-            // print_r($xml);
-            // echo '</code>';
             return $xml;
         }
 
@@ -369,7 +366,6 @@ if (! class_exists('LDtoTutorExport')) {
 		public function tutor_import_from_ld(){
             global $wpdb;
             $error = true;
-
 			if (isset($_FILES['tutor_import_file'])){
                 $course_post_type = tutor()->course_post_type;
                 $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
@@ -378,8 +374,14 @@ if (! class_exists('LDtoTutorExport')) {
                     $xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
                     $xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
                     $xml_data = simplexml_load_string($xmlContent);
+                    if($xml_data == false) {
+                        wp_send_json([
+                            'success' => false,
+                            'message' => 'Migration not successfull'
+                        ]); 
+                    }
                     $courses = $xml_data->courses;
-
+                    
                     foreach ($courses as $course){
 
                         $course_data = array(
@@ -471,7 +473,7 @@ if (! class_exists('LDtoTutorExport')) {
             if($error) {
                 wp_send_json([
                     'success' => false,
-                    'message' => 'Migration not '
+                    'message' => 'Migration not successfull'
                 ]);
             } else {
                 $responce = [
@@ -480,8 +482,6 @@ if (! class_exists('LDtoTutorExport')) {
                 ];
                 wp_send_json($responce);
             }
-            // $_SESSION['tutor-migration-success'] = 'tutor-migration-success';
-            // wp_safe_redirect( $actual_link );
             // wp_redirect( $actual_link . '&notice=' . $notice );
 		}
 

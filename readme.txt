@@ -41,8 +41,7 @@ To get started with migrating your information from LearnPress/LearnDash LMS to 
   * For LearnPress (Version 3.2.6.4 or later)
   * For LearnDash ( Version 3.1.1 or later)
 
-  You need the mentioned versions or later of the plugin for the migration to work properly.
-
+You need the mentioned versions or later of the plugin for the migration to work properly.
 
 = Get Started =
 
@@ -54,10 +53,10 @@ In the LearnPress Migration tab, you will find the migration status bar. You wil
   * Sales Data
   * Reviews
 
-  And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
+And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
- * Courses
- * Sales data
+  * Courses
+  * Sales data
 
 For both migrations, click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
 
@@ -90,7 +89,7 @@ The WordPress codex contains [instructions on how to do this here](https://codex
 
 = Is This Plugin has any Dependency? =
 
-Yes, You need tutor regular plugin in order to use this plugin, You can migrate LearnPress data if exists.
+Yes, You need tutor regular plugin in order to use this plugin, You can migrate LearnPress data if exists. Take a backaup of your full website before migrate.
 
 = I need migrate others LMS data to Tutor LMS, what should I do? =
 
