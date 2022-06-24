@@ -11,11 +11,9 @@ if ( ! defined( 'ABSPATH' ) )
 
     $tutor_migration_history = $utils->fetch_history('ld');
 
-    // $courses_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
     $courses_count = $utils->ld_course_count();
     
     $orders_count = $utils->ld_orders_count();
-    // $orders_count = (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
 
     $items_count = $courses_count + $orders_count;
     ?>
