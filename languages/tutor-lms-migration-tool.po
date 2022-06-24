@@ -1,0 +1,188 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2022-06-24 16:07+0600\n"
+"PO-Revision-Date: 2022-06-24 16:07+0600\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: classes/LDtoTutorMigration.php:38 classes/LDtoTutorMigration.php:40
+msgid "LearnDash Migration"
+msgstr ""
+
+#: classes/LDtoTutorMigration.php:265 classes/LPtoTutorMigration.php:350
+msgid "Course Enrolled"
+msgstr ""
+
+#: classes/LPtoTutorMigration.php:33 classes/LPtoTutorMigration.php:35
+msgid "LearnPress Migration"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:52
+msgid ""
+"For the migration to work properly, please ensure only the LMS plugin you "
+"want to migrate from and Tutor LMS is active. Deactivate all other LMS "
+"plugins."
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:79 classes/TutorLMSMigrationTool.php:100
+msgid "Tutor Logo"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:82 classes/TutorLMSMigrationTool.php:103
+msgid "Thanks for using Tutor LMS - Migration Tool"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:83 classes/TutorLMSMigrationTool.php:104
+#, php-format
+msgid ""
+"You must have <a href=\"%s\" target=\"_blank\">Tutor</a> core version "
+"installed and activated on this website in order to use Tutor LMS - "
+"Migration Tool."
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:84 classes/TutorLMSMigrationTool.php:105
+msgid "Learn more about Tutor"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:87
+msgid "Activate Tutor"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:108
+msgid "Install Tutor"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:159
+#, php-format
+msgid "Installing Plugin: %s"
+msgstr ""
+
+#: classes/TutorLMSMigrationTool.php:210 classes/TutorLMSMigrationTool.php:213
+#: classes/TutorLMSMigrationTool.php:215
+msgid "Settings"
+msgstr ""
+
+#: views/migration_ld.php:27 views/migration_lp.php:26
+msgid "Migration"
+msgstr ""
+
+#: views/migration_ld.php:30 views/migration_lp.php:29
+msgid ""
+"Explore our integrated online learning destination that helps everyone gain "
+"the skills."
+msgstr ""
+
+#: views/migration_ld.php:42 views/migration_lp.php:40
+msgid "Auto Migrate"
+msgstr ""
+
+#: views/migration_ld.php:47 views/migration_lp.php:43
+msgid "Upload File"
+msgstr ""
+
+#: views/migration_ld.php:52 views/migration_lp.php:47
+msgid "More"
+msgstr ""
+
+#: views/migration_ld.php:75 views/migration_lp.php:70
+msgid "Destination that helps everyone gain the skills."
+msgstr ""
+
+#: views/migration_ld.php:90 views/migration_lp.php:84
+msgid "Sales Data"
+msgstr ""
+
+#: views/migration_ld.php:93 views/migration_lp.php:86
+msgid "Explore our integrated online learning"
+msgstr ""
+
+#: views/migration_ld.php:108 views/migration_lp.php:100
+msgid "Reviews"
+msgstr ""
+
+#: views/migration_ld.php:111 views/migration_lp.php:102
+msgid "Reviews left by your customers for your courses."
+msgstr ""
+
+#: views/migration_ld.php:125 views/migration_ld.php:166
+#: views/migration_lp.php:116 views/migration_lp.php:153
+msgid "Please take a complete a backup for safety."
+msgstr ""
+
+#: views/migration_ld.php:130 views/migration_ld.php:171
+#: views/migration_lp.php:120 views/migration_lp.php:157
+msgid "Backup Now"
+msgstr ""
+
+#: views/migration_ld.php:137 views/migration_ld.php:177
+#: views/migration_lp.php:126 views/migration_lp.php:162
+msgid "Migrate Now"
+msgstr ""
+
+#: views/migration_ld.php:154 views/migration_lp.php:142
+msgid "Drag & Drop XML file here"
+msgstr ""
+
+#: views/migration_ld.php:155 views/migration_lp.php:143
+msgid "Browse File"
+msgstr ""
+
+#: views/migration_ld.php:191 views/migration_lp.php:175
+msgid "Settings History"
+msgstr ""
+
+#: views/migration_ld.php:198 views/migration_lp.php:183
+msgid "Date"
+msgstr ""
+
+#: views/migration_ld.php:249 views/migration_lp.php:240
+msgid "Are you sure you want to migrate from"
+msgstr ""
+
+#: views/migration_ld.php:251
+msgid "LearnDash to Tutor LMS?"
+msgstr ""
+
+#: views/migration_ld.php:255 views/migration_lp.php:246
+msgid "No, Maybe Later!"
+msgstr ""
+
+#: views/migration_ld.php:259 views/migration_lp.php:250
+msgid "Yes, Let’s Start"
+msgstr ""
+
+#: views/migration_ld.php:287 views/migration_lp.php:279
+msgid "Migration Successful!"
+msgstr ""
+
+#: views/migration_ld.php:290
+msgid ""
+"Migration from LearnDash to Tutor LMS has been completed. Please check your "
+"contents and ensure everything is working as expected."
+msgstr ""
+
+#: views/migration_ld.php:293 views/migration_lp.php:283
+msgid "Go to dashboard"
+msgstr ""
+
+#: views/migration_lp.php:68
+msgid "Courses"
+msgstr ""
+
+#: views/migration_lp.php:242
+msgid "LearnPress to Tutor LMS?"
+msgstr ""
+
+#: views/migration_lp.php:280
+msgid "The migration from LearnPress to Tutor LMS is successfully done."
+msgstr ""
