@@ -13,7 +13,6 @@ class Utils {
                 $vendor, 0, 20
             )
         );
-        // return $vendor;
         return $result;
     }
 

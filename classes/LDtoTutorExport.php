@@ -66,6 +66,14 @@ if (! class_exists('LDtoTutorExport')) {
                             $xml .= "<{$course_col}>{$course_col_value}</{$course_col}>\n";
                         }
 
+                        $course_metas = $wpdb->get_results("SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}");
+
+                        $xml .= $this->start_element('course_meta');
+                        foreach ($course_metas as $course_meta){
+                            $xml .= "<{$course_meta->meta_key}>{$course_meta->meta_value}</{$course_meta->meta_key}>\n";
+                        }
+                        $xml .= $this->close_element('course_meta');
+
                         $total_data = LDLMS_Factory_Post::course_steps($course_id);
                         $total_data = $total_data->get_steps();
 

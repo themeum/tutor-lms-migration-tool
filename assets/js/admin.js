@@ -341,8 +341,6 @@ jQuery(document).ready(function ($) {
         var formData = new FormData();
         formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
         formData.append("action", action_name);
-        // console.log('action name ', action_name);
-        // return;
         $.ajax({
             type: "POST",
             url: ajaxurl,

@@ -176,7 +176,6 @@ final class TutorLMSMigrationTool {
 	public function used_classes() {
 		$this->classes[] = 'LPtoTutorMigration';
 		$this->classes[] = 'LDtoTutorMigration';
-		// $this->classes[] = 'Utils';
 	}
 
 	/**
