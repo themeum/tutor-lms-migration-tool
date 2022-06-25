@@ -18,7 +18,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 			add_action('tutor_action_migrate_lp_orders', array($this, 'migrate_lp_orders'));
 			add_action('tutor_action_migrate_lp_reviews', array($this, 'migrate_lp_reviews'));
 
-			add_action('tutor_action_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
+			// add_action('tutor_action_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
+			add_action('wp_ajax_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
 			add_action('tutor_action_tutor_lp_export_xml', array($this, 'tutor_lp_export_xml'));
 		}
 
@@ -496,7 +497,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 */
 		public function tutor_import_from_xml(){
 		    global $wpdb;
-
 			if (isset($_FILES['tutor_import_file'])){
 				$course_post_type = tutor()->course_post_type;
 
@@ -504,8 +504,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 				$xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
 
 				$xml_data = simplexml_load_string($xmlContent);
-				$courses = $xml_data->courses;
 
+				$courses = $xml_data->courses;
 				foreach ($courses as $course){
 
 					$course_data = array(
@@ -523,11 +523,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 					$course_meta = json_decode(json_encode($course->course_meta), true);
 					foreach ($course_meta as $course_meta_key => $course_meta_value){
-					    if ( is_array($course_meta_value)){
-						    $course_meta_value = json_encode($course_meta_value);
-					    }
-					    $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
-                    }
+						if ( is_array($course_meta_value)){
+							$course_meta_value = json_encode($course_meta_value);
+						}
+						$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+					}
 
 					foreach ($course->topics as $topic){
 						$topic_data = array(
@@ -569,7 +569,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 							if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
 								foreach ($item->questions as $question) {
-								    $answers = $question->answers;
+									$answers = $question->answers;
 
 									$question = (array) $question;
 									$question['quiz_id'] = $item_id;
@@ -585,37 +585,45 @@ if ( ! class_exists('LPtoTutorMigration')){
 										$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
 									}
 								}
-                            }
-                        }
-                    }
+							}
+						}
+					}
 
-                    if (isset($course->reviews) && is_object($course->reviews) && count($course->reviews) ){
-					    foreach ($course->reviews as $review){
-						    $rating_data = array(
-							    'comment_post_ID'   => $course_id,
-							    'comment_approved'  => 'approved',
-							    'comment_type'      => 'tutor_course_rating',
-							    'comment_date'      => (string) $review->comment_date,
-							    'comment_date_gmt'  => (string) $review->comment_date,
-							    'comment_content'   => (string) $review->comment_content,
-							    'user_id'           => (string) $review->user_id,
-							    'comment_author'    => (string) $review->comment_author,
-							    'comment_agent'     => 'TutorLMSPlugin',
-						    );
+					if (isset($course->reviews) && is_object($course->reviews) && count($course->reviews) ){
+						foreach ($course->reviews as $review){
+							$rating_data = array(
+								'comment_post_ID'   => $course_id,
+								'comment_approved'  => 'approved',
+								'comment_type'      => 'tutor_course_rating',
+								'comment_date'      => (string) $review->comment_date,
+								'comment_date_gmt'  => (string) $review->comment_date,
+								'comment_content'   => (string) $review->comment_content,
+								'user_id'           => (string) $review->user_id,
+								'comment_author'    => (string) $review->comment_author,
+								'comment_agent'     => 'TutorLMSPlugin',
+							);
 
-						    $wpdb->insert($wpdb->comments, $rating_data);
-						    $comment_id = (int) $wpdb->insert_id;
+							$wpdb->insert($wpdb->comments, $rating_data);
+							$comment_id = (int) $wpdb->insert_id;
 
-						    $rating_meta_data = array(
-							    'comment_id' => $comment_id,
-							    'meta_key' => 'tutor_rating',
-							    'meta_value' => (string) $review->tutor_rating
-						    );
-						    $wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
-                        }
-                    }
+							$rating_meta_data = array(
+								'comment_id' => $comment_id,
+								'meta_key' => 'tutor_rating',
+								'meta_value' => (string) $review->tutor_rating
+							);
+							$wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
+						}
+					}
 				}
+				wp_send_json([
+					'success' => true,
+					'message' => 'LP Migration successfull'
+				]);
 			}
+			wp_send_json([
+				'success' => false,
+				'message' => 'LP Migration not successfull'
+			]);
 		}
 
 

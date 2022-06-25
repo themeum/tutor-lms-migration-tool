@@ -136,7 +136,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 <span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
                             </div>
                             <form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
-                                <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
                                 <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
                                 <div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
                                     <div class="tutor-color-black"><?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?></div>
@@ -147,7 +146,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                             </form>
                         </div>
                     </div>
-                    <div class="tutor-px-48 tutor-py-28 tutor-border-top">
+                    <div class="tutor-px-48 tutor-py-36 tutor-border-top">
                         <div class="tutor-row tutor-align-center">
                             <div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
                                 <sapn class="backup-now-subtile tutor-fs-7"><?php _e('Please take a complete a backup for safety.','tutor-lms-migration-tool'); ?></sapn>

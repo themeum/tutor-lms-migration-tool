@@ -332,16 +332,17 @@ jQuery(document).ready(function ($) {
     })
 
     $(document).on('click', '#manual-migrate-now-btn', function(event) {
-        var formData = new FormData();
-        formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
         var fileType = $('input[name="tutor_import_file"]')[0].files[0].type;
         if(fileType != 'text/xml') {
             alert('Not supported file. Upload xml file here!');
             return;
         }
-        // formData.append("tutor_action", $('input[name="tutor_action"]').val());
-        formData.append("tutor_migration_vendor", $('input[name="tutor_migration_vendor"]').val());
-        formData.append("action", 'tutor_action_tutor_import_from_ld');
+        var action_name = $('#tutor-manual-migrate-form input[name="tutor_action"]').val();
+        var formData = new FormData();
+        formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
+        formData.append("action", action_name);
+        // console.log('action name ', action_name);
+        // return;
         $.ajax({
             type: "POST",
             url: ajaxurl,

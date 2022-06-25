@@ -11,7 +11,7 @@ if (! class_exists('LDtoTutorExport')) {
 
         public function __construct() {
             // add_action('tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
-            add_action('wp_ajax_tutor_action_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
+            add_action('wp_ajax_tutor_import_from_ld', array($this, 'tutor_import_from_ld'));
             add_action('tutor_action_tutor_ld_export_xml', array($this, 'tutor_ld_export_xml'));
             // add_action('init', array($this, 'generate_xml_data'));
 
@@ -476,11 +476,10 @@ if (! class_exists('LDtoTutorExport')) {
                     'message' => 'Migration not successfull'
                 ]);
             } else {
-                $responce = [
+                wp_send_json([
                     'success' => true,
                     'message' => 'Migration successfull'
-                ];
-                wp_send_json($responce);
+                ]);
             }
             // wp_redirect( $actual_link . '&notice=' . $notice );
 		}

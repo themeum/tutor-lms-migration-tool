@@ -118,12 +118,11 @@ if ( ! defined( 'ABSPATH' ) )
                             <div id="progressCounter"></div>
                         </form>
                     </div>
-                    <div class="tutor-backup-area tutor-p-48 tutor-border-top">
+                    <div class="tutor-backup-area tutor-px-48 tutor-py-36 tutor-border-top">
                         <div class="tutor-row tutor-align-center">
                             <div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
                                 <sapn class="backup-now-subtile tutor-fs-7"><?php _e('Please take a complete a backup for safety.','tutor-lms-migration-tool'); ?></sapn>
                                 <form id="tutor_migration_export_form" method="post">
-                                    <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
                                     <input type="hidden" name="tutor_action" value="tutor_ld_export_xml">
                                     <button <?php echo !$items_count ? 'disabled' : ''; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium">
                                         <?php _e('Backup Now','tutor-lms-migration-tool'); ?>
@@ -146,8 +145,6 @@ if ( ! defined( 'ABSPATH' ) )
                                 <span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
                             </div>
                             <form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
-                                <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
-                                <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
                                 <input type="hidden" name="tutor_action" value="tutor_import_from_ld">
                                 <div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
                                     <div class="tutor-color-black"> <?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?> </div>
