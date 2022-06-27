@@ -389,6 +389,12 @@ if (! class_exists('LDtoTutorExport')) {
                         ]); 
                     }
                     $courses = $xml_data->courses;
+                    if($courses == false) {
+                        wp_send_json([
+                            'success' => false,
+                            'message' => 'Migration not successfull'
+                        ]); 
+                    }
                     
                     foreach ($courses as $course){
 
@@ -472,9 +478,10 @@ if (! class_exists('LDtoTutorExport')) {
                                 }
                             }
                         }
+                        $error = false;
                     }
                     // $notice = 'success';
-                    $error = false;
+                    // $error = false;
                 }
             }
             

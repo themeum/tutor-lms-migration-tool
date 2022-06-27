@@ -138,40 +138,42 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			$tutor_course = array();
 			$i = 0;
-			foreach ( $curriculum as $section ) {
-				$i++;
+			if($curriculum){
+				foreach ( $curriculum as $section ) {
+					$i++;
 
-				$topic = array(
-					'post_type'     => 'topics',
-					'post_title'    => $section->get_title(),
-					'post_content'  => $section->get_description(),
-					'post_status'   => 'publish',
-					'post_author'   => $course->get_author('id'),
-					'post_parent'   => $course_id,
-					'menu_order'    => $i,
-					'items'         => array()
-				);
-
-				$lessons = $section->get_items();
-				foreach ($lessons as $lesson){
-					$item_post_type = learn_press_get_post_type( $lesson->get_id() );
-
-					if ($item_post_type !== 'lp_lesson'){
-						if ($item_post_type === 'lp_quiz'){
-							$lesson_post_type = 'tutor_quiz';
-						}
-					}
-
-					$tutor_lessons = array(
-						'ID'    => $lesson->get_id(),
-						'post_type'    => $lesson_post_type,
-						'post_parent'  => '{topic_id}',
+					$topic = array(
+						'post_type'     => 'topics',
+						'post_title'    => $section->get_title(),
+						'post_content'  => $section->get_description(),
+						'post_status'   => 'publish',
+						'post_author'   => $course->get_author('id'),
+						'post_parent'   => $course_id,
+						'menu_order'    => $i,
+						'items'         => array()
 					);
 
-					$topic['items'][] = $tutor_lessons;
-				}
+					$lessons = $section->get_items();
+					foreach ($lessons as $lesson){
+						$item_post_type = learn_press_get_post_type( $lesson->get_id() );
 
-				$tutor_course[] = $topic;
+						if ($item_post_type !== 'lp_lesson'){
+							if ($item_post_type === 'lp_quiz'){
+								$lesson_post_type = 'tutor_quiz';
+							}
+						}
+
+						$tutor_lessons = array(
+							'ID'    => $lesson->get_id(),
+							'post_type'    => $lesson_post_type,
+							'post_parent'  => '{topic_id}',
+						);
+
+						$topic['items'][] = $tutor_lessons;
+					}
+
+					$tutor_course[] = $topic;
+				}
 			}
 
 
@@ -504,8 +506,20 @@ if ( ! class_exists('LPtoTutorMigration')){
 				$xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
 
 				$xml_data = simplexml_load_string($xmlContent);
-
+				if($xml_data == false) {
+					wp_send_json([
+						'success' => false,
+						'message' => 'Migration not successfull'
+					]); 
+				}
 				$courses = $xml_data->courses;
+				if($courses == false) {
+					wp_send_json([
+						'success' => false,
+						'message' => 'Migration not successfull'
+					]);
+					exit();
+				}
 				foreach ($courses as $course){
 
 					$course_data = array(
@@ -614,11 +628,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 							$wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
 						}
 					}
+					wp_send_json([
+						'success' => true,
+						'message' => 'LP Migration successfull'
+					]);
 				}
-				wp_send_json([
-					'success' => true,
-					'message' => 'LP Migration successfull'
-				]);
 			}
 			wp_send_json([
 				'success' => false,

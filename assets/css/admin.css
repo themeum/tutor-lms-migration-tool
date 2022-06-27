@@ -353,7 +353,8 @@
     }
 }
 /* modal success */
-.lp-success-modal {
+.lp-success-modal ,
+.lp-error-modal {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -385,6 +386,7 @@
     position: relative;
     width: 80px;
 }
+
 .lp-modal-alert .lp-modal-icon.lp-modal-success{
     border-color: #A5DC86;
 }

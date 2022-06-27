@@ -230,7 +230,7 @@ jQuery(document).ready(function ($) {
     var migrationModal = $('.lp-migration-modal-wrap');
     var successModal = $('.lp-success-modal');
     var errorModal = $('.lp-error-modal');
-    var successModalClose = $('.modal-close.success-modal-close');
+    var successModalClose = $('.modal-close');
     var migrateModalClose = $('.modal-close.migration-modal-close');
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
     var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
@@ -278,6 +278,13 @@ jQuery(document).ready(function ($) {
     $(successModalClose).on('click', function (event) {
         event.preventDefault();
         removeModal(successModal);
+        removeModal(errorModal);
+    });
+
+    $('.migration-try-again-btn').on('click', function (event) {
+        event.preventDefault();
+        // removeModal(successModal);
+        removeModal(errorModal);
     });
     // error modal close button click action
     $(migrateModalClose).on('click', function (event) {
@@ -348,6 +355,7 @@ jQuery(document).ready(function ($) {
             contentType: false,
             processData: false,
             success: function (res) {
+                console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
                     $.post(ajaxurl, { 
@@ -359,7 +367,10 @@ jQuery(document).ready(function ($) {
                     $('.tutor-migration-upload-area.file-attached').removeClass('file-attached');
                     $('.file-info').html('');
                 } else {
-                    alert('Not valid xml data!!!');
+                    console.log(res);
+                    // activeModal('.lp-error-modal');
+                    activeModal(errorModal);
+                    // alert('Not valid xml dsata!!!');
                 }
             },
         });

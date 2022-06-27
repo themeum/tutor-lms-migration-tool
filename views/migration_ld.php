@@ -151,7 +151,7 @@ if ( ! defined( 'ABSPATH' ) )
                                     or <a href="" class="tutor-color-primary"> <?php _e('Browse File','tutor-lms-migration-tool'); ?> </a>
                                 </div>
                                 <input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
-                                <span class="file-info tutor-fs-6 tutor-fw-medium"></span>
+                                <span class="file-info tutor-fw-medium backup-now-subtile tutor-fs-6"></span>
                             </form>
                         </div>
                     </div>
@@ -287,6 +287,27 @@ if ( ! defined( 'ABSPATH' ) )
             </div>
 			<a href="<?php echo esc_url(admin_url()); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
 				<?php _e( 'Go to dashboard', 'tutor-lms-migration-tool' ); ?>
+			</a>
+		</div>
+	</div>
+</div>
+
+<div class="lp-error-modal-wrap">
+	<div class="lp-error-modal">
+		<div class="lp-modal-alert tutor-p-40">
+            <img class="tutor-mt-12" style="width: 80px; height: 80px;" src="<?php esc_attr_e( TLMT_URL . 'assets/img/error-modal-icon.jpg' ); ?>" alt="error-midal-alert-icon">
+            <div class="modal-close success-modal-close">
+				<span class="modal-close-line success-close-line-one"></span>
+				<span class="modal-close-line success-close-line-two"></span>
+			</div>
+			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> 
+                <?php _e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?> 
+            </div>
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> 
+                <?php _e( 'Oops... The migration from LearnDash to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?> 
+            </div>
+			<a href="" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
+				<?php _e( 'Try Again', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>

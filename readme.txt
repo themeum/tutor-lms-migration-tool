@@ -104,7 +104,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 2.0.0 - 2 March, 2022 =
+= 2.0.0 - 27 June, 2022 =
 
 * Added: Compatibility added for the Tutor LMS v2.0 plugin
 

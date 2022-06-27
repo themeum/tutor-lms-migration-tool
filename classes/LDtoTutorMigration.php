@@ -198,7 +198,7 @@ defined( 'ABSPATH' ) || exit;
             public function ld_migrate_course_to_tutor($return_type = false)
             {
                 global $wpdb;
-                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
+                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');");
 
                 $course_type = tutor()->course_post_type;
 
@@ -207,7 +207,7 @@ defined( 'ABSPATH' ) || exit;
                     $i = 0;
                     foreach ($ld_courses as $ld_course) {
                         $course_i++;
-                        $course_id = $this->update_post($course_type, $ld_course->ID, 0, '');
+                        $course_id = $this->update_post($ld_course->ID, $course_type, 0, '');
                         if ($course_id) {
                             $this->migrate_course($ld_course->ID, $course_id);
 
@@ -369,7 +369,7 @@ defined( 'ABSPATH' ) || exit;
             }
 
 
-            public function insert_post($post_type = 'topics', $post_title, $post_content, $author_id, $menu_order = 0, $post_parent = '')
+            public function insert_post($post_title, $post_content, $author_id, $post_type = 'topics', $menu_order = 0, $post_parent = '')
             {
                 $post_arg = array(
                     'post_type'     => $post_type,
@@ -383,7 +383,7 @@ defined( 'ABSPATH' ) || exit;
                 return wp_insert_post($post_arg);
             }
 
-            public function update_post($post_type = 'topics', $post_id,  $menu_order = 0, $post_parent = '')
+            public function update_post($post_id, $post_type = 'topics',  $menu_order = 0, $post_parent = '')
             {
                 global $wpdb;
                 $post_arg = array(
@@ -540,25 +540,25 @@ defined( 'ABSPATH' ) || exit;
                     if (isset($section_heading[$section_count]['order'])) {
                         if ($section_heading[$section_count]['order'] == $check) {
                             // Insert Topics
-                            $topic_id = $this->insert_post('topics', $section_heading[$section_count]['post_title'], '', $author_id, $i, $new_course_id);
+                            $topic_id = $this->insert_post($section_heading[$section_count]['post_title'], '', $author_id, 'topics', $i, $new_course_id);
                             $section_count++;
                         }
                     }
 
 
                     if ($topic_id) {
-                        $lesson_id = $this->update_post($lesson_post_type, $lesson_key, $i, $topic_id);
+                        $lesson_id = $this->update_post($lesson_key, $lesson_post_type, $i, $topic_id);
 
                         update_post_meta($lesson_id, '_tutor_course_id_for_lesson', $course_id);
 
                         foreach ($lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner) {
 
-                            $lesson_id = $this->update_post($lesson_post_type, $lesson_inner_key, $i, $topic_id); // Insert Lesson
+                            $lesson_id = $this->update_post($lesson_inner_key, $lesson_post_type, $i, $topic_id); // Insert Lesson
 
                             update_post_meta($lesson_id, '_tutor_course_id_for_lesson', $course_id);
 
                             foreach ($lesson_inner['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                                $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                                $quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 
                                 if ($quiz_id) {
                                     $this->migrate_quiz($quiz_id);
@@ -567,7 +567,7 @@ defined( 'ABSPATH' ) || exit;
                         }
 
                         foreach ($lesson_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                            $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                            $quiz_id = $this->update_post($quiz_key, 'tutor_quiz', $i, $topic_id);
                             if ($quiz_id) {
                                 $this->migrate_quiz($quiz_id);
                             }
@@ -578,7 +578,7 @@ defined( 'ABSPATH' ) || exit;
 
                 if (!empty($total_data['sfwd-quiz'])) {
                     foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                        $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                        $quiz_id = $this->update_post($quiz_key, 'tutor_quiz', $i, $topic_id);
                         if ($quiz_id) {
                             $this->migrate_quiz($quiz_id);
                         }
