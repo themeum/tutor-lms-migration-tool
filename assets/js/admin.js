@@ -26,9 +26,7 @@ jQuery(document).ready(function ($) {
      * LP Migration
      * Since v.1.4.6
      */
-
     var checkProgress;
-
     function get_live_progress_course_migrating_info(final_types = 'lp') {
         $.ajax({
             url: ajaxurl,
@@ -49,7 +47,6 @@ jQuery(document).ready(function ($) {
     function migration_progress_bar(cmplete) {
         var $progressBar = $('#sectionCourse').find('.tutor-progress');
         var data_parcent = parseInt($progressBar.attr('data-percent'));
-
         if (cmplete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
@@ -84,17 +81,14 @@ jQuery(document).ready(function ($) {
             },
             success: function (data) {
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_done');
-
                 migration_progress_bar(true);
                 migrate_orders($formData, final_types);
-                
             },
             complete: function () {
                 clearTimeout(countReviewsProgress);
                 clearTimeout(checkProgress);
                 clearTimeout(countProgress);
                 $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
-
                 $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
             }
         });
@@ -114,7 +108,6 @@ jQuery(document).ready(function ($) {
         }
     }
     function migrate_orders($formData, final_types) {
-
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -122,12 +115,10 @@ jQuery(document).ready(function ($) {
             beforeSend: function (XMLHttpRequest) {
                 get_live_progress_course_migrating_info();
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
-
                 order_migration_progress_bar(final_types);
             },
             success: function (data) {
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_done');
-
                 order_migration_progress_bar(true);
                 migrate_reviews($formData);
             },
@@ -145,12 +136,10 @@ jQuery(document).ready(function ($) {
     /**
      * Migrate And Progress Reviews
      */
-
     var countReviewsProgress;
     function reviews_migration_progress_bar(cmplete) {
         var $progressBar = $('#sectionReviews').find('.tutor-progress');
         var data_parcent = parseInt($progressBar.attr('data-percent'));
-
         if (cmplete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
@@ -165,16 +154,13 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             data: $formData + '&migrate_type=reviews',
             beforeSend: function (XMLHttpRequest) {
-
                 get_live_progress_course_migrating_info();
                 $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
-
                 reviews_migration_progress_bar();
             },
             success: function (data) {
                 $('#sectionReviews').find('.j-spinner').addClass('tmtl_done');
                 reviews_migration_progress_bar(true);
-
                 if (data.success) {
                     clearTimeout(countReviewsProgress);
                     clearTimeout(checkProgress);
@@ -186,7 +172,6 @@ jQuery(document).ready(function ($) {
                     });
                     $('.lp-success-modal').addClass('active');
                 }
-
             },
             complete: function () {
                 clearTimeout(countReviewsProgress);
@@ -198,31 +183,6 @@ jQuery(document).ready(function ($) {
             }
         });
     }
-
-    /*
-    $(document).on( 'click', '#migrate_lp_courses_btn',  function( e ){
-        e.preventDefault();
-
-        var $that = $(this);
-        $.ajax({
-            url : ajaxurl,
-            type : 'POST',
-            data : {action : 'lp_migrate_course_to_tutor' },
-            beforeSend: function (XMLHttpRequest) {
-                $that.addClass('tutor-updating-message');
-                get_live_progress_course_migrating_info();
-            },
-            success: function (data) {
-                if (data.success) {
-                    window.location.reload();
-                }
-            },
-            complete: function () {
-                $that.removeClass('tutor-updating-message');
-            }
-        });
-    });
-    */
 
     var migrateBtn = $(".migrate-now-btn");
     var migrateLaterBtn = $('.migration-later-btn');
@@ -243,19 +203,12 @@ jQuery(document).ready(function ($) {
     function removeModal(removeItem) {
         removeItem.removeClass('active');
     }
-
-    
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
         if (totalItemsMigrateCounts > 0) {
             migrationModal.addClass('active');
         }
-        //  else {
-        //     if (!event.detail || event.detail == 1) {
-        //         tutor_toast('Warning', 'Nothing to migrate from ' + document.querySelector('.lp-migration-heading h3').innerText.split(' ')[0], 'warning');
-        //     }
-        // }
     });
     
     // migrate now button click
@@ -266,7 +219,6 @@ jQuery(document).ready(function ($) {
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
         }
     });
-
 
     // migration later button click action
     $(migrateLaterBtn).on('click', function (event) {
@@ -354,8 +306,10 @@ jQuery(document).ready(function ($) {
             data: formData,
             contentType: false,
             processData: false,
+            beforeSend: function (XMLHttpRequest) {
+                manualMigrateNowBtn.attr('disabled', 'disabled');
+            },
             success: function (res) {
-                console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
                     $.post(ajaxurl, { 
@@ -367,10 +321,8 @@ jQuery(document).ready(function ($) {
                     $('.tutor-migration-upload-area.file-attached').removeClass('file-attached');
                     $('.file-info').html('');
                 } else {
-                    console.log(res);
-                    // activeModal('.lp-error-modal');
+                    manualMigrateNowBtn.removeAttr('disabled', 'disabled');
                     activeModal(errorModal);
-                    // alert('Not valid xml dsata!!!');
                 }
             },
         });
@@ -384,7 +336,6 @@ const dropZoneInputs = document.querySelectorAll('.tutor-migration-drag-drop-zon
 
 dropZoneInputs.forEach((inputEl) => {
 	const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
-
 	['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
 		if (dragEvent === 'dragover') {
 			dropZone.addEventListener(dragEvent, (e) => {

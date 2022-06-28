@@ -8,8 +8,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function __construct() {
 			add_filter('tutor_tool_pages', array($this, 'tutor_tool_pages'));
 
-			//add_action('wp_ajax_lp_migrate_course_to_tutor', array($this, 'lp_migrate_course_to_tutor'));
-
 			add_action('wp_ajax_lp_migrate_all_data_to_tutor', array($this, 'lp_migrate_all_data_to_tutor'));
 			add_action('wp_ajax_tlmt_reset_migrated_items_count', array($this, 'tlmt_reset_migrated_items_count'));
 
@@ -18,7 +16,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 			add_action('tutor_action_migrate_lp_orders', array($this, 'migrate_lp_orders'));
 			add_action('tutor_action_migrate_lp_reviews', array($this, 'migrate_lp_reviews'));
 
-			// add_action('tutor_action_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
 			add_action('wp_ajax_tutor_import_from_xml', array($this, 'tutor_import_from_xml'));
 			add_action('tutor_action_tutor_lp_export_xml', array($this, 'tutor_lp_export_xml'));
 		}
@@ -26,10 +23,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function tutor_tool_pages($pages){
 			$hasLPdata = get_option('learnpress_version');
 
-			// if ($hasLPdata){
 			if (defined('LEARNPRESS_VERSION') ) {
-			// if (defined('LEARNPRESS_VERSION') && !defined('LEARNDASH_VERSION') ) {
-					// $pages['migration_lp'] = array('title' =>  __('LearnPress Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_lp.php');
 				$pages['migration_lp'] = array(
 					'label'    => __( 'LearnPress Migration', 'tutor' ),
 					'slug'     => 'migration_lp',
@@ -54,29 +48,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 		}
 
 		public function lp_migrate_all_data_to_tutor(){
-			//delete_option('_tutor_migrated_items_count');
-
-			/*
-			if (isset($_POST['import']) && is_array($_POST['import'])){
-			    $i = 0;
-		        foreach ($_POST['import'] as $migrate_item_key => $value ){
-			        $i++;
-		            update_option('_tutor_migrated_items_count', $i);
-		            sleep(2);
-		            switch ($migrate_item_key){
-                        case 'courses':
-                            //$this->lp_migrate_course_to_tutor();
-                            break;
-			            case 'orders':
-			                //$this->migrate_lp_orders();
-				            break;
-			            case 'reviews':
-			                //$this->migrate_lp_reviews();
-				            break;
-                    }
-                }
-            }
-            */
 
             if (isset($_POST['migrate_type'])){
 			    $migrate_type = sanitize_text_field($_POST['migrate_type']);
@@ -171,7 +142,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 						$topic['items'][] = $tutor_lessons;
 					}
-
 					$tutor_course[] = $topic;
 				}
 			}
@@ -254,7 +224,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 						}
 
-
 						$lesson['post_parent'] = $topic_id;
 						wp_update_post($lesson);
 
@@ -269,12 +238,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 						}else{
 							delete_post_meta($lesson_id, '_is_preview');
 						}
-
-
 					}
-
-
-
 				}
 			}
 
@@ -320,7 +284,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 						update_post_meta( $product_id, $key, $value );
 					}
 				}
-
 				/**
 				 * Attaching product to course
 				 */
@@ -337,12 +300,13 @@ if ( ! class_exists('LPtoTutorMigration')){
 			 * Enrollment Migration to this course
 			 */
 			$lp_enrollments = $wpdb->get_results( "SELECT lp_user_items.*,
-        lp_order.ID as order_id,
-        lp_order.post_date as order_time
+													lp_order.ID as order_id,
+													lp_order.post_date as order_time
 
-        FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-        LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-        WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled'" );
+													FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+													LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+													WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled'" 
+			);
 
 			foreach ($lp_enrollments as $lp_enrollment){
 				$user_id = $lp_enrollment->user_id;
@@ -499,11 +463,32 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 */
 		public function tutor_import_from_xml(){
 		    global $wpdb;
+			$wpdb->query('START TRANSACTION');
+            $error = true;
 			if (isset($_FILES['tutor_import_file'])){
 				$course_post_type = tutor()->course_post_type;
 
 				$xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
-				$xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
+				libxml_use_internal_errors(true);
+				$replacer = array(
+					'&' => '&amp;',
+					' allowfullscreen' => ' allowfullscreen="allowfullscreen"', // don't remove space
+					' disabled' => ' disabled="disabled"'
+				);
+				
+				$xmlContent = str_replace(array_keys($replacer), array_values($replacer), $xmlContent);
+				$xml_data = simplexml_load_string($xmlContent, null, LIBXML_NOCDATA);
+				if($xml_data == false) {
+					$errors = libxml_get_errors();
+					$error_message = '';
+					if(is_array($errors)) {
+						$error_message = $errors[0]->message . 'on line number ' . $errors[0]->line;
+					}
+					wp_send_json([
+						'success' => false,
+						'message' => $error_message,
+					]);
+				}
 
 				$xml_data = simplexml_load_string($xmlContent);
 				if($xml_data == false) {
@@ -518,7 +503,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 						'success' => false,
 						'message' => 'Migration not successfull'
 					]);
-					exit();
 				}
 				foreach ($courses as $course){
 
@@ -540,7 +524,21 @@ if ( ! class_exists('LPtoTutorMigration')){
 						if ( is_array($course_meta_value)){
 							$course_meta_value = json_encode($course_meta_value);
 						}
-						$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+						if($course_meta_key == '_thumbnail_id') {
+							$thumbnail_post = $wpdb->get_results(
+								$wpdb->prepare(
+									"SELECT  * FROM {$wpdb->posts}
+									WHERE `ID` = %d
+									LIMIT %d",
+									$course_meta_value,1
+								)
+							);
+							if(count($thumbnail_post)) {
+								$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+							}
+						} else {
+							$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+						}
 					}
 
 					foreach ($course->topics as $topic){
@@ -628,16 +626,22 @@ if ( ! class_exists('LPtoTutorMigration')){
 							$wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
 						}
 					}
-					wp_send_json([
-						'success' => true,
-						'message' => 'LP Migration successfull'
-					]);
 				}
+				$error = false;
 			}
-			wp_send_json([
-				'success' => false,
-				'message' => 'LP Migration not successfull'
-			]);
+			if($error) {
+                $wpdb->query('ROLLBACK');
+                wp_send_json([
+                    'success' => false,
+                    'message' => 'LP Migration not successfull'
+                ]);
+            } else {
+                $wpdb->query('COMMIT');
+				wp_send_json([
+					'success' => true,
+					'message' => 'LP Migration successfull'
+				]);
+            }
 		}
 
 
@@ -669,15 +673,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			$lp_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status  FROM {$wpdb->posts} WHERE post_type = 'lp_course' AND post_status = 'publish';");
 
-			//$xml .= $this->start_element('courses');
-
 			if (tutils()->count($lp_courses)){
 				$course_i = 0;
 				foreach ($lp_courses as $lp_course){
 					$course_i++;
-
-					//print_r($lp_course);
-					//post_type
 
 					$course_id = $lp_course->ID;
 
@@ -707,7 +706,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 						$i            = 0;
 
-						//$xml .= $this->start_element('topics');
 						if($curriculum) {
 							foreach ( $curriculum as $section ) {
 								$i ++;
@@ -731,12 +729,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 								/**
 								 * Lessons
 								 */
-								//$xml .= $this->start_element('items');
-
 								$lessons = $this->get_lp_section_items($section->get_id());
 
 								foreach ( $lessons as $lesson ) {
-									//print_r($lesson);
 									$item_post_type = $lesson->item_type;
 
 									if ( $item_post_type !== 'lp_lesson' ) {
@@ -765,10 +760,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 											$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
 										}
 									}
-									//print_r($item_metas);
 
 									$xml .= $this->close_element('item_meta');
-									//$xml .= $this->start_element('questions');
 
 									if ($lesson_post_type === 'tutor_quiz'){
 										$quiz_id = $lesson->id;
@@ -811,11 +804,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 														$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
 													}
 
-													//$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $new_question_data);
-													//$question_id = $wpdb->insert_id;
 													$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
-
-													//$xml .= $this->start_element('answers');
 
 													if (tutils()->count($answer_items)){
 														foreach ($answer_items as $answer_item){
@@ -835,11 +824,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 																$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
 															}
 															$xml .= $this->close_element('answers');
-
-															//$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer_data);
 														}
 													}
-													//$xml .= $this->close_element('answers');
 
 													$xml .= $this->close_element('questions');
 												}
@@ -847,22 +833,15 @@ if ( ! class_exists('LPtoTutorMigration')){
 										}
 									}
 
-									//$xml .= $this->close_element('questions');
-
 									$xml .= $this->close_element('items');
 								}
-
-								//Close Lessons Tag
-								//$xml .= $this->close_element('items');
 
 								//Close Topic Tag
 								$xml .= $this->close_element('topics');
 							}
 						}
-						//$xml .= $this->close_element('topics');
 					}
 
-					//$xml .= $this->start_element('reviews');
 					$lp_reviews = $wpdb->get_results("SELECT comments.comment_post_ID,
                     comments.comment_post_ID,
                     comments.comment_author,
@@ -889,12 +868,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 						}
 					}
 
-					//$xml .= $this->close_element('reviews');
 					$xml .= $this->close_element('courses');
 				}
 			}
 
-			//$xml .= $this->close_element('courses');
 			$xml .= $this->close_element('channel');
 			return $xml;
 		}
@@ -910,7 +887,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 			if ( ! seems_utf8( $str ) ) {
 				$str = utf8_encode( $str );
 			}
-			// $str = ent2ncr(esc_html($str));
 			$str = '<![CDATA[' . str_replace( ']]>', ']]]]><![CDATA[>', $str ) . ']]>';
 
 			return $str;

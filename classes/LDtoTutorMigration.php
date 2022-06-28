@@ -70,13 +70,6 @@ defined( 'ABSPATH' ) || exit;
                             $this->ld_order_migrate();
                             break;
                     }
-
-                    // $item_data = array(
-                    //     'order_item_name'   => get_the_title($course_id),
-                    //     'order_item_type'   => 'line_item',
-                    //     'order_id'          => $course_id,
-                    // );
-                    // $wpdb->insert($wpdb->prefix.'woocommerce_order_items', $item_data);
                     
                     wp_send_json_success();
                 }
@@ -453,9 +446,6 @@ defined( 'ABSPATH' ) || exit;
                             'question_mark' => $result['points']
                         ));
 
-                        // echo '<pre>';
-                        // print_r( $question );
-                        // echo '</pre>';
                         $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
 
                         // Will Return $questions
@@ -493,9 +483,6 @@ defined( 'ABSPATH' ) || exit;
                                     }
                                     $i++;
                                 }
-                                // echo '<pre>';
-                                // print_r( $answer );
-                                // echo '</pre>';
                                 $wpdb->insert( $wpdb->prefix.'tutor_quiz_question_answers', $answer );
                             }
                         }
@@ -509,10 +496,6 @@ defined( 'ABSPATH' ) || exit;
                     }
                 }
             }
-
-
-
-
 
             public function migrate_course($course_id, $new_course_id)
             {

@@ -70,7 +70,6 @@ final class TutorLMSMigrationTool {
 		return $default;
 	}
 
-
 	public function free_plugin_installed_but_inactive_notice() {
 		?>
 		<div class="notice notice-error tutor-install-notice">
@@ -90,7 +89,6 @@ final class TutorLMSMigrationTool {
 		</div>
 		<?php
 	}
-
 
 	public function free_plugin_not_installed() {
 		?>
@@ -116,7 +114,6 @@ final class TutorLMSMigrationTool {
 	public function activate_tutor_free() {
 		activate_plugin( 'tutor/tutor.php' );
 	}
-
 
 	public function install_tutor_plugin() {
 		include ABSPATH . 'wp-admin/includes/plugin-install.php';
@@ -196,6 +193,7 @@ final class TutorLMSMigrationTool {
 	public function load_assets() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 	}
+
 	public function admin_scripts() {
 		wp_enqueue_style( 'tlmt-admin', TLMT_URL . 'assets/css/admin.css', array(), TLMT_VERSION );
 		if ( function_exists( 'tutils' ) ) {
@@ -204,6 +202,7 @@ final class TutorLMSMigrationTool {
 			wp_enqueue_script( 'tlmt-admin', TLMT_URL . 'assets/js/admin.js', array( 'jquery' ), TLMT_VERSION, true );
 		}
 	}
+	
 	public function plugin_action_links( $actions ) {
 		if ( defined( 'LP_PLUGIN_FILE' ) ) {
 			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
