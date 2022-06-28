@@ -354,6 +354,9 @@ jQuery(document).ready(function ($) {
             data: formData,
             contentType: false,
             processData: false,
+            beforeSend: function (XMLHttpRequest) {
+                manualMigrateNowBtn.attr('disabled', 'disabled');
+            },
             success: function (res) {
                 console.log(res);
                 if (res.success) {
@@ -367,10 +370,8 @@ jQuery(document).ready(function ($) {
                     $('.tutor-migration-upload-area.file-attached').removeClass('file-attached');
                     $('.file-info').html('');
                 } else {
-                    console.log(res);
-                    // activeModal('.lp-error-modal');
+                    manualMigrateNowBtn.removeAttr('disabled', 'disabled');
                     activeModal(errorModal);
-                    // alert('Not valid xml dsata!!!');
                 }
             },
         });

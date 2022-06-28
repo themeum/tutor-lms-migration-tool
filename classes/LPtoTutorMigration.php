@@ -499,11 +499,33 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 */
 		public function tutor_import_from_xml(){
 		    global $wpdb;
+			$wpdb->query('START TRANSACTION');
+            $error = true;
 			if (isset($_FILES['tutor_import_file'])){
 				$course_post_type = tutor()->course_post_type;
 
 				$xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
-				$xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
+				// $xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
+				libxml_use_internal_errors(true);
+				$replacer = array(
+					'&' => '&amp;',
+					' allowfullscreen' => ' allowfullscreen="allowfullscreen"', // don't remove space
+					' disabled' => ' disabled="disabled"'
+				);
+				
+				$xmlContent = str_replace(array_keys($replacer), array_values($replacer), $xmlContent);
+				$xml_data = simplexml_load_string($xmlContent, null, LIBXML_NOCDATA);
+				if($xml_data == false) {
+					$errors = libxml_get_errors();
+					$error_message = '';
+					if(is_array($errors)) {
+						$error_message = $errors[0]->message . 'on line number ' . $errors[0]->line;
+					}
+					wp_send_json([
+						'success' => false,
+						'message' => $error_message,
+					]);
+				}
 
 				$xml_data = simplexml_load_string($xmlContent);
 				if($xml_data == false) {
@@ -518,7 +540,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 						'success' => false,
 						'message' => 'Migration not successfull'
 					]);
-					exit();
 				}
 				foreach ($courses as $course){
 
@@ -540,7 +561,21 @@ if ( ! class_exists('LPtoTutorMigration')){
 						if ( is_array($course_meta_value)){
 							$course_meta_value = json_encode($course_meta_value);
 						}
-						$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+						if($course_meta_key == '_thumbnail_id') {
+							$thumbnail_post = $wpdb->get_results(
+								$wpdb->prepare(
+									"SELECT  * FROM {$wpdb->posts}
+									WHERE `ID` = %d
+									LIMIT %d",
+									$course_meta_value,1
+								)
+							);
+							if(count($thumbnail_post)) {
+								$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+							}
+						} else {
+							$wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+						}
 					}
 
 					foreach ($course->topics as $topic){
@@ -628,16 +663,22 @@ if ( ! class_exists('LPtoTutorMigration')){
 							$wpdb->insert( $wpdb->commentmeta,  $rating_meta_data);
 						}
 					}
-					wp_send_json([
-						'success' => true,
-						'message' => 'LP Migration successfull'
-					]);
 				}
+				$error = false;
 			}
-			wp_send_json([
-				'success' => false,
-				'message' => 'LP Migration not successfull'
-			]);
+			if($error) {
+                $wpdb->query('ROLLBACK');
+                wp_send_json([
+                    'success' => false,
+                    'message' => 'LP Migration not successfull'
+                ]);
+            } else {
+                $wpdb->query('COMMIT');
+				wp_send_json([
+					'success' => true,
+					'message' => 'LP Migration successfull'
+				]);
+            }
 		}
 
 
@@ -669,15 +710,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			$lp_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status  FROM {$wpdb->posts} WHERE post_type = 'lp_course' AND post_status = 'publish';");
 
-			//$xml .= $this->start_element('courses');
-
 			if (tutils()->count($lp_courses)){
 				$course_i = 0;
 				foreach ($lp_courses as $lp_course){
 					$course_i++;
-
-					//print_r($lp_course);
-					//post_type
 
 					$course_id = $lp_course->ID;
 

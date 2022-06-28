@@ -65,7 +65,6 @@ if (! class_exists('LDtoTutorExport')) {
                         foreach ($course_arr as $course_col => $course_col_value) {
                             $xml .= "<{$course_col}>{$course_col_value}</{$course_col}>\n";
                         }
-
                         $course_metas = $wpdb->get_results("SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}");
 
                         $xml .= $this->start_element('course_meta');
@@ -162,10 +161,6 @@ if (! class_exists('LDtoTutorExport')) {
                                 $xml_inner[] = $xml_quiz;
                             }
                         }
-
-                        // echo '<pre>';
-                        // print_r($total_data);
-                        // echo '</pre>';
 
                         if (!empty($total_data['sfwd-quiz'])) {
                             foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
@@ -373,6 +368,7 @@ if (! class_exists('LDtoTutorExport')) {
 		 */
 		public function tutor_import_from_ld(){
             global $wpdb;
+            $wpdb->query('START TRANSACTION');
             $error = true;
 			if (isset($_FILES['tutor_import_file'])){
                 $course_post_type = tutor()->course_post_type;
@@ -380,13 +376,20 @@ if (! class_exists('LDtoTutorExport')) {
 
                 if( $_FILES['tutor_import_file']['tmp_name'] ) {
                     $xmlContent = file_get_contents($_FILES['tutor_import_file']['tmp_name']);
-                    $xmlContent = str_replace(array( '<![CDATA[', ']]>'),'', $xmlContent);
-                    $xml_data = simplexml_load_string($xmlContent);
+                    // $xmlContent = str_replace(array( '<![CDATA[', ']]>', '&'),'', $xmlContent);
+                    libxml_use_internal_errors(true);
+                    $xmlContent = str_replace(array('&'), '&amp;', $xmlContent);
+                    $xml_data = simplexml_load_string($xmlContent, null, LIBXML_NOCDATA);
                     if($xml_data == false) {
+                        $errors = libxml_get_errors();
+                        $error_message = '';
+                        if(is_array($errors)) {
+                            $error_message = $errors[0]->message . 'on line number ' . $errors[0]->line;
+                        }
                         wp_send_json([
                             'success' => false,
-                            'message' => 'Migration not successfull'
-                        ]); 
+                            'message' => $error_message,
+                        ]);
                     }
                     $courses = $xml_data->courses;
                     if($courses == false) {
@@ -397,7 +400,6 @@ if (! class_exists('LDtoTutorExport')) {
                     }
                     
                     foreach ($courses as $course){
-
                         $course_data = array(
                             'post_author'   => (string) $course->post_author,
                             'post_date'     => (string)$course->post_date,
@@ -416,7 +418,21 @@ if (! class_exists('LDtoTutorExport')) {
                             if ( is_array($course_meta_value)){
                                 $course_meta_value = json_encode($course_meta_value);
                             }
-                            $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+                            if($course_meta_key == '_thumbnail_id') {
+                                $thumbnail_post = $wpdb->get_results(
+                                    $wpdb->prepare(
+                                        "SELECT  * FROM {$wpdb->posts}
+                                        WHERE `ID` = %d
+                                        LIMIT %d",
+                                        $course_meta_value,1
+                                    )
+                                );
+                                if($thumbnail_post) {
+                                    $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+                                }
+                            } else {
+                                $wpdb->insert($wpdb->postmeta, array('post_id' => $course_id, 'meta_key' => $course_meta_key, 'meta_value' =>$course_meta_value));
+                            }
                         }
 
                         foreach ($course->topics as $topic){
@@ -478,25 +494,23 @@ if (! class_exists('LDtoTutorExport')) {
                                 }
                             }
                         }
-                        $error = false;
                     }
-                    // $notice = 'success';
-                    // $error = false;
+                    $error = false;
                 }
             }
-            
             if($error) {
+                $wpdb->query('ROLLBACK');
                 wp_send_json([
                     'success' => false,
                     'message' => 'Migration not successfull'
                 ]);
             } else {
+                $wpdb->query('COMMIT');
                 wp_send_json([
                     'success' => true,
                     'message' => 'Migration successfull'
                 ]);
             }
-            // wp_redirect( $actual_link . '&notice=' . $notice );
 		}
 
     }
