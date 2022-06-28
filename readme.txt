@@ -2,10 +2,10 @@
 Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
-Requires at least: 4.5
-Tested up to: 5.6
-Requires PHP: 5.4.0
-Stable tag: 1.0.4
+Requires at least: 5.0
+Tested up to: 6.0
+Requires PHP: 7.2
+Stable tag: 2.0.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -26,20 +26,19 @@ Currently Tutor LMS Migration support migration options from
 * LearnPress
 * LearnDash
 
-
 = Pre-requisites =
 
 To get started with migrating your information from LearnPress/LearnDash LMS to Tutor LMS in the easiest way, you need to make sure you have the following plugins installed.
 
 **Note:** Note: Currently the Tutor LMS Migration Tool supports migration from LearnPress/LearnDash to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
 
-  * Tutor LMS (Version 1.4.6 or later) for migration from LearnPress
-  * Tutor LMS (Version 1.5.0 or later) for migrating from LearnDash
+  * Tutor LMS (Version 2.0.0 or later) for migration from LearnPress
+  * Tutor LMS (Version 2.0.0 or later) for migrating from LearnDash
 
   And the following plugins for their respective migrations
 
-  * For LearnPress (Version 3.2.6.4 or later)
-  * For LearnDash ( Version 3.1.1 or later)
+  * For LearnPress (Version 4.0 or later)
+  * For LearnDash ( Version 4.0 or later)
 
 You need the mentioned versions or later of the plugin for the migration to work properly.
 
@@ -56,7 +55,7 @@ In the LearnPress Migration tab, you will find the migration status bar. You wil
 And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
   * Courses
-  * Sales data
+  * Sales Data
 
 For both migrations, click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
 
@@ -70,7 +69,7 @@ With Tutor LMS Migration Tool you can also separately export the data to your lo
 
 = Minimum Requirements =
 
-* PHP version 5.6.0 or greater (PHP 7.1 or greater is recommended)
+* PHP version 7.2 or greater (PHP 7.4 or greater is recommended)
 * MySQL version 5.0 or greater (MySQL 5.6 or greater is recommended)
 
 = Automatic installation =
@@ -104,6 +103,14 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
+= 2.0.0 - 28 June, 2022 =
+
+* New: New design is introduced for the Migration Tool to make it more user friendly
+* New: Migration performance is enhanced
+* New: Migration History will be 
+* Update: Compatibility with WordPress 6.0 and Tutor LMS 2.0 is 
+* Fix: Once migration is initiated, it kept loading behind the screen until the page is refreshed
+
 = 1.0.4 - 30 January, 2020 =
 
 * Added: LearnDash to Tutor LMS Migration Tool
@@ -126,4 +133,4 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Upgrade Notice ==
 
-nothing here.
+None Available

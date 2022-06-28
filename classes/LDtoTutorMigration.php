@@ -7,16 +7,44 @@ defined( 'ABSPATH' ) || exit;
             public function __construct()
             {
                 add_filter('tutor_tool_pages', array($this, 'ld_tool_pages'));
+                add_action('wp_ajax_insert_tutor_migration_data', array($this, 'insert_tutor_migration_data'));
                 add_action('wp_ajax_ld_migrate_all_data_to_tutor', array($this, 'ld_migrate_all_data_to_tutor'));
                 add_action('wp_ajax_ld_reset_migrated_items_count', array($this, 'ld_reset_migrated_items_count'));
                 add_action('wp_ajax__get_ld_live_progress_course_migrating_info', array($this, '_get_ld_live_progress_course_migrating_info'));
             }
 
+            public function insert_tutor_migration_data(){
+                global $wpdb;
+                $tutor_migration_table_data = [
+                    'migration_type' => $_POST['migration_type'],
+                    'migration_vendor' => $_POST['migration_vendor'],
+                    'created_by' => get_current_user_id(),
+                    'created_at' => current_time('mysql'),
+                ];
+
+                $wpdb->insert(
+                    $wpdb->prefix . 'tutor_migration',
+                    $tutor_migration_table_data
+                );
+            }
+
 
             public function ld_tool_pages($pages)
             {
-                if (defined('LEARNDASH_VERSION')) {
-                    $pages['migration_ld'] = array('title' =>  __('LearnDash Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_ld.php');
+                // if (defined('LEARNDASH_VERSION') && !defined('LEARNPRESS_VERSION') ) {
+                if (defined('LEARNDASH_VERSION') ) {
+                    // $pages['migration_ld'] = array('title' =>  __('LearnDash Migration', 'tutor-lms-migration-tool'), 'view_path' => TLMT_PATH.'views/migration_ld.php');
+                    $pages['migration_ld'] = array(
+                        'label'    => __( 'LearnDash Migration', 'tutor' ),
+                        'slug'     => 'migration_ld',
+                        'desc'     => __( 'LearnDash Migration', 'tutor' ),
+                        'template' => 'migration_ld',
+                        'view_path'     => TLMT_PATH . 'views/',
+                        'icon'     => 'tutor-icon-brand-learndash',
+                        'blocks'   => array(
+                            'block' => array(),
+                        ),
+                    );
                 }
                 return $pages;
             }
@@ -42,28 +70,28 @@ defined( 'ABSPATH' ) || exit;
                             $this->ld_order_migrate();
                             break;
                     }
-
+                    
                     wp_send_json_success();
                 }
                 wp_send_json_error();
             }
 
 
-            // Order 
+            // Order
             public function ld_order_migrate(){
                 global $wpdb;
-                
+
                 $monetize_by = tutils()->get_option('monetize_by');
 
                 $ld_orders = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
                 $item_i = (int) get_option('_tutor_migrated_items_count');
 
                 if (tutils()->has_wc() && $monetize_by == 'wc') {
-                    
+
                     foreach ($ld_orders as $order) {
                         $item_i++;
                         update_option('_tutor_migrated_items_count', $item_i);
-                
+
                         $migrate_order_data = array(
                             'ID'            => $order->ID,
                             'post_status'   => 'wc-completed',
@@ -71,7 +99,7 @@ defined( 'ABSPATH' ) || exit;
                         );
                         wp_update_post($migrate_order_data);
 
-                        // Order Item 
+                        // Order Item
                         $course_id = get_post_meta($order->ID, 'course_id', true);
                         $item_data = array(
                             'order_item_name'   => get_the_title($course_id),
@@ -112,7 +140,7 @@ defined( 'ABSPATH' ) || exit;
                 }
 
                 if ( tutils()->has_edd() && $monetize_by == 'edd' ) {
-                    
+
                     foreach ($ld_orders as $order) {
                         $item_i++;
                         update_option('_tutor_migrated_items_count', $item_i);
@@ -163,7 +191,7 @@ defined( 'ABSPATH' ) || exit;
             public function ld_migrate_course_to_tutor($return_type = false)
             {
                 global $wpdb;
-                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish';");
+                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');");
 
                 $course_type = tutor()->course_post_type;
 
@@ -172,9 +200,10 @@ defined( 'ABSPATH' ) || exit;
                     $i = 0;
                     foreach ($ld_courses as $ld_course) {
                         $course_i++;
-                        $course_id = $this->update_post($course_type, $ld_course->ID, 0, '');
+                        $course_id = $this->update_post($ld_course->ID, $course_type, 0, '');
                         if ($course_id) {
                             $this->migrate_course($ld_course->ID, $course_id);
+
                             update_option('_tutor_migrated_items_count', $course_i);
 
                             // Attached Product
@@ -219,13 +248,13 @@ defined( 'ABSPATH' ) || exit;
             {
                 global $wpdb;
                 $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}usermeta WHERE meta_key = 'course_{$course_id}_access_from'");
-    
+
                 foreach ($ld_enrollments as $ld_enrollment) {
                     $user_id = $ld_enrollment->user_id;
-    
+
                     if (! tutils()->is_enrolled($course_id, $user_id)) {
                         $order_time = strtotime($ld_enrollment->meta_value);
-    
+
                         $title = __('Course Enrolled', 'tutor')." &ndash; ".date(get_option('date_format'), $order_time).' @ '.date(get_option('time_format'), $order_time);
                         $tutor_enrollment_data = array(
                             'post_type'   => 'tutor_enrolled',
@@ -234,9 +263,9 @@ defined( 'ABSPATH' ) || exit;
                             'post_author' => $user_id,
                             'post_parent' => $course_id,
                         );
-    
+
                         $isEnrolled = wp_insert_post($tutor_enrollment_data);
-    
+
                         if ($isEnrolled) {
                             //Mark Current User as Students with user meta data
                             update_user_meta($user_id, '_is_tutor_student', $order_time);
@@ -333,7 +362,7 @@ defined( 'ABSPATH' ) || exit;
             }
 
 
-            public function insert_post($post_type = 'topics', $post_title, $post_content, $author_id, $menu_order = 0, $post_parent = '')
+            public function insert_post($post_title, $post_content, $author_id, $post_type = 'topics', $menu_order = 0, $post_parent = '')
             {
                 $post_arg = array(
                     'post_type'     => $post_type,
@@ -347,7 +376,7 @@ defined( 'ABSPATH' ) || exit;
                 return wp_insert_post($post_arg);
             }
 
-            public function update_post($post_type = 'topics', $post_id,  $menu_order = 0, $post_parent = '')
+            public function update_post($post_id, $post_type = 'topics',  $menu_order = 0, $post_parent = '')
             {
                 global $wpdb;
                 $post_arg = array(
@@ -359,7 +388,7 @@ defined( 'ABSPATH' ) || exit;
                 $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}posts SET post_type=%s, post_parent=%s, menu_order=%s WHERE ID=%s", $post_type, $post_parent, $menu_order, $post_id));
                 return $post_id;
             }
-            
+
 
 
             public function migrate_quiz($old_quiz_id)
@@ -380,7 +409,7 @@ defined( 'ABSPATH' ) || exit;
                         } else {
                             $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = {$question_id}", ARRAY_A);
                         }
-                        
+
                         $question = array();
                         $question['quiz_id'] = $old_quiz_id;
                         $question['question_title'] = $result['title'];
@@ -406,22 +435,19 @@ defined( 'ABSPATH' ) || exit;
                             case 'cloze_answer':
                                 $question['question_type'] = 'fill_in_the_blank';
                                 break;
-                            
+
                             default:
                                 # code...
                                 break;
                         }
-                        
+
                         $question['question_settings'] = maybe_serialize(array(
                             'question_type' => $result['answer_type'],
                             'question_mark' => $result['points']
                         ));
 
-                        // echo '<pre>';
-                        // print_r( $question );
-                        // echo '</pre>';
                         $wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
-                        
+
                         // Will Return $questions
                         $question_id = $wpdb->insert_id;
                         if ($question_id) {
@@ -457,9 +483,6 @@ defined( 'ABSPATH' ) || exit;
                                     }
                                     $i++;
                                 }
-                                // echo '<pre>';
-                                // print_r( $answer );
-                                // echo '</pre>';
                                 $wpdb->insert( $wpdb->prefix.'tutor_quiz_question_answers', $answer );
                             }
                         }
@@ -473,10 +496,6 @@ defined( 'ABSPATH' ) || exit;
                     }
                 }
             }
-
-
-
-
 
             public function migrate_course($course_id, $new_course_id)
             {
@@ -496,7 +515,6 @@ defined( 'ABSPATH' ) || exit;
                 $i = 0;
                 $section_count = 0;
                 $topic_id = 0;
-
                 foreach ($total_data['sfwd-lessons'] as $lesson_key => $lesson_data) {
                     $author_id = get_post_field('post_author', $course_id);
 
@@ -505,25 +523,25 @@ defined( 'ABSPATH' ) || exit;
                     if (isset($section_heading[$section_count]['order'])) {
                         if ($section_heading[$section_count]['order'] == $check) {
                             // Insert Topics
-                            $topic_id = $this->insert_post('topics', $section_heading[$section_count]['post_title'], '', $author_id, $i, $new_course_id);
+                            $topic_id = $this->insert_post($section_heading[$section_count]['post_title'], '', $author_id, 'topics', $i, $new_course_id);
                             $section_count++;
                         }
                     }
 
 
                     if ($topic_id) {
-                        $lesson_id = $this->update_post($lesson_post_type, $lesson_key, $i, $topic_id);
+                        $lesson_id = $this->update_post($lesson_key, $lesson_post_type, $i, $topic_id);
 
                         update_post_meta($lesson_id, '_tutor_course_id_for_lesson', $course_id);
 
                         foreach ($lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner) {
 
-                            $lesson_id = $this->update_post($lesson_post_type, $lesson_inner_key, $i, $topic_id); // Insert Lesson
+                            $lesson_id = $this->update_post($lesson_inner_key, $lesson_post_type, $i, $topic_id); // Insert Lesson
 
                             update_post_meta($lesson_id, '_tutor_course_id_for_lesson', $course_id);
 
                             foreach ($lesson_inner['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                                $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                                $quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 
                                 if ($quiz_id) {
                                     $this->migrate_quiz($quiz_id);
@@ -532,7 +550,7 @@ defined( 'ABSPATH' ) || exit;
                         }
 
                         foreach ($lesson_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                            $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                            $quiz_id = $this->update_post($quiz_key, 'tutor_quiz', $i, $topic_id);
                             if ($quiz_id) {
                                 $this->migrate_quiz($quiz_id);
                             }
@@ -543,7 +561,7 @@ defined( 'ABSPATH' ) || exit;
 
                 if (!empty($total_data['sfwd-quiz'])) {
                     foreach ($total_data['sfwd-quiz'] as $quiz_key => $quiz_data) {
-                        $quiz_id = $this->update_post('tutor_quiz', $quiz_key, $i, $topic_id);
+                        $quiz_id = $this->update_post($quiz_key, 'tutor_quiz', $i, $topic_id);
                         if ($quiz_id) {
                             $this->migrate_quiz($quiz_id);
                         }
