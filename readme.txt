@@ -103,7 +103,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 2.0.0 - 28 June, 2022 =
+= 2.0.0 - 29 June, 2022 =
 
 * New: New design is introduced for the Migration Tool to make it more user friendly
 * New: Migration performance is enhanced
