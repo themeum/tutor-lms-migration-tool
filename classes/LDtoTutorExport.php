@@ -415,9 +415,9 @@ if (! class_exists('LDtoTutorExport')) {
                                 $thumbnail_post = $wpdb->get_results(
                                     $wpdb->prepare(
                                         "SELECT  * FROM {$wpdb->posts}
-                                        WHERE `ID` = %d
+                                        WHERE `ID` = %d AND `post_type` = %s
                                         LIMIT %d",
-                                        $course_meta_value,1
+                                        $course_meta_value, 'attachment', 1
                                     )
                                 );
                                 if($thumbnail_post) {
@@ -505,7 +505,6 @@ if (! class_exists('LDtoTutorExport')) {
                 ]);
             }
 		}
-
     }
     new LDtoTutorExport();
 }

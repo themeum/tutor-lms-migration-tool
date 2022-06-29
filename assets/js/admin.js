@@ -310,6 +310,7 @@ jQuery(document).ready(function ($) {
                 manualMigrateNowBtn.attr('disabled', 'disabled');
             },
             success: function (res) {
+                console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
                     $.post(ajaxurl, { 

@@ -475,7 +475,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 					' allowfullscreen' => ' allowfullscreen="allowfullscreen"', // don't remove space
 					' disabled' => ' disabled="disabled"'
 				);
-				
 				$xmlContent = str_replace(array_keys($replacer), array_values($replacer), $xmlContent);
 				$xml_data = simplexml_load_string($xmlContent, null, LIBXML_NOCDATA);
 				if($xml_data == false) {
@@ -528,9 +527,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 							$thumbnail_post = $wpdb->get_results(
 								$wpdb->prepare(
 									"SELECT  * FROM {$wpdb->posts}
-									WHERE `ID` = %d
+									WHERE `ID` = %d AND `post_type` = %s
 									LIMIT %d",
-									$course_meta_value,1
+									$course_meta_value, 'attachment', 1
 								)
 							);
 							if(count($thumbnail_post)) {
