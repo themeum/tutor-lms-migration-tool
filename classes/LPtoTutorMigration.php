@@ -299,7 +299,15 @@ if ( ! class_exists('LPtoTutorMigration')){
 			/**
 			 * Course Complete Status Migration
 			 */
+			$lp_enrollments_pgs = $wpdb->get_results( "SELECT lp_user_items.*,
+				lp_order.ID as order_id,
+				lp_order.post_date as order_time
 
+				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
+			);
+			
 
 			/**
 			 * Enrollment Migration to this course
