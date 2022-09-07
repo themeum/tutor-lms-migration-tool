@@ -61,6 +61,7 @@ In the LearnPress Migration tab, you will find the migration status bar. You wil
 And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
   * Courses
+  * Quiz
   * Sales Data
 
 For both migrations, click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
