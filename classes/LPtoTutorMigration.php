@@ -323,7 +323,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 						'comment_post_ID' => $course_id,
 					);
 
-					$isEnrolled = wp_insert_comment( $tutor_enrollment_pg_data );
+					$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
 					
 				}
 			}
