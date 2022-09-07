@@ -307,6 +307,26 @@ if ( ! class_exists('LPtoTutorMigration')){
 				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
 				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
 			);
+
+			foreach ($lp_enrollments_pgs as $lp_enrollments_pg){
+				$user_id = $lp_enrollments_pg->user_id;
+
+				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
+
+					$tutor_enrollment_pg_data = array(
+						'comment_type'   => 'course_completed',
+						'comment_agent'   => 'TutorLMSPlugin',
+						'comment_approved'   => 'approved',
+						'comment_content'   => '76a73b96cc628c21',
+						'user_id' => $user_id,
+						'comment_author' => $user_id,
+						'comment_post_ID' => $course_id,
+					);
+
+					$isEnrolled = wp_insert_comment( $tutor_enrollment_pg_data );
+					
+				}
+			}
 			
 
 			/**
