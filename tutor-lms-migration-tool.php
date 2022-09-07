@@ -30,7 +30,7 @@ define('TLMT_PATH', plugin_dir_path( TLMT_FILE ));
 define('TLMT_URL', plugin_dir_url( TLMT_FILE ));
 define('TLMT_BASENAME', plugin_basename( TLMT_FILE ));
 define('TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool');
-define('TLMT_TUTOR_CORE_REQ_VERSION', '2.0.0-rc');
+define('TLMT_TUTOR_CORE_REQ_VERSION', '2.0.9');
 define('TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.0-rc');
 
 register_activation_hook(__FILE__, 'tutor_migration_tool_activate');
