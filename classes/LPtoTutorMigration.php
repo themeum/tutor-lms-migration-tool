@@ -297,6 +297,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 
 			/**
+			 * Course Complete Status Migration
+			 */
+
+
+			/**
 			 * Enrollment Migration to this course
 			 */
 			$lp_enrollments = $wpdb->get_results( 
