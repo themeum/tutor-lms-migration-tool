@@ -33,7 +33,7 @@ To get started with migrating your information from LearnPress/LearnDash LMS to 
 **Note:** Note: Currently the Tutor LMS Migration Tool supports migration from LearnPress/LearnDash to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
 
   * Tutor LMS (Version 2.0.9 or later) for migration from LearnPress
-  * Tutor LMS (Version 2.0.0 or later) for migrating from LearnDash
+  * Tutor LMS (Version 2.0.9 or later) for migrating from LearnDash
 
   And the following plugins for their respective migrations
 
