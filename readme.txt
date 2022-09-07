@@ -49,8 +49,12 @@ After you install the migration plugin in your WordPress site you will find the 
 In the LearnPress Migration tab, you will find the migration status bar. You will see a successful message for each dataset for a successful migration. You will see success messages for
 
   * Courses
+  * Lesson
+  * Quiz
   * Sales Data
   * Reviews
+  * Student
+  * Instructors
 
 And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
