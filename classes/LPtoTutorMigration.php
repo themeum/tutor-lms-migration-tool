@@ -299,7 +299,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			/**
 			 * Course Complete Status Migration
 			 */
-			$lp_enrollments_pgs = $wpdb->get_results( "SELECT lp_user_items.*,
+			$lp_course_complete_datas = $wpdb->get_results( "SELECT lp_user_items.*,
 				lp_order.ID as order_id,
 				lp_order.post_date as order_time
 
