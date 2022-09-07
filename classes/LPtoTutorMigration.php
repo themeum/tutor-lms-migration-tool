@@ -309,7 +309,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			);
 
 			foreach ($lp_course_complete_datas as $lp_course_complete_data){
-				$user_id = $lp_enrollments_pg->user_id;
+				$user_id = $lp_course_complete_data->user_id;
 
 				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
 
