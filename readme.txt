@@ -56,6 +56,7 @@ In the LearnPress Migration tab, you will find the migration status bar. You wil
   * Students
   * Instructors
   * Course Enrollment
+  * Course Complete Status
 
 And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
