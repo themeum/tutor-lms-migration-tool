@@ -313,7 +313,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
 
-					$tutor_enrollment_pg_data = array(
+					$tutor_course_complete_data = array(
 						'comment_type'   => 'course_completed',
 						'comment_agent'   => 'TutorLMSPlugin',
 						'comment_approved'   => 'approved',
