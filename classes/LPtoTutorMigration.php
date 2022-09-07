@@ -308,7 +308,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
 			);
 
-			foreach ($lp_course_complete_datas as $lp_enrollments_pg){
+			foreach ($lp_course_complete_datas as $lp_course_complete_data){
 				$user_id = $lp_enrollments_pg->user_id;
 
 				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
