@@ -247,15 +247,14 @@ defined( 'ABSPATH' ) || exit;
             public function insert_enrollment($course_id)
             {
                 global $wpdb;
-                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}usermeta WHERE meta_key = 'course_{$course_id}_access_from'");
+                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'access'");
 
                 foreach ($ld_enrollments as $ld_enrollment) {
                     $user_id = $ld_enrollment->user_id;
 
                     if (! tutils()->is_enrolled($course_id, $user_id)) {
-                        $order_time = strtotime($ld_enrollment->meta_value);
 
-                        $title = __('Course Enrolled', 'tutor')." &ndash; ".date(get_option('date_format'), $order_time).' @ '.date(get_option('time_format'), $order_time);
+                        $title = __('Course Enrolled', 'tutor');
                         $tutor_enrollment_data = array(
                             'post_type'   => 'tutor_enrolled',
                             'post_title'  => $title,
