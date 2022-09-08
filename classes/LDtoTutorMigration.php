@@ -248,9 +248,27 @@ defined( 'ABSPATH' ) || exit;
             public function insert_enrollment($course_id)
             {
                 global $wpdb;
-                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
+                $ld_course_complete_datas = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
 
-
+                foreach ($ld_course_complete_datas as $ld_course_complete_data){
+                    $user_id = $ld_course_complete_data->user_id;
+    
+                    if ( ! tutils()->is_enrolled($course_id, $user_id)) {
+    
+                        $tutor_course_complete_data = array(
+                            'comment_type'   => 'course_completed',
+                            'comment_agent'   => 'TutorLMSPlugin',
+                            'comment_approved'   => 'approved',
+                            'comment_content'   => '76a73b96cc628c21',
+                            'user_id' => $user_id,
+                            'comment_author' => $user_id,
+                            'comment_post_ID' => $course_id,
+                        );
+    
+                        $isEnrolled = wp_insert_comment( $tutor_course_complete_data );
+                        
+                    }
+                }
 
                 $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'access'");
 
