@@ -242,6 +242,10 @@ defined( 'ABSPATH' ) || exit;
             }
 
             /**
+             * Course Complete Status Migration
+             */
+
+            /**
              * Insert Enbrolement LD to Tutor
              */
             public function insert_enrollment($course_id)
