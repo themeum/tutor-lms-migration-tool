@@ -299,6 +299,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			/**
 			 * Course Complete Status Migration
 			 */
+			
 			$lp_course_complete_datas = $wpdb->get_results( "SELECT lp_user_items.*,
 				lp_order.ID as order_id,
 				lp_order.post_date as order_time
@@ -313,11 +314,25 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
 
+					$date = date( 'Y-m-d H:i:s', tutor_time() );
+
+					do {
+						$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
+						$hasHash = (int) $wpdb->get_var(
+							$wpdb->prepare(
+								"SELECT COUNT(comment_ID) from {$wpdb->comments}
+								WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
+								$hash
+							)
+						);
+			
+					} while ( $hasHash > 0 );
+
 					$tutor_course_complete_data = array(
 						'comment_type'   => 'course_completed',
 						'comment_agent'   => 'TutorLMSPlugin',
 						'comment_approved'   => 'approved',
-						'comment_content'   => '76a73b96cc628c21',
+						'comment_content'   => $hash,
 						'user_id' => $user_id,
 						'comment_author' => $user_id,
 						'comment_post_ID' => $course_id,
@@ -339,7 +354,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
 				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled'" 
+				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled' OR status = 'finished'" 
 			);
 
 			foreach ($lp_enrollments as $lp_enrollment){
