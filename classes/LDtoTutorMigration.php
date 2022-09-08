@@ -241,9 +241,6 @@ defined( 'ABSPATH' ) || exit;
                 }
             }
 
-            /**
-             * Course Complete Status Migration
-             */
 
             /**
              * Insert Enbrolement LD to Tutor
@@ -251,6 +248,10 @@ defined( 'ABSPATH' ) || exit;
             public function insert_enrollment($course_id)
             {
                 global $wpdb;
+                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
+
+
+
                 $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'access'");
 
                 foreach ($ld_enrollments as $ld_enrollment) {
