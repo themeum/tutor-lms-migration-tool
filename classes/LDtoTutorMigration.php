@@ -296,7 +296,6 @@ defined( 'ABSPATH' ) || exit;
                 }
             }
 
-
             /**
              * Create WC Product and attaching it with course
              */
@@ -376,13 +375,11 @@ defined( 'ABSPATH' ) || exit;
                 }
             }
 
-
             public function _get_ld_live_progress_course_migrating_info()
             {
                 $migrated_count = (int) get_option('_tutor_migrated_items_count');
                 wp_send_json_success(array('migrated_count' => $migrated_count ));
             }
-
 
             public function insert_post($post_title, $post_content, $author_id, $post_type = 'topics', $menu_order = 0, $post_parent = '')
             {
@@ -410,8 +407,6 @@ defined( 'ABSPATH' ) || exit;
                 $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}posts SET post_type=%s, post_parent=%s, menu_order=%s WHERE ID=%s", $post_type, $post_parent, $menu_order, $post_id));
                 return $post_id;
             }
-
-
 
             public function migrate_quiz($old_quiz_id)
             {
