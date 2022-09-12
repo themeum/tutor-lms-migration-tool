@@ -255,7 +255,7 @@ defined( 'ABSPATH' ) || exit;
     
                         if ( ! tutils()->is_enrolled($course_id, $user_id)) {
 
-                            $date = date( 'Y-m-d H:i:s', tutor_time() );
+                        $date = date( 'Y-m-d H:i:s', tutor_time() );
 
                         do {
                             $hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
@@ -311,15 +311,19 @@ defined( 'ABSPATH' ) || exit;
             }
 
             /**
-             * Create WC Product and attaching it with course
+             * Create WC Product and linked with the course
              */
-            public function attached_product($course_id, $course_title)
-            {
+            public function attached_product($course_id, $course_title) {
+
                 update_post_meta($course_id, '_tutor_course_price_type', 'free');
                 $monetize_by = tutils()->get_option('monetize_by');
+
                 if (tutils()->has_wc() && $monetize_by == 'wc') {
+
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
+
                     if ($_ld_price['sfwd-courses_course_price']) {
+
                         update_post_meta($course_id, '_tutor_course_price_type', 'paid');
                         $product_id = wp_insert_post(array(
                             'post_title' => $course_title.' Product',
@@ -327,7 +331,9 @@ defined( 'ABSPATH' ) || exit;
                             'post_status' => 'publish',
                             'post_type' => "product",
                         ));
+
                         if ($product_id) {
+
                             $product_metas = array(
                                 '_stock_status'      => 'instock',
                                 'total_sales'        => '0',
@@ -341,6 +347,7 @@ defined( 'ABSPATH' ) || exit;
                                 '_virtual'           => 'yes',
                                 '_tutor_product'     => 'yes',
                             );
+
                             foreach ($product_metas as $key => $value) {
                                 update_post_meta($product_id, $key, $value);
                             }
@@ -351,10 +358,13 @@ defined( 'ABSPATH' ) || exit;
                             if ($coursePostThumbnail) {
                                 set_post_thumbnail($product_id, $coursePostThumbnail);
                             }
+
                         }
+
                     } else {
                         update_post_meta($course_id, '_tutor_course_price_type', 'free');
                     }
+                    
                 }
 
                 // Edd Support Add
