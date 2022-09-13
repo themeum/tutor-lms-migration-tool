@@ -258,6 +258,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
 
 			if ($_lp_price){
+
 				update_post_meta($course_id, '_tutor_course_price_type', 'paid');
 
 				$product_id = wp_insert_post( array(
@@ -266,7 +267,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 					'post_status' => 'publish',
 					'post_type' => "product",
 				) );
+
 				if ($product_id) {
+
 					$product_metas = array(
 						'_stock_status'      => 'instock',
 						'total_sales'        => '0',
@@ -280,11 +283,13 @@ if ( ! class_exists('LPtoTutorMigration')){
 						'_virtual'           => 'yes',
 						'_tutor_product'     => 'yes',
 					);
+
 					foreach ( $product_metas as $key => $value ) {
 						update_post_meta( $product_id, $key, $value );
 					}
+
 				}
-				
+
 				/**
 				 * Attaching product to course
 				 */
@@ -293,7 +298,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 				if ( $coursePostThumbnail ) {
 					set_post_thumbnail( $product_id, $coursePostThumbnail );
 				}
-			}else{
+
+			} else{
 				update_post_meta($course_id, '_tutor_course_price_type', 'free');
 			}
 
