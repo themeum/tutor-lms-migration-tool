@@ -81,12 +81,12 @@ defined( 'ABSPATH' ) || exit;
             public function ld_order_migrate(){
                 global $wpdb;
 
-                $monetize_by = tutils()->get_option('monetize_by');
+                $tutor_monetize_by = tutils()->get_option('monetize_by');
 
                 $ld_orders = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
                 $item_i = (int) get_option('_tutor_migrated_items_count');
 
-                if (tutils()->has_wc() && $monetize_by == 'wc') {
+                if (tutils()->has_wc() && $tutor_monetize_by == 'wc') {
 
                     foreach ($ld_orders as $order) {
                         $item_i++;
@@ -123,6 +123,7 @@ defined( 'ABSPATH' ) || exit;
                             '_order_total'       => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
                             '_line_tax_data'     => maybe_serialize( array( 'total' => array(), 'subtotal' => array() ) ),
                         );
+
                         foreach ($wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ){
                             $wc_item_metas = array(
                                 'order_item_id' => $order_item_id,
@@ -136,10 +137,11 @@ defined( 'ABSPATH' ) || exit;
                         $user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$order->post_author} ");
                         update_post_meta($order->ID, '_billing_address_index', $user_email );
                         update_post_meta($order->ID, '_billing_email', $user_email );
+                        
                     }
                 }
 
-                if ( tutils()->has_edd() && $monetize_by == 'edd' ) {
+                if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
                     foreach ($ld_orders as $order) {
                         $item_i++;
@@ -168,6 +170,7 @@ defined( 'ABSPATH' ) || exit;
                             '_edd_payment_tax' => 0,
                             '_edd_completed_date' => $order->post_date,
                         );
+
                         foreach ($meta_data as $key => $value) {
                             update_post_meta($order->ID, $key, $value);
                         }
@@ -182,7 +185,9 @@ defined( 'ABSPATH' ) || exit;
                             'notes' => '',
                             'date_created' => $order->post_date,
                         );
+
                         $wpdb->insert($wpdb->prefix.'edd_customers', $edd_item_metas);
+
                     }
                 }
             }
@@ -316,9 +321,9 @@ defined( 'ABSPATH' ) || exit;
             public function attached_product($course_id, $course_title) {
 
                 update_post_meta($course_id, '_tutor_course_price_type', 'free');
-                $monetize_by = tutils()->get_option('monetize_by');
+                $tutor_monetize_by = tutils()->get_option('monetize_by');
 
-                if (tutils()->has_wc() && $monetize_by == 'wc') {
+                if (tutils()->has_wc() && $tutor_monetize_by == 'wc') {
 
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
 
@@ -364,11 +369,11 @@ defined( 'ABSPATH' ) || exit;
                     } else {
                         update_post_meta($course_id, '_tutor_course_price_type', 'free');
                     }
-                    
+
                 }
 
                 // Edd Support Add
-                if (tutils()->has_edd() && $monetize_by == 'edd') {
+                if (tutils()->has_edd() && $tutor_monetize_by == 'edd') {
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
                     if ($_ld_price['sfwd-courses_course_price']) {
                         update_post_meta($course_id, '_tutor_course_price_type', 'paid');
