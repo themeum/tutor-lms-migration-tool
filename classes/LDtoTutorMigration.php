@@ -316,13 +316,16 @@ defined( 'ABSPATH' ) || exit;
             }
 
             /**
-             * Create WC Product and linked with the course
+             * Create WC & EDD Product and linked with the course
              */
             public function attached_product($course_id, $course_title) {
 
                 update_post_meta($course_id, '_tutor_course_price_type', 'free');
                 $tutor_monetize_by = tutils()->get_option('monetize_by');
 
+                /**
+                 * Create WC Product and linked with the course
+                 */
                 if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
 
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
@@ -372,7 +375,9 @@ defined( 'ABSPATH' ) || exit;
 
                 }
 
-                // Edd Support Add
+                /**
+                 * Create EDD Product and linked with the course
+                 */
                 if (tutils()->has_edd() && $tutor_monetize_by == 'edd') {
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
                     if ($_ld_price['sfwd-courses_course_price']) {
