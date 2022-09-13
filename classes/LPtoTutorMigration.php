@@ -284,6 +284,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 						update_post_meta( $product_id, $key, $value );
 					}
 				}
+				
 				/**
 				 * Attaching product to course
 				 */
