@@ -323,7 +323,7 @@ defined( 'ABSPATH' ) || exit;
                 update_post_meta($course_id, '_tutor_course_price_type', 'free');
                 $tutor_monetize_by = tutils()->get_option('monetize_by');
 
-                if (tutils()->has_wc() && $tutor_monetize_by == 'wc') {
+                if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
 
                     $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
 
