@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
                 add_action('wp_ajax_ld_migrate_all_data_to_tutor', array($this, 'ld_migrate_all_data_to_tutor'));
                 add_action('wp_ajax_ld_reset_migrated_items_count', array($this, 'ld_reset_migrated_items_count'));
                 add_action('wp_ajax__get_ld_live_progress_course_migrating_info', array($this, '_get_ld_live_progress_course_migrating_info'));
+                add_action('tutor_action_ld_order_migrate', array($this, 'ld_order_migrate'));
             }
 
             public function insert_tutor_migration_data(){
