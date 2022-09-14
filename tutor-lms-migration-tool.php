@@ -77,6 +77,7 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 	TutorLMSMigrationTool::instance();
 }
 
+// Get Utils
 $utils = new Utils;
 
 // Migrate Learndash Instructor to Tutor Instructor
