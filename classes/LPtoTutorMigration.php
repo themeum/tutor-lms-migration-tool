@@ -430,6 +430,86 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 		}
 
+		/*
+		* Learnpress eCommerce order migrate to WC
+		*/
+		public function migrate_lp_orders(){
+			global $wpdb;
+
+			$lp_orders = $wpdb->get_results("SELECT * FROM {$wpdb->posts} WHERE post_type = 'lp_order' AND post_status = 'lp-completed' ;");
+
+			$item_i = (int) get_option('_tutor_migrated_items_count');
+			foreach ($lp_orders as $lp_order){
+				$item_i++;
+				update_option('_tutor_migrated_items_count', $item_i);
+
+				$order_id = $lp_order->ID;
+				$migrate_order_data = array(
+					'ID'    => $order_id,
+					'post_status'    => 'wc-completed',
+					'post_type'    => 'shop_order',
+				);
+
+				wp_update_post($migrate_order_data);
+
+				$_items = $this->get_lp_order_items($order_id);
+
+				foreach ($_items as $item){
+
+					$item_data = array(
+						'order_item_name'   => $item->name,
+						'order_item_type'   => 'line_item',
+						'order_id'          => $order_id,
+					);
+
+					$wpdb->insert($wpdb->prefix.'woocommerce_order_items', $item_data);
+					$order_item_id = (int) $wpdb->insert_id;
+
+					$lp_item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->prefix}learnpress_order_itemmeta WHERE learnpress_order_item_id = {$item->id} ");
+
+					$lp_formatted_metas = array();
+					foreach ($lp_item_metas as $item_meta) {
+						$lp_formatted_metas[$item_meta->meta_key] = $item_meta->meta_value;
+					}
+
+					$_course_id = tutils()->array_get('_course_id', $lp_formatted_metas);
+					$_quantity = tutils()->array_get('_quantity', $lp_formatted_metas);
+					$_subtotal = tutils()->array_get('_subtotal', $lp_formatted_metas);
+					$_total = tutils()->array_get('_total', $lp_formatted_metas);
+
+					$wc_item_metas = array(
+						'_product_id'        => $_course_id,
+						'_variation_id'      => 0,
+						'_qty'               => $_quantity,
+						'_tax_class'         => '',
+						'_line_subtotal'     => $_subtotal,
+						'_line_subtotal_tax' => 0,
+						'_line_total'        => $_total,
+						'_line_tax'          => 0,
+						'_line_tax_data'     => maybe_serialize( array( 'total' => array(), 'subtotal' => array() ) ),
+					);
+
+					foreach ($wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ){
+						$wc_item_metas = array(
+							'order_item_id' => $order_item_id,
+							'meta_key'      => $wc_item_meta_key,
+							'meta_value'    => $wc_item_meta_value,
+						);
+						$wpdb->insert($wpdb->prefix.'woocommerce_order_itemmeta', $wc_item_metas);
+					}
+
+				}
+
+				update_post_meta($order_id, '_customer_user', get_post_meta($order_id, '_user_id', true));
+				update_post_meta($order_id, '_customer_ip_address', get_post_meta($order_id, '_user_ip_address', true));
+				update_post_meta($order_id, '_customer_user_agent', get_post_meta($order_id, '_user_agent', true));
+
+				$user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$lp_order->post_author} ");
+				update_post_meta($order_id, '_billing_address_index', $user_email );
+				update_post_meta($order_id, '_billing_email', $user_email );
+			}
+
+		}
 
 		public function migrate_lp_reviews(){
 			global $wpdb;
