@@ -77,10 +77,9 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 	TutorLMSMigrationTool::instance();
 }
 
-// Migrate Learndash Instructor to Tutor Instructor
-
 $utils = new Utils;
 
+// Migrate Learndash Instructor to Tutor Instructor
 $ld_migration_history = $utils->fetch_history('ld');
 
 if(count($ld_migration_history)){
@@ -88,6 +87,22 @@ if(count($ld_migration_history)){
 		'wp_login',
 		function( $user_login, $user ) { // We want $user
 			if ( in_array( 'wdm_instructor', $user->roles ) ) {
+				$user->set_role( 'tutor_instructor' );
+			}
+		},
+		10,
+		2
+	);
+}
+
+// Migrate Learnpress Instructor to Tutor Instructor
+$lp_migration_history = $utils->fetch_history('lp');
+
+if(count($lp_migration_history)){
+	add_action(
+		'wp_login',
+		function( $user_login, $user ) { // We want $user
+			if ( in_array( 'lp_teacher', $user->roles ) ) {
 				$user->set_role( 'tutor_instructor' );
 			}
 		},
