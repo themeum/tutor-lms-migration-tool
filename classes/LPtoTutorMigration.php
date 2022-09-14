@@ -511,6 +511,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 		}
 
+		/*
+		* learnpress Review migrate to Tutor
+		*/
 		public function migrate_lp_reviews(){
 			global $wpdb;
 
