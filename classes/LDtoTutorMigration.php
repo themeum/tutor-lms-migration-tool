@@ -413,6 +413,9 @@ defined( 'ABSPATH' ) || exit;
                 }
             }
 
+            /*
+            * Progress Migration
+            */
             public function _get_ld_live_progress_course_migrating_info()
             {
                 $migrated_count = (int) get_option('_tutor_migrated_items_count');
