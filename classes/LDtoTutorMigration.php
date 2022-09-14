@@ -111,8 +111,10 @@ defined( 'ABSPATH' ) || exit;
                             $this->insert_thumbnail($ld_course->ID, $course_id);
                         }
                     }
+
                 }
                 wp_send_json_success();
+
             }
 
             public function attached_prerequisite($course_id){
