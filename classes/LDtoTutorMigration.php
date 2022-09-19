@@ -221,7 +221,15 @@ defined( 'ABSPATH' ) || exit;
 
                     if ($_ld_price['sfwd-courses_course_price']) {
 
+                        global $wpdb;
+
+                        $get_ld_products = $wpdb->get_results("SELECT post_id from {$wpdb->prefix}postmeta WHERE meta_key = '_related_course' AND meta_value LIKE '%'.$course_id.'%'");
+
+                        //$get_ld_product_id = $get_ld_product;
+                        
                         update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+                        update_post_meta($course_id, '_tutor_course_product_id', $get_ld_products);
+                        /*
                         $product_id = wp_insert_post(array(
                             'post_title' => $course_title.' Product',
                             'post_content' => '',
@@ -250,13 +258,14 @@ defined( 'ABSPATH' ) || exit;
                             }
 
                             // Attaching product to course
-                            update_post_meta($course_id, '_tutor_course_product_id', $product_id);
+                            update_post_meta($course_id, '_tutor_course_product_id', $get_ld_product_id);
                             $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
                             if ($coursePostThumbnail) {
-                                set_post_thumbnail($product_id, $coursePostThumbnail);
+                                set_post_thumbnail($get_ld_product_id, $coursePostThumbnail);
                             }
 
                         }
+                        */
 
                     } else {
                         update_post_meta($course_id, '_tutor_course_price_type', 'free');
