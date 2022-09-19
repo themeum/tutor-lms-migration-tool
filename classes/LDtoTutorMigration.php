@@ -223,7 +223,7 @@ defined( 'ABSPATH' ) || exit;
 
                         global $wpdb;
 
-                        $get_ld_products = $wpdb->get_results("SELECT post_id from {$wpdb->prefix}postmeta WHERE meta_key = '_related_course' AND meta_value LIKE '%'.$course_id.'%'");
+                        $get_ld_products = $wpdb->get_var("SELECT post_id from {$wpdb->prefix}postmeta WHERE meta_key = '_related_course' AND meta_value LIKE $course_id");
 
                         //$get_ld_product_id = $get_ld_product;
                         
