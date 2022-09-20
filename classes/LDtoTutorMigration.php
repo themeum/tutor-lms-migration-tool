@@ -217,48 +217,57 @@ defined( 'ABSPATH' ) || exit;
                  */
                 if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
 
-                    $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
+                    update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                    $monetize_by = tutils()->get_option('monetize_by');
 
-                    if ($_ld_price['sfwd-courses_course_price']) {
+                    if (tutils()->has_wc() && $monetize_by == 'wc') {
 
-                        $product_id = wp_insert_post(array(
-                            'post_title' => $course_title.' Product',
-                            'post_content' => '',
-                            'post_status' => 'publish',
-                            'post_type' => "product",
-                        ));
+                        $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
 
-                        if ($product_id) {
+                        if ($_ld_price['sfwd-courses_course_price']) {
 
-                            $product_metas = array(
-                                '_stock_status'      => 'instock',
-                                'total_sales'        => '0',
-                                '_regular_price'     => '',
-                                '_sale_price'        => $_ld_price['sfwd-courses_course_price'],
-                                '_price'             => $_ld_price['sfwd-courses_course_price'],
-                                '_sold_individually' => 'no',
-                                '_manage_stock'      => 'no',
-                                '_backorders'        => 'no',
-                                '_stock'             => '',
-                                '_virtual'           => 'yes',
-                                '_tutor_product'     => 'yes',
-                            );
+                            update_post_meta($course_id, '_tutor_course_price_type', 'paid');
 
-                            foreach ($product_metas as $key => $value) {
-                                update_post_meta($product_id, $key, $value);
+                            $product_id = wp_insert_post(array(
+                                'post_title' => $course_title.' Product',
+                                'post_content' => '',
+                                'post_status' => 'publish',
+                                'post_type' => "product",
+                            ));
+
+                            if ($product_id) {
+                                $product_metas = array(
+                                    '_stock_status'      => 'instock',
+                                    'total_sales'        => '0',
+                                    '_regular_price'     => '',
+                                    '_sale_price'        => $_ld_price['sfwd-courses_course_price'],
+                                    '_price'             => $_ld_price['sfwd-courses_course_price'],
+                                    '_sold_individually' => 'no',
+                                    '_manage_stock'      => 'no',
+                                    '_backorders'        => 'no',
+                                    '_stock'             => '',
+                                    '_virtual'           => 'yes',
+                                    '_tutor_product'     => 'yes',
+                                );
+
+                                foreach ($product_metas as $key => $value) {
+                                    update_post_meta($product_id, $key, $value);
+                                }
+
+                                // Attaching product to course
+                                update_post_meta($course_id, '_tutor_course_product_id', $product_id);
+
+                                $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
+
+                                if ($coursePostThumbnail) {
+                                    set_post_thumbnail($product_id, $coursePostThumbnail);
+                                }
+
                             }
 
-                            // Attaching product to course
-                            update_post_meta($course_id, '_tutor_course_product_id', $get_ld_product_id);
-                            $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
-                            if ($coursePostThumbnail) {
-                                set_post_thumbnail($get_ld_product_id, $coursePostThumbnail);
-                            }
-
+                        } else {
+                            update_post_meta($course_id, '_tutor_course_price_type', 'free');
                         }
-
-                    } else {
-                        update_post_meta($course_id, '_tutor_course_price_type', 'free');
                     }
 
                 }
