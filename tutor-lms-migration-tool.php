@@ -77,6 +77,8 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 	TutorLMSMigrationTool::instance();
 }
 
+if( function_exists( 'tutor' ) ) {
+
 $utils = new Utils;
 
 // Migrate Learndash Instructor to Tutor Instructor
@@ -109,4 +111,6 @@ if(count($lp_migration_history)){
 		10,
 		2
 	);
+}
+
 }
