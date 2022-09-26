@@ -142,7 +142,7 @@ defined( 'ABSPATH' ) || exit;
             public function insert_enrollment($course_id)
             {
                 global $wpdb;
-                $ld_course_complete_datas = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
+                $ld_course_complete_datas = $wpdb->get_results("SELECT post_id, course_id from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
 
                 foreach ($ld_course_complete_datas as $ld_course_complete_data){
                     $user_id = $ld_course_complete_data->user_id;
