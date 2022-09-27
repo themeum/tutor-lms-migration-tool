@@ -142,17 +142,18 @@ defined( 'ABSPATH' ) || exit;
             public function insert_enrollment($course_id)
             {
                 global $wpdb;
-                $ld_course_complete_datas = $wpdb->get_results("SELECT post_id, course_id from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
+                $ld_course_complete_datas = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
 
                 foreach ($ld_course_complete_datas as $ld_course_complete_data){
                     $user_id = $ld_course_complete_data->user_id;
+                    $complete_course_id = $ld_course_complete_data->course_id;
     
                         if ( ! tutils()->is_enrolled($course_id, $user_id)) {
 
                         $date = date( 'Y-m-d H:i:s', tutor_time() );
 
                         do {
-                            $hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
+                            $hash    = substr( md5( wp_generate_password( 32 ) . $date . $complete_course_id . $user_id ), 0, 16 );
                             $hasHash = (int) $wpdb->get_var(
                                 $wpdb->prepare(
                                     "SELECT COUNT(comment_ID) from {$wpdb->comments}
@@ -170,7 +171,7 @@ defined( 'ABSPATH' ) || exit;
                             'comment_content'   => $hash,
                             'user_id' => $user_id,
                             'comment_author' => $user_id,
-                            'comment_post_ID' => $course_id,
+                            'comment_post_ID' => $complete_course_id,
                         );
     
                         $isEnrolled = wp_insert_comment( $tutor_course_complete_data );
