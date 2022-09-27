@@ -402,7 +402,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
 				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled' OR status = 'finished'" 
+				WHERE item_id = {$course_id} AND ref_type = 'lp_order'" 
 			);
 
 			foreach ($lp_enrollments as $lp_enrollment){
