@@ -112,6 +112,22 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 = 2.1.0 - 29 September, 2022 =
 
+* New: LearnPress eCommerce Order Records will be migrated to Tutor LMS WooCommerce now
+* New: LearnPress Enrolment Records will be Migrated to Tutor LMS now
+* New: LearnPress Course Completion Status will be Migrated to Tutor LMS now
+* New: Certificates will be generated for respective Students after migration to LearnPress
+* New: LearnPress Ecommerce Products will be migrated to Tutor LMS EDD now
+* New: LearnPress Ecommerce Products will be migrated to Tutor LMS WooCommerce now
+* New: LearnPress Instructors will be Migrated to Tutor LMS now
+* New: LearnDash Instructors will be Migrated to Tutor LMS now
+* New: LearnDash Enrolment Records will be Migrated to Tutor LMS now
+* New: LearnDash Course Completion Status will be Migrated to Tutor LMS now
+* New: LearnDash Students will be Migrated to Tutor LMS now
+* New: LearnDash Ecommerce Products will be migrated to Tutor LMS EDD now
+* New: LearnDash eCommerce Order Records will be migrated to Tutor LMS WooCommerce now
+* New: Certificates will be generated for respective Students after migration to LearnDash
+* New: LearnDash Ecommerce Products will be migrated to Tutor LMS WooCommerce now
+
 = 2.0.0 - 29 June, 2022 =
 
 * New: New design is introduced for the Migration Tool to make it more user friendly
