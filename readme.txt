@@ -3,7 +3,7 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
-Tested up to: 6.0.3
+Tested up to: 6.0.2
 Requires PHP: 7.3
 Stable tag: 2.1.0
 License: GPLv3
