@@ -77,7 +77,7 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 	TutorLMSMigrationTool::instance();
 }
 
-if( function_exists( 'tutor' ) ) {
+if ( is_plugin_active('tutor/tutor.php') ) {
 
 $utils = new Utils;
 
