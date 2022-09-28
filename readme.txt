@@ -127,6 +127,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 * New: LearnDash eCommerce Order Records will be migrated to Tutor LMS WooCommerce now
 * New: Certificates will be generated for respective Students after migration to LearnDash
 * New: LearnDash Ecommerce Products will be migrated to Tutor LMS WooCommerce now
+* New: LearnDash Closed Type course data will be migrated to WooCommerce and EDD (If Price Field not empty or 0)
 
 = 2.0.0 - 29 June, 2022 =
 
