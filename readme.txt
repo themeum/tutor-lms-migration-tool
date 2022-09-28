@@ -3,7 +3,7 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
-Tested up to: 6.2
+Tested up to: 6.0.3
 Requires PHP: 7.3
 Stable tag: 2.1.0
 License: GPLv3
@@ -109,6 +109,8 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.1.0 - 29 September, 2022 =
 
 = 2.0.0 - 29 June, 2022 =
 
