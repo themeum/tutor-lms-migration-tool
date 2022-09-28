@@ -8,7 +8,7 @@ Version: 2.1.0
 Author URI: http://themeum.com
 Requires at least: 5.3
 Tested up to: 6.0.3
-Requires PHP: 7.2
+Requires PHP: 7.3
 License: GPLv2 or later
 Text Domain: tutor-lms-migration-tool
 */
