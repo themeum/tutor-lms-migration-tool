@@ -179,7 +179,7 @@ defined( 'ABSPATH' ) || exit;
                     }
                 }
 
-                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'access'");
+                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE course_id = {$course_id} AND activity_type = 'access' AND activity_status = 0");
 
                 foreach ($ld_enrollments as $ld_enrollment) {
                     $user_id = $ld_enrollment->user_id;
