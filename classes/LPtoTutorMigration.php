@@ -253,59 +253,156 @@ if ( ! class_exists('LPtoTutorMigration')){
 			/**
 			 * Create WC Product and attaching it with course
 			 */
+			update_post_meta($course_id, '_tutor_course_price_type', 'free');
+			$tutor_monetize_by = tutils()->get_option('monetize_by');
 
-			$_lp_price = get_post_meta($course_id, '_lp_price', true);
-			$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
+			if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
 
-			if ($_lp_price){
-				update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+				$_lp_price = get_post_meta($course_id, '_lp_price', true);
+				$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
 
-				$product_id = wp_insert_post( array(
-					'post_title' => $course->get_title().' Product',
-					'post_content' => '',
-					'post_status' => 'publish',
-					'post_type' => "product",
-				) );
-				if ($product_id) {
-					$product_metas = array(
-						'_stock_status'      => 'instock',
-						'total_sales'        => '0',
-						'_regular_price'     => $_lp_price,
-						'_sale_price'        => $_lp_sale_price,
-						'_price'             => $_lp_price,
-						'_sold_individually' => 'no',
-						'_manage_stock'      => 'no',
-						'_backorders'        => 'no',
-						'_stock'             => '',
-						'_virtual'           => 'yes',
-						'_tutor_product'     => 'yes',
-					);
-					foreach ( $product_metas as $key => $value ) {
-						update_post_meta( $product_id, $key, $value );
+				if ($_lp_price){
+
+					update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+	
+					$product_id = wp_insert_post( array(
+						'post_title' => $course->get_title().' Product',
+						'post_content' => '',
+						'post_status' => 'publish',
+						'post_type' => "product",
+					) );
+	
+					if ($product_id) {
+	
+						$product_metas = array(
+							'_stock_status'      => 'instock',
+							'total_sales'        => '0',
+							'_regular_price'     => $_lp_price,
+							'_sale_price'        => $_lp_sale_price,
+							'_price'             => $_lp_price,
+							'_sold_individually' => 'no',
+							'_manage_stock'      => 'no',
+							'_backorders'        => 'no',
+							'_stock'             => '',
+							'_virtual'           => 'yes',
+							'_tutor_product'     => 'yes',
+						);
+	
+						foreach ( $product_metas as $key => $value ) {
+							update_post_meta( $product_id, $key, $value );
+						}
+	
 					}
+	
+					/**
+					 * Attaching product to course
+					 */
+					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
+					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+					if ( $coursePostThumbnail ) {
+						set_post_thumbnail( $product_id, $coursePostThumbnail );
+					}
+	
+				} else{
+					update_post_meta($course_id, '_tutor_course_price_type', 'free');
 				}
-				/**
-				 * Attaching product to course
-				 */
-				update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-				$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-				if ( $coursePostThumbnail ) {
-					set_post_thumbnail( $product_id, $coursePostThumbnail );
-				}
-			}else{
-				update_post_meta($course_id, '_tutor_course_price_type', 'free');
+
 			}
+
+			/**
+			 * Create EDD Product and linked with the course
+			 */
+			if (tutils()->has_edd() && $tutor_monetize_by == 'edd') {
+				$_lp_price = get_post_meta($course_id, '_lp_price', true);
+				$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
+
+				if ($_lp_price){
+					update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+					$product_id = wp_insert_post(array(
+						'post_title' => $course->get_title().' Product',
+						'post_content' => '',
+						'post_status' => 'publish',
+						'post_type' => "download",
+					));
+					$product_metas = array(
+						'edd_price'             => $_lp_price,
+						'edd_variable_prices'   => array(),
+						'edd_download_files'    => array(),
+						'_edd_bundled_products' => array('0'),
+						'_edd_bundled_products_conditions' => array('all'),
+					);
+					foreach ($product_metas as $key => $value) {
+						update_post_meta($product_id, $key, $value);
+					}
+					update_post_meta($course_id, '_tutor_course_product_id', $product_id);
+					$coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
+					if ($coursePostThumbnail) {
+						set_post_thumbnail($product_id, $coursePostThumbnail);
+					}
+				} else {
+					update_post_meta($course_id, '_tutor_course_price_type', 'free');
+				}
+			}
+
+			/**
+			 * Course Complete Status Migration
+			 */
+			
+			$lp_course_complete_datas = $wpdb->get_results( "SELECT lp_user_items.*,
+				lp_order.ID as order_id,
+				lp_order.post_date as order_time
+
+				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
+			);
+
+			foreach ($lp_course_complete_datas as $lp_course_complete_data){
+				$user_id = $lp_course_complete_data->user_id;
+
+				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
+
+					$date = date( 'Y-m-d H:i:s', tutor_time() );
+
+					do {
+						$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
+						$hasHash = (int) $wpdb->get_var(
+							$wpdb->prepare(
+								"SELECT COUNT(comment_ID) from {$wpdb->comments}
+								WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
+								$hash
+							)
+						);
+			
+					} while ( $hasHash > 0 );
+
+					$tutor_course_complete_data = array(
+						'comment_type'   => 'course_completed',
+						'comment_agent'   => 'TutorLMSPlugin',
+						'comment_approved'   => 'approved',
+						'comment_content'   => $hash,
+						'user_id' => $user_id,
+						'comment_author' => $user_id,
+						'comment_post_ID' => $course_id,
+					);
+
+					$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
+					
+				}
+			}
+			
 
 			/**
 			 * Enrollment Migration to this course
 			 */
-			$lp_enrollments = $wpdb->get_results( "SELECT lp_user_items.*,
-													lp_order.ID as order_id,
-													lp_order.post_date as order_time
+			$lp_enrollments = $wpdb->get_results( 
+				"SELECT lp_user_items.*,
+				lp_order.ID as order_id,
+				lp_order.post_date as order_time
 
-													FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-													LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-													WHERE item_id = {$course_id} AND item_type = 'lp_course' AND status = 'enrolled'" 
+				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+				WHERE item_id = {$course_id} AND ref_type = 'lp_order'" 
 			);
 
 			foreach ($lp_enrollments as $lp_enrollment){
@@ -333,7 +430,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 		}
 
-
+		/*
+		* Learnpress eCommerce order migrate to WC
+		*/
 		public function migrate_lp_orders(){
 			global $wpdb;
 
@@ -412,6 +511,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 		}
 
+		/*
+		* learnpress Review migrate to Tutor
+		*/
 		public function migrate_lp_reviews(){
 			global $wpdb;
 

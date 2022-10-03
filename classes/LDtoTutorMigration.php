@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
                 add_action('wp_ajax_ld_migrate_all_data_to_tutor', array($this, 'ld_migrate_all_data_to_tutor'));
                 add_action('wp_ajax_ld_reset_migrated_items_count', array($this, 'ld_reset_migrated_items_count'));
                 add_action('wp_ajax__get_ld_live_progress_course_migrating_info', array($this, '_get_ld_live_progress_course_migrating_info'));
+                add_action('tutor_action_ld_order_migrate', array($this, 'ld_order_migrate'));
             }
 
             public function insert_tutor_migration_data(){
@@ -76,17 +77,248 @@ defined( 'ABSPATH' ) || exit;
                 wp_send_json_error();
             }
 
+            /*
+            * Course Migration
+            */
+            public function ld_migrate_course_to_tutor($return_type = false)
+            {
+                global $wpdb;
+                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');");
 
-            // Order
+                $course_type = tutor()->course_post_type;
+
+                if (tutils()->count($ld_courses)) {
+                    $course_i = (int) get_option('_tutor_migrated_items_count');
+                    $i = 0;
+                    foreach ($ld_courses as $ld_course) {
+                        $course_i++;
+                        $course_id = $this->update_post($ld_course->ID, $course_type, 0, '');
+                        if ($course_id) {
+                            $this->migrate_course($ld_course->ID, $course_id);
+
+                            update_option('_tutor_migrated_items_count', $course_i);
+
+                            // Attached Product
+                            $this->attached_product($course_id, $ld_course->post_title);
+
+                            // Attached Prerequisite
+                            $this->attached_prerequisite($course_id);
+
+                            // Add Enrollments
+                            $this->insert_enrollment($course_id);
+
+                            // Attached thumbnail
+                            $this->insert_thumbnail($ld_course->ID, $course_id);
+                        }
+                    }
+
+                }
+                wp_send_json_success();
+
+            }
+
+            public function attached_prerequisite($course_id){
+                $course_data = get_post_meta($course_id, '_sfwd-courses', true);
+                if( $course_data['sfwd-courses_course_prerequisite'] ) {
+                    update_post_meta($course_id, '_tutor_course_prerequisites_ids', $course_data['sfwd-courses_course_prerequisite']);
+                }
+            }
+
+            /**
+             * Insert thumbnail ID
+             */
+            public function insert_thumbnail($new_thumbnail_id, $thumbnail_id)
+            {
+                $thumbnail = get_post_meta($thumbnail_id, '_thumbnail_id', true);
+                if ($thumbnail) {
+                    set_post_thumbnail($new_thumbnail_id, $thumbnail);
+                }
+            }
+
+
+            /**
+             * Insert Enbrolement LD to Tutor
+             */
+            public function insert_enrollment($course_id)
+            {
+                global $wpdb;
+                $ld_course_complete_datas = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1");
+
+                foreach ($ld_course_complete_datas as $ld_course_complete_data){
+                    $user_id = $ld_course_complete_data->user_id;
+                    $complete_course_id = $ld_course_complete_data->course_id;
+    
+                        if ( ! tutils()->is_enrolled($course_id, $user_id)) {
+
+                        $date = date( 'Y-m-d H:i:s', tutor_time() );
+
+                        do {
+                            $hash    = substr( md5( wp_generate_password( 32 ) . $date . $complete_course_id . $user_id ), 0, 16 );
+                            $hasHash = (int) $wpdb->get_var(
+                                $wpdb->prepare(
+                                    "SELECT COUNT(comment_ID) from {$wpdb->comments}
+                                    WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
+                                    $hash
+                                )
+                            );
+                
+                        } while ( $hasHash > 0 );
+    
+                        $tutor_course_complete_data = array(
+                            'comment_type'   => 'course_completed',
+                            'comment_agent'   => 'TutorLMSPlugin',
+                            'comment_approved'   => 'approved',
+                            'comment_content'   => $hash,
+                            'user_id' => $user_id,
+                            'comment_author' => $user_id,
+                            'comment_post_ID' => $complete_course_id,
+                        );
+    
+                        $isEnrolled = wp_insert_comment( $tutor_course_complete_data );
+                        
+                    }
+                }
+
+                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE course_id = {$course_id} AND activity_type = 'access' AND activity_status = 0");
+
+                foreach ($ld_enrollments as $ld_enrollment) {
+                    $user_id = $ld_enrollment->user_id;
+
+                    if (! tutils()->is_enrolled($course_id, $user_id)) {
+
+                        $title = __('Course Enrolled', 'tutor');
+                        $tutor_enrollment_data = array(
+                            'post_type'   => 'tutor_enrolled',
+                            'post_title'  => $title,
+                            'post_status' => 'completed',
+                            'post_author' => $user_id,
+                            'post_parent' => $course_id,
+                        );
+
+                        $isEnrolled = wp_insert_post($tutor_enrollment_data);
+
+                        if ($isEnrolled) {
+                            //Mark Current User as Students with user meta data
+                            update_user_meta($user_id, '_is_tutor_student', $order_time);
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Create WC & EDD Product and linked with the course
+             */
+            public function attached_product($course_id, $course_title) {
+
+                update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                $tutor_monetize_by = tutils()->get_option('monetize_by');
+
+                /**
+                 * Create WC Product and linked with the course
+                 */
+                if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
+
+                    update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                    $monetize_by = tutils()->get_option('monetize_by');
+
+                    if (tutils()->has_wc() && $monetize_by == 'wc') {
+
+                        $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
+
+                        if ($_ld_price['sfwd-courses_course_price']) {
+
+                            update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+
+                            $product_id = wp_insert_post(array(
+                                'post_title' => $course_title.' Product',
+                                'post_content' => '',
+                                'post_status' => 'publish',
+                                'post_type' => "product",
+                            ));
+
+                            if ($product_id) {
+                                $product_metas = array(
+                                    '_stock_status'      => 'instock',
+                                    'total_sales'        => '0',
+                                    '_regular_price'     => '',
+                                    '_sale_price'        => $_ld_price['sfwd-courses_course_price'],
+                                    '_price'             => $_ld_price['sfwd-courses_course_price'],
+                                    '_sold_individually' => 'no',
+                                    '_manage_stock'      => 'no',
+                                    '_backorders'        => 'no',
+                                    '_stock'             => '',
+                                    '_virtual'           => 'yes',
+                                    '_tutor_product'     => 'yes',
+                                );
+
+                                foreach ($product_metas as $key => $value) {
+                                    update_post_meta($product_id, $key, $value);
+                                }
+
+                                // Attaching product to course
+                                update_post_meta($course_id, '_tutor_course_product_id', $product_id);
+
+                                $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
+
+                                if ($coursePostThumbnail) {
+                                    set_post_thumbnail($product_id, $coursePostThumbnail);
+                                }
+
+                            }
+
+                        } else {
+                            update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                        }
+                    }
+
+                }
+
+                /**
+                 * Create EDD Product and linked with the course
+                 */
+                if (tutils()->has_edd() && $tutor_monetize_by == 'edd') {
+                    $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
+                    if ($_ld_price['sfwd-courses_course_price']) {
+                        update_post_meta($course_id, '_tutor_course_price_type', 'paid');
+                        $product_id = wp_insert_post(array(
+                            'post_title' => $course_title.' Product',
+                            'post_content' => '',
+                            'post_status' => 'publish',
+                            'post_type' => "download",
+                        ));
+                        $product_metas = array(
+                            'edd_price'             => $_ld_price['sfwd-courses_course_price'],
+                            'edd_variable_prices'   => array(),
+                            'edd_download_files'    => array(),
+                            '_edd_bundled_products' => array('0'),
+                            '_edd_bundled_products_conditions' => array('all'),
+                        );
+                        foreach ($product_metas as $key => $value) {
+                            update_post_meta($product_id, $key, $value);
+                        }
+                        update_post_meta($course_id, '_tutor_course_product_id', $product_id);
+                        $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
+                        if ($coursePostThumbnail) {
+                            set_post_thumbnail($product_id, $coursePostThumbnail);
+                        }
+                    } else {
+                        update_post_meta($course_id, '_tutor_course_price_type', 'free');
+                    }
+                }
+            }
+
+            /*
+            * Learndash eCommerce orders migration to WC & EDD
+            */
             public function ld_order_migrate(){
                 global $wpdb;
 
-                $monetize_by = tutils()->get_option('monetize_by');
+                $tutor_monetize_by = tutils()->get_option('monetize_by');
 
                 $ld_orders = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';");
                 $item_i = (int) get_option('_tutor_migrated_items_count');
 
-                if (tutils()->has_wc() && $monetize_by == 'wc') {
+                if (tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free') {
 
                     foreach ($ld_orders as $order) {
                         $item_i++;
@@ -123,6 +355,7 @@ defined( 'ABSPATH' ) || exit;
                             '_order_total'       => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
                             '_line_tax_data'     => maybe_serialize( array( 'total' => array(), 'subtotal' => array() ) ),
                         );
+
                         foreach ($wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ){
                             $wc_item_metas = array(
                                 'order_item_id' => $order_item_id,
@@ -136,10 +369,11 @@ defined( 'ABSPATH' ) || exit;
                         $user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$order->post_author} ");
                         update_post_meta($order->ID, '_billing_address_index', $user_email );
                         update_post_meta($order->ID, '_billing_email', $user_email );
+                        
                     }
                 }
 
-                if ( tutils()->has_edd() && $monetize_by == 'edd' ) {
+                if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
                     foreach ($ld_orders as $order) {
                         $item_i++;
@@ -168,6 +402,7 @@ defined( 'ABSPATH' ) || exit;
                             '_edd_payment_tax' => 0,
                             '_edd_completed_date' => $order->post_date,
                         );
+
                         foreach ($meta_data as $key => $value) {
                             update_post_meta($order->ID, $key, $value);
                         }
@@ -182,185 +417,21 @@ defined( 'ABSPATH' ) || exit;
                             'notes' => '',
                             'date_created' => $order->post_date,
                         );
+
                         $wpdb->insert($wpdb->prefix.'edd_customers', $edd_item_metas);
+
                     }
                 }
             }
 
-
-            public function ld_migrate_course_to_tutor($return_type = false)
-            {
-                global $wpdb;
-                $ld_courses = $wpdb->get_results("SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');");
-
-                $course_type = tutor()->course_post_type;
-
-                if (tutils()->count($ld_courses)) {
-                    $course_i = (int) get_option('_tutor_migrated_items_count');
-                    $i = 0;
-                    foreach ($ld_courses as $ld_course) {
-                        $course_i++;
-                        $course_id = $this->update_post($ld_course->ID, $course_type, 0, '');
-                        if ($course_id) {
-                            $this->migrate_course($ld_course->ID, $course_id);
-
-                            update_option('_tutor_migrated_items_count', $course_i);
-
-                            // Attached Product
-                            $this->attached_product($course_id, $ld_course->post_title);
-
-                            // Attached Prerequisite
-                            $this->attached_prerequisite($course_id);
-
-                            // Add Enrollments
-                            $this->insert_enrollment($course_id);
-
-                            // Attached thumbnail
-                            $this->insert_thumbnail($ld_course->ID, $course_id);
-                        }
-                    }
-                }
-                wp_send_json_success();
-            }
-
-            public function attached_prerequisite($course_id){
-                $course_data = get_post_meta($course_id, '_sfwd-courses', true);
-                if( $course_data['sfwd-courses_course_prerequisite'] ) {
-                    update_post_meta($course_id, '_tutor_course_prerequisites_ids', $course_data['sfwd-courses_course_prerequisite']);
-                }
-            }
-
-            /**
-             * Insert thumbnail ID
-             */
-            public function insert_thumbnail($new_thumbnail_id, $thumbnail_id)
-            {
-                $thumbnail = get_post_meta($thumbnail_id, '_thumbnail_id', true);
-                if ($thumbnail) {
-                    set_post_thumbnail($new_thumbnail_id, $thumbnail);
-                }
-            }
-
-            /**
-             * Insert Enbrolement LD to Tutor
-             */
-            public function insert_enrollment($course_id)
-            {
-                global $wpdb;
-                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}usermeta WHERE meta_key = 'course_{$course_id}_access_from'");
-
-                foreach ($ld_enrollments as $ld_enrollment) {
-                    $user_id = $ld_enrollment->user_id;
-
-                    if (! tutils()->is_enrolled($course_id, $user_id)) {
-                        $order_time = strtotime($ld_enrollment->meta_value);
-
-                        $title = __('Course Enrolled', 'tutor')." &ndash; ".date(get_option('date_format'), $order_time).' @ '.date(get_option('time_format'), $order_time);
-                        $tutor_enrollment_data = array(
-                            'post_type'   => 'tutor_enrolled',
-                            'post_title'  => $title,
-                            'post_status' => 'completed',
-                            'post_author' => $user_id,
-                            'post_parent' => $course_id,
-                        );
-
-                        $isEnrolled = wp_insert_post($tutor_enrollment_data);
-
-                        if ($isEnrolled) {
-                            //Mark Current User as Students with user meta data
-                            update_user_meta($user_id, '_is_tutor_student', $order_time);
-                        }
-                    }
-                }
-            }
-
-
-            /**
-             * Create WC Product and attaching it with course
-             */
-            public function attached_product($course_id, $course_title)
-            {
-                update_post_meta($course_id, '_tutor_course_price_type', 'free');
-                $monetize_by = tutils()->get_option('monetize_by');
-                if (tutils()->has_wc() && $monetize_by == 'wc') {
-                    $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
-                    if ($_ld_price['sfwd-courses_course_price']) {
-                        update_post_meta($course_id, '_tutor_course_price_type', 'paid');
-                        $product_id = wp_insert_post(array(
-                            'post_title' => $course_title.' Product',
-                            'post_content' => '',
-                            'post_status' => 'publish',
-                            'post_type' => "product",
-                        ));
-                        if ($product_id) {
-                            $product_metas = array(
-                                '_stock_status'      => 'instock',
-                                'total_sales'        => '0',
-                                '_regular_price'     => '',
-                                '_sale_price'        => $_ld_price['sfwd-courses_course_price'],
-                                '_price'             => $_ld_price['sfwd-courses_course_price'],
-                                '_sold_individually' => 'no',
-                                '_manage_stock'      => 'no',
-                                '_backorders'        => 'no',
-                                '_stock'             => '',
-                                '_virtual'           => 'yes',
-                                '_tutor_product'     => 'yes',
-                            );
-                            foreach ($product_metas as $key => $value) {
-                                update_post_meta($product_id, $key, $value);
-                            }
-
-                            // Attaching product to course
-                            update_post_meta($course_id, '_tutor_course_product_id', $product_id);
-                            $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
-                            if ($coursePostThumbnail) {
-                                set_post_thumbnail($product_id, $coursePostThumbnail);
-                            }
-                        }
-                    } else {
-                        update_post_meta($course_id, '_tutor_course_price_type', 'free');
-                    }
-                }
-
-                // Edd Support Add
-                if (tutils()->has_edd() && $monetize_by == 'edd') {
-                    $_ld_price = get_post_meta($course_id, '_sfwd-courses', true);
-                    if ($_ld_price['sfwd-courses_course_price']) {
-                        update_post_meta($course_id, '_tutor_course_price_type', 'paid');
-                        $product_id = wp_insert_post(array(
-                            'post_title' => $course_title.' Product',
-                            'post_content' => '',
-                            'post_status' => 'publish',
-                            'post_type' => "download",
-                        ));
-                        $product_metas = array(
-                            'edd_price'             => $_ld_price['sfwd-courses_course_price'],
-                            'edd_variable_prices'   => array(),
-                            'edd_download_files'    => array(),
-                            '_edd_bundled_products' => array('0'),
-                            '_edd_bundled_products_conditions' => array('all'),
-                        );
-                        foreach ($product_metas as $key => $value) {
-                            update_post_meta($product_id, $key, $value);
-                        }
-                        update_post_meta($course_id, '_tutor_course_product_id', $product_id);
-                        $coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
-                        if ($coursePostThumbnail) {
-                            set_post_thumbnail($product_id, $coursePostThumbnail);
-                        }
-                    } else {
-                        update_post_meta($course_id, '_tutor_course_price_type', 'free');
-                    }
-                }
-            }
-
-
+            /*
+            * Progress Migration
+            */
             public function _get_ld_live_progress_course_migrating_info()
             {
                 $migrated_count = (int) get_option('_tutor_migrated_items_count');
                 wp_send_json_success(array('migrated_count' => $migrated_count ));
             }
-
 
             public function insert_post($post_title, $post_content, $author_id, $post_type = 'topics', $menu_order = 0, $post_parent = '')
             {
@@ -388,8 +459,6 @@ defined( 'ABSPATH' ) || exit;
                 $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}posts SET post_type=%s, post_parent=%s, menu_order=%s WHERE ID=%s", $post_type, $post_parent, $menu_order, $post_id));
                 return $post_id;
             }
-
-
 
             public function migrate_quiz($old_quiz_id)
             {

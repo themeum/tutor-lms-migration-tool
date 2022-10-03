@@ -3,9 +3,9 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
-Tested up to: 6.0
-Requires PHP: 7.2
-Stable tag: 2.0.0
+Tested up to: 6.0.2
+Requires PHP: 7.4
+Stable tag: 2.1.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -32,8 +32,8 @@ To get started with migrating your information from LearnPress/LearnDash LMS to 
 
 **Note:** Note: Currently the Tutor LMS Migration Tool supports migration from LearnPress/LearnDash to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
 
-  * Tutor LMS (Version 2.0.0 or later) for migration from LearnPress
-  * Tutor LMS (Version 2.0.0 or later) for migrating from LearnDash
+  * Tutor LMS (Version 2.0.10 or later) for migration from LearnPress
+  * Tutor LMS (Version 2.0.10 or later) for migrating from LearnDash
 
   And the following plugins for their respective migrations
 
@@ -49,12 +49,19 @@ After you install the migration plugin in your WordPress site you will find the 
 In the LearnPress Migration tab, you will find the migration status bar. You will see a successful message for each dataset for a successful migration. You will see success messages for
 
   * Courses
+  * Lesson
+  * Quiz
   * Sales Data
   * Reviews
+  * Students
+  * Instructors
+  * Course Enrollment
+  * Course Complete Status
 
 And for the LearnDash Migration tab, you will find the migration options for LearnDash migration. You will find status bars for the following dataset migrations.
 
   * Courses
+  * Quiz
   * Sales Data
 
 For both migrations, click on the “Migrate Now” button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
@@ -102,6 +109,25 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.1.0 - 29 September, 2022 =
+
+* New: LearnPress eCommerce Order Records will be migrated to Tutor LMS WooCommerce now
+* New: LearnPress Enrolment Records will be Migrated to Tutor LMS now
+* New: LearnPress Course Completion Status will be Migrated to Tutor LMS now
+* New: Certificates will be generated for respective Students after migration to LearnPress
+* New: LearnPress Ecommerce Products will be migrated to Tutor LMS EDD now
+* New: LearnPress Ecommerce Products will be migrated to Tutor LMS WooCommerce now
+* New: LearnPress Instructors will be Migrated to Tutor LMS now
+* New: LearnDash Instructors will be Migrated to Tutor LMS now
+* New: LearnDash Enrolment Records will be Migrated to Tutor LMS now
+* New: LearnDash Course Completion Status will be Migrated to Tutor LMS now
+* New: LearnDash Students will be Migrated to Tutor LMS now
+* New: LearnDash Ecommerce Products will be migrated to Tutor LMS EDD now
+* New: LearnDash eCommerce Order Records will be migrated to Tutor LMS WooCommerce now
+* New: Certificates will be generated for respective Students after migration to LearnDash
+* New: LearnDash Ecommerce Products will be migrated to Tutor LMS WooCommerce now
+* New: LearnDash Closed Type course data will be migrated to WooCommerce and EDD (If Price Field not empty or 0)
 
 = 2.0.0 - 29 June, 2022 =
 
