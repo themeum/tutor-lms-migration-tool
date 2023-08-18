@@ -560,7 +560,15 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function get_lif_order_items( $order_id ) {
 			global $wpdb;
 
-	
+			$query = $wpdb->prepare(
+				"
+				SELECT orders.id as order_id, 
+				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_id') as course_id,
+				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_title') as course_title
+				FROM $wpdb->posts as orders
+				WHERE orders.post_type='llms_order' AND id=%d ",
+				$order_id
+			);
 
 			return $wpdb->get_results( $query );
 		}

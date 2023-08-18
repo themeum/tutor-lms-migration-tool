@@ -13,7 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$courses_count = $utils->lfter_course_count();
 	$orders_count  = $utils->lifter_orders_count();
 	$reviews_count = $utils->lifter_reviews_count();
-
+    $tt= new LIFtoTutorMigration();
+    $test = $tt->get_lif_order_items('187');
+    var_dump($test);
 	$items_count = $courses_count + $orders_count + $reviews_count;
 	?>
 

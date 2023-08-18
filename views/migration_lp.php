@@ -10,12 +10,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     $utils = new Utils;
 
     $tutor_migration_history = $utils->fetch_history('lp');
-    var_dump($tutor_migration_history);
 	$courses_count = $utils->lp_course_count();
 	$orders_count  = $utils->lp_orders_count();
 	$reviews_count = $utils->lp_reviews_count();
 
 	$items_count = $courses_count + $orders_count + $reviews_count;
+    $tt= new LPtoTutorMigration();
+    $test = $tt->get_lp_order_items('166');
+    var_dump($test);
+    
 	?>
 
 	<div id="tutor-migration-wrapper">
