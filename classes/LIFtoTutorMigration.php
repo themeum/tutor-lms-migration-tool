@@ -15,7 +15,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			add_action( 'wp_ajax__get_lif_live_progress_course_migrating_info', array( $this, '_get_lif_live_progress_course_migrating_info' ) );
 
 			add_action( 'tutor_action_migrate_lif_orders', array( $this, 'migrate_lif_orders' ) );
-			add_action( 'tutor_action_migrate_lp_reviews', array( $this, 'migrate_lp_reviews' ) );
+			add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
 
 			add_action( 'wp_ajax_tutor_import_from_xml', array( $this, 'tutor_import_from_xml' ) );
 			add_action( 'tutor_action_tutor_lp_export_xml', array( $this, 'tutor_lp_export_xml' ) );
@@ -61,7 +61,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						$this->migrate_lif_orders();
 						break;
 					case 'reviews':
-						$this->migrate_lp_reviews();
+						$this->migrate_lif_reviews();
 						break;
 				}
 				wp_send_json_success();
@@ -518,14 +518,14 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/*
 		* learnpress Review migrate to Tutor
 		*/
-		public function migrate_lp_reviews() {
+		public function migrate_lif_reviews() {
 			global $wpdb;
 
-			$lp_review_ids = $wpdb->get_col( "SELECT comments.comment_ID FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';" );
+			$lif_review_ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type='llms_review';" );
 
-			if ( tutils()->count( $lp_review_ids ) ) {
+			if ( tutils()->count( $lif_review_ids ) ) {
 				$item_i = (int) get_option( '_tutor_migrated_items_count' );
-				foreach ( $lp_review_ids as $lp_review_id ) {
+				foreach ( $lif_review_ids as $lif_review_id ) {
 					$item_i++;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
@@ -535,20 +535,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'comment_agent'    => 'TutorLMSPlugin',
 					);
 
-					$wpdb->update( $wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lp_review_id ) );
+					$wpdb->update( $wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lif_review_id ) );
 					$wpdb->update(
 						$wpdb->commentmeta,
 						array( 'meta_key' => 'tutor_rating' ),
 						array(
-							'comment_id' => $lp_review_id,
-							'meta_key'   => '_lpr_rating',
-						)
-					);
-					$wpdb->delete(
-						$wpdb->commentmeta,
-						array(
-							'comment_id' => $lp_review_id,
-							'meta_key'   => '_lpr_review_title',
+							'comment_id' => $lif_review_id,
+							'meta_key'   => '_lif_rating',
 						)
 					);
 				}
