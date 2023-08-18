@@ -12,12 +12,13 @@ Requires PHP: 7.4
 License: GPLv2 or later
 Text Domain: tutor-lms-migration-tool
 */
-include('classes/Dependency.php');
+require 'classes/Dependency.php';
 
 use TutorLMSMigrationTool\TLMT\Dependency;
 
-if ( ! defined( 'ABSPATH' ) )
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
 
 /**
  * Defining Constant
@@ -79,38 +80,61 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 
 if ( is_plugin_active('tutor/tutor.php') ) {
 
-$utils = new Utils;
+	$utils = new Utils;
 
-// Migrate Learndash Instructor to Tutor Instructor
-$ld_migration_history = $utils->fetch_history('ld');
+	// Migrate Learndash Instructor to Tutor Instructor.
+	$ld_migration_history = $utils->fetch_history('ld');
 
-if(count($ld_migration_history)){
-	add_action(
-		'wp_login',
-		function( $user_login, $user ) { // We want $user
-			if ( in_array( 'wdm_instructor', $user->roles ) ) {
-				$user->set_role( 'tutor_instructor' );
-			}
-		},
-		10,
-		2
-	);
-}
+		if ( count( $ld_migration_history ) ) {
+			add_action(
+				'wp_login',
+				function( $user_login, $user ) {
+					// We want $user.
+					if ( in_array( 'wdm_instructor', $user->roles ) ) {
+						$user->set_role( 'tutor_instructor' );
+					}
+				},
+				10,
+				2
+			);
+		}
 
-// Migrate Learnpress Instructor to Tutor Instructor
-$lp_migration_history = $utils->fetch_history('lp');
 
-if(count($lp_migration_history)){
-	add_action(
-		'wp_login',
-		function( $user_login, $user ) { // We want $user
-			if ( in_array( 'lp_teacher', $user->roles ) ) {
-				$user->set_role( 'tutor_instructor' );
-			}
-		},
-		10,
-		2
-	);
-}
+	// Migrate Learnpress Instructor to Tutor Instructor.
+	$lp_migration_history = $utils->fetch_history( 'lp' );
+
+	if ( count( $lp_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user
+				if ( in_array( 'lp_teacher', $user->roles ) ) {
+					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
+
+
+
+	// Migrate Lifter Instructor to Tutor Instructor.
+	$lifter_migration_history = $utils->fetch_history( 'instructor' );
+
+	if ( count( $lifter_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user .
+				if ( in_array( 'instructor', $user->roles ) ) {
+					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
+
 
 }
