@@ -18,7 +18,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
 
 			add_action( 'wp_ajax_tutor_import_from_xml', array( $this, 'tutor_import_from_xml' ) );
-			add_action( 'tutor_action_tutor_lp_export_xml', array( $this, 'tutor_lp_export_xml' ) );
+			add_action( 'tutor_action_tutor_lif_export_xml', array( $this, 'tutor_lif_export_xml' ) );
 		}
 
 		public function tutor_tool_pages( $pages ) {
@@ -97,13 +97,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function migrate_course( $course_id ) {
 			global $wpdb;
 
-			$course = learn_press_get_course( $course_id );
+			$course = llms_get_post( $course_id );
 
 			if ( ! $course ) {
 				return;
 			}
 
-			$curriculum = $course->get_curriculum();
+			$curriculum = $course->get_lessons( 'ids' );
 
 			$lesson_post_type = tutor()->lesson_post_type;
 			$course_post_type = tutor()->course_post_type;
@@ -127,10 +127,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					$lessons = $section->get_items();
 					foreach ( $lessons as $lesson ) {
-						$item_post_type = learn_press_get_post_type( $lesson->get_id() );
+						$item_post_type = get_post_type( $lesson->get_id() );
 
-						if ( $item_post_type !== 'lp_lesson' ) {
-							if ( $item_post_type === 'lp_quiz' ) {
+						if ( $item_post_type !== 'lesson' ) {
+							if ( $item_post_type === 'llms_quiz' ) {
 								$lesson_post_type = 'tutor_quiz';
 							}
 						}
@@ -157,7 +157,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					// Insert Topic post type
 					$topic_id = wp_insert_post( $course_topic );
 
-					// Update lesson from LearnPress to TutorLMS
+					// Update lesson from lifter to TutorLMS
 					foreach ( $lessons as $lesson ) {
 
 						if ( $lesson['post_type'] === 'tutor_quiz' ) {
@@ -772,7 +772,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				wp_send_json(
 					array(
 						'success' => false,
-						'message' => 'LP Migration not successfull',
+						'message' => 'LIF Migration not successfull',
 					)
 				);
 			} else {
@@ -780,16 +780,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				wp_send_json(
 					array(
 						'success' => true,
-						'message' => 'LP Migration successfull',
+						'message' => 'LIF Migration successfull',
 					)
 				);
 			}
 		}
 
 
-		public function tutor_lp_export_xml() {
+		public function tutor_lif_export_xml() {
 			header( 'Content-Type: application/octet-stream' );
-			header( 'Content-Disposition: attachment; filename=learnpress_data_for_tutor.xml' );
+			header( 'Content-Disposition: attachment; filename=lifter_data_for_tutor.xml' );
 			header( 'Expires: 0' );
 
 			echo $this->generate_xml_data();
@@ -813,18 +813,18 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				<?php
 				$xml .= ob_get_clean();
 
-				$lp_courses = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status  FROM {$wpdb->posts} WHERE post_type = 'lp_course' AND post_status = 'publish';" );
+				$lif_courses = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status  FROM {$wpdb->posts} WHERE post_type = 'course' AND post_status = 'publish';" );
 
-				if ( tutils()->count( $lp_courses ) ) {
+				if ( tutils()->count( $lif_courses ) ) {
 					$course_i = 0;
-					foreach ( $lp_courses as $lp_course ) {
+					foreach ( $lif_courses as $lif_course ) {
 						$course_i++;
 
-						$course_id = $lp_course->ID;
+						$course_id = $lif_course->ID;
 
 						$xml .= $this->start_element( 'courses' );
 
-						$course_arr = (array) $lp_course;
+						$course_arr = (array) $lif_course;
 						foreach ( $course_arr as $course_col => $course_col_value ) {
 							$xml .= "<{$course_col}>{$course_col_value}</{$course_col}>\n";
 						}
@@ -837,155 +837,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						}
 						$xml .= $this->close_element( 'course_meta' );
 
-						$course = learn_press_get_course( $course_id );
+						$course = llms_get_post( $course_id );
 
 						$lesson_post_type = tutor()->lesson_post_type;
 						$course_post_type = tutor()->course_post_type;
 
-						if ( $course ) {
-							$curriculum = $course->get_curriculum();
-
-							$i = 0;
-
-							if ( $curriculum ) {
-								foreach ( $curriculum as $section ) {
-									$i ++;
-
-									$xml .= $this->start_element( 'topics' );
-
-									/**
-									 * Topic
-									 */
-									$xml .= "<post_type>topics</post_type>\n";
-									$xml .= "<post_title>{$section->get_title()}</post_title>\n";
-
-									$topic_content = ! empty( $section->get_description() ) ? $this->xml_cdata( $section->get_description() ) : '';
-
-									$xml .= "<post_content>{$topic_content}</post_content>\n";
-									$xml .= "<post_status>publish</post_status>\n";
-									$xml .= "<post_author>{$course->get_author( 'id' )}</post_author>\n";
-									$xml .= "<post_parent>{$course_id}</post_parent>";
-									$xml .= "<menu_order>{$i}</menu_order>\n";
-
-									/**
-									 * Lessons
-									 */
-									$lessons = $this->get_lp_section_items( $section->get_id() );
-
-									foreach ( $lessons as $lesson ) {
-										$item_post_type = $lesson->item_type;
-
-										if ( $item_post_type !== 'lp_lesson' ) {
-											if ( $item_post_type === 'lp_quiz' ) {
-												$lesson_post_type = 'tutor_quiz';
-											}
-										}
-
-										// Item
-										$xml .= $this->start_element( 'items' );
-
-										$xml .= "<item_id>{$lesson->id}</item_id>\n";
-										$xml .= "<post_type>{$lesson_post_type}</post_type>\n";
-										$xml .= "<post_author>{$lesson->post_author}</post_author>\n";
-										$xml .= "<post_date>{$lesson->post_date}</post_date>\n";
-										$xml .= "<post_title>{$lesson->post_title}</post_title>\n";
-										$xml .= "<post_content>{$this->xml_cdata($lesson->post_content)}</post_content>\n";
-										$xml .= "<post_parent>{topic_id}</post_parent>\n";
-
-										$xml .= $this->start_element( 'item_meta' );
-
-										$item_metas = $wpdb->get_results( "SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} " );
-
-										if ( is_array( $item_metas ) && count( $item_metas ) ) {
-											foreach ( $item_metas as $item_meta ) {
-												$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
-											}
-										}
-
-										$xml .= $this->close_element( 'item_meta' );
-
-										if ( $lesson_post_type === 'tutor_quiz' ) {
-											$quiz_id = $lesson->id;
-
-											$questions = $wpdb->get_results(
-												"SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
-										FROM {$wpdb->prefix}learnpress_quiz_questions
-										LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
-										LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
-										LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
-										WHERE quiz_id = {$quiz_id}  "
-											);
-
-											if ( tutils()->count( $questions ) ) {
-
-												foreach ( $questions as $question ) {
-
-													$question_type = null;
-													if ( $question->question_type === 'true_or_false' ) {
-														$question_type = 'true_false';
-													}
-													if ( $question->question_type === 'single_choice' ) {
-														$question_type = 'single_choice';
-													}
-													if ( $question->question_type === 'multi_choice' ) {
-														$question_type = 'multiple_choice';
-													}
-
-													if ( $question_type ) {
-														$xml              .= $this->start_element( 'questions' );
-														$new_question_data = array(
-															'quiz_id'              => '{quiz_id}',
-															'question_title'       => $question->post_title,
-															'question_description' => $question->post_content,
-															'question_type'        => $question_type,
-															'question_mark'        => $question->question_mark,
-															'question_settings'    => maybe_serialize( array() ),
-															'question_order'       => $question->question_order,
-														);
-
-														foreach ( $new_question_data as $question_key => $question_value ) {
-															$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
-														}
-
-														$answer_items = $wpdb->get_results( "SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} " );
-
-														if ( tutils()->count( $answer_items ) ) {
-															foreach ( $answer_items as $answer_item ) {
-																$answer_data = maybe_unserialize( $answer_item->answer_data );
-
-																$answer_data = array(
-																	'belongs_question_id'   => '{question_id}',
-																	'belongs_question_type' => $question_type,
-																	'answer_title'          => tutils()->array_get( 'text', $answer_data ),
-																	'is_correct'            => tutils()->array_get( 'is_true', $answer_data ) == 'yes' ? 1 : 0,
-																	'answer_order'          => $answer_item->answer_order,
-																);
-
-																$xml .= $this->start_element( 'answers' );
-
-																foreach ( $answer_data as $answers_key => $answers_value ) {
-																	$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
-																}
-																$xml .= $this->close_element( 'answers' );
-															}
-														}
-
-														$xml .= $this->close_element( 'questions' );
-													}
-												}
-											}
-										}
-
-										$xml .= $this->close_element( 'items' );
-									}
-
-									// Close Topic Tag
-									$xml .= $this->close_element( 'topics' );
-								}
-							}
-						}
-
-						$lp_reviews = $wpdb->get_results(
+						$lif_reviews = $wpdb->get_results(
 							"SELECT comments.comment_post_ID,
                     comments.comment_post_ID,
                     comments.comment_author,
@@ -1000,15 +857,15 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							ARRAY_A
 						);
 
-						if ( tutils()->count( $lp_reviews ) ) {
-							foreach ( $lp_reviews as $lp_review ) {
-								$lp_review['comment_approved'] = 'approved';
-								$lp_review['comment_agent']    = 'TutorLMSPlugin';
-								$lp_review['comment_type']     = 'tutor_course_rating';
+						if ( tutils()->count( $lif_reviews ) ) {
+							foreach ( $lif_reviews as $lif_review ) {
+								$lif_review['comment_approved'] = 'approved';
+								$lif_review['comment_agent']    = 'TutorLMSPlugin';
+								$lif_review['comment_type']     = 'tutor_course_rating';
 
 								$xml .= $this->start_element( 'reviews' );
-								foreach ( $lp_review as $lp_review_key => $lp_review_value ) {
-									$xml .= "<{$lp_review_key}>{$this->xml_cdata($lp_review_value)}</{$lp_review_key}>\n";
+								foreach ( $lif_review as $lif_review_key => $lif_review_value ) {
+									$xml .= "<{$lif_review_key}>{$this->xml_cdata($lif_review_value)}</{$lif_review_key}>\n";
 								}
 								$xml .= $this->close_element( 'reviews' );
 							}
@@ -1038,36 +895,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			return $str;
 		}
 
-		/**
-		 * @param $section_id
-		 *
-		 * @return array|null|object
-		 *
-		 * Get items (lesson|quiz) by section ID
-		 */
 
-		public function get_lp_section_items( $section_id ) {
-			global $wpdb;
-
-			$query = $wpdb->prepare(
-				"
-			SELECT item_id id, item_type, it.post_author, it.post_date, it.post_content, it.post_title, it.post_excerpt
-
-			FROM {$wpdb->learnpress_section_items} si
-
-			INNER JOIN {$wpdb->learnpress_sections} s ON si.section_id = s.section_id
-			INNER JOIN {$wpdb->posts} c ON c.ID = s.section_course_id
-			INNER JOIN {$wpdb->posts} it ON it.ID = si.item_id
-
-			WHERE s.section_id = %d
-			AND it.post_status = %s
-			ORDER BY si.item_order, si.section_item_id ASC
-		",
-				$section_id, /*'publish',*/
-				'publish'
-			);
-
-			return $wpdb->get_results( $query );
-		}
 	}
 }
