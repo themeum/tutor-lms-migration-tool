@@ -164,12 +164,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							$quiz_id = tutils()->array_get( 'ID', $lesson );
 
 							$questions = $wpdb->get_results(
-								"SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
-						FROM {$wpdb->prefix}learnpress_quiz_questions
-						LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
-						LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
-						LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
-						WHERE quiz_id = {$quiz_id}  "
+								"SELECT q.ID question_id,q.menu_order question_order,q.post_title,q.post_content,
+								(SELECT qm.meta_value FROM {$wpdb->postmeta} qm WHERE qm.meta_key='_llms_question_type' AND qm.post_id=q.ID) question_type
+								FROM {$wpdb->posts} q 
+								LEFT JOIN {$wpdb->postmeta} pm on pm.post_id = q.ID
+								WHERE post_type ='llms_question' AND pm.meta_key='_llms_parent_id' AND pm.meta_value={$quiz_id}   "
 							);
 
 							if ( tutils()->count( $questions ) ) {
