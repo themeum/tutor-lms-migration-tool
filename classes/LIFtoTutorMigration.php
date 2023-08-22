@@ -230,8 +230,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 						}
 
-						$_lp_preview = get_post_meta( $lesson_id, '_lp_preview', true );
-						if ( $_lp_preview === 'yes' ) {
+						$_lif_preview = get_post_meta( $lesson_id, '_is_preview', true );
+						if ( $_lif_preview === 'yes' ) {
 							update_post_meta( $lesson_id, '_is_preview', 1 );
 						} else {
 							delete_post_meta( $lesson_id, '_is_preview' );
@@ -246,7 +246,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				'post_type' => $course_post_type,
 			);
 			wp_update_post( $tutor_course );
-			update_post_meta( $course_id, '_was_lp_course', true );
+			update_post_meta( $course_id, '_was_lif_course', true );
 
 			/**
 			 * Create WC Product and attaching it with course
@@ -256,10 +256,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
-				$_lp_price      = get_post_meta( $course_id, '_lp_price', true );
-				$_lp_sale_price = get_post_meta( $course_id, '_lp_sale_price', true );
+				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
+				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
 
-				if ( $_lp_price ) {
+				if ( $_llms_price ) {
 
 					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
 
@@ -277,9 +277,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						$product_metas = array(
 							'_stock_status'      => 'instock',
 							'total_sales'        => '0',
-							'_regular_price'     => $_lp_price,
-							'_sale_price'        => $_lp_sale_price,
-							'_price'             => $_lp_price,
+							'_regular_price'     => $_llms_price,
+							'_sale_price'        => $_llms_sale_price,
+							'_price'             => $_llms_price,
 							'_sold_individually' => 'no',
 							'_manage_stock'      => 'no',
 							'_backorders'        => 'no',
@@ -310,10 +310,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 * Create EDD Product and linked with the course
 			 */
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
-				$_lp_price      = get_post_meta( $course_id, '_lp_price', true );
-				$_lp_sale_price = get_post_meta( $course_id, '_lp_sale_price', true );
+				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
+				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
 
-				if ( $_lp_price ) {
+				if ( $_llms_price ) {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
 					$product_id    = wp_insert_post(
 						array(
@@ -347,7 +347,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 * Course Complete Status Migration
 			 */
 
-			$lp_course_complete_datas = $wpdb->get_results(
+			$lif_course_complete_datas = $wpdb->get_results(
 				"SELECT lp_user_items.*,
 				lif_order.ID as order_id,
 				lif_order.post_date as order_time
@@ -357,8 +357,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
 			);
 
-			foreach ( $lp_course_complete_datas as $lp_course_complete_data ) {
-				$user_id = $lp_course_complete_data->user_id;
+			foreach ( $lif_course_complete_datas as $lif_course_complete_data ) {
+				$user_id = $lif_course_complete_data->user_id;
 
 				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
 
