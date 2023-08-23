@@ -22,8 +22,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		}
 
 		public function tutor_tool_pages( $pages ) {
-			$hasLPdata = get_option( 'lifter_version' );
-
+			
 			if ( defined( 'LLMS_VERSION' ) ) {
 				$pages['migration_lif'] = array(
 					'label'     => __( 'LifterLMS Migration', 'tutor' ),
@@ -324,7 +323,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						)
 					);
 					$product_metas = array(
-						'edd_price'                        => $_lp_price,
+						'edd_price'                        => $_llms_price,
 						'edd_variable_prices'              => array(),
 						'edd_download_files'               => array(),
 						'_edd_bundled_products'            => array( '0' ),
@@ -348,13 +347,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 */
 
 			$lif_course_complete_datas = $wpdb->get_results(
-				"SELECT lp_user_items.*,
-				lif_order.ID as order_id,
-				lif_order.post_date as order_time
-
-				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-				LEFT JOIN {$wpdb->posts} lif_order ON lp_user_items.ref_id = lif_order.ID
-				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
+				"
+				SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
+			WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'"
 			);
 
 			foreach ( $lif_course_complete_datas as $lif_course_complete_data ) {
@@ -394,21 +389,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			/**
 			 * Enrollment Migration to this course
 			 */
-			$lp_enrollments = $wpdb->get_results(
-				"SELECT lp_user_items.*,
-				lif_order.ID as order_id,
-				lif_order.post_date as order_time
-
-				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-				LEFT JOIN {$wpdb->posts} lif_order ON lp_user_items.ref_id = lif_order.ID
-				WHERE item_id = {$course_id} AND ref_type = 'lif_order'"
+			$lif_enrollments = $wpdb->get_results(
+				"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
+				WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'"
 			);
 
-			foreach ( $lp_enrollments as $lp_enrollment ) {
-				$user_id = $lp_enrollment->user_id;
+			foreach ( $lif_enrollments as $lif_enrollment ) {
+				$user_id = $lif_enrollment->user_id;
 
 				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-					$order_time = strtotime( $lp_enrollment->order_time );
+					$order_time = strtotime( $lif_enrollment->updated_date );
 
 					$title                 = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date( get_option( 'date_format' ), $order_time ) . ' @ ' . date( get_option( 'time_format' ), $order_time );
 					$tutor_enrollment_data = array(
@@ -464,17 +454,21 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
 					$order_item_id = (int) $wpdb->insert_id;
 
-					$lp_item_metas = $wpdb->get_results( "SELECT meta_key, meta_value FROM {$wpdb->prefix}learnpress_order_itemmeta WHERE learnpress_order_item_id = {$item->id} " );
+					$lif_item_metas = $wpdb->get_results( "
+					SELECT meta_key, meta_value 
+						FROM {$wpdb->postmeta}
+						WHERE meta_key in ('_llms_product_id','_llms_order_type','_llms_original_total','_llms_total')  AND post_id = {$item->id}
+					" );
 
-					$lp_formatted_metas = array();
-					foreach ( $lp_item_metas as $item_meta ) {
-						$lp_formatted_metas[ $item_meta->meta_key ] = $item_meta->meta_value;
+					$lif_formatted_metas = array();
+					foreach ( $lif_item_metas as $item_meta ) {
+						$lif_formatted_metas[ $item_meta->meta_key ] = $item_meta->meta_value;
 					}
 
-					$_course_id = tutils()->array_get( '_course_id', $lp_formatted_metas );
-					$_quantity  = tutils()->array_get( '_quantity', $lp_formatted_metas );
-					$_subtotal  = tutils()->array_get( '_subtotal', $lp_formatted_metas );
-					$_total     = tutils()->array_get( '_total', $lp_formatted_metas );
+					$_course_id = tutils()->array_get( '_llms_product_id', $lif_formatted_metas );
+					$_quantity  = tutils()->array_get( '_llms_order_type', $lif_formatted_metas );
+					$_subtotal  = tutils()->array_get( '_llms_original_total', $lif_formatted_metas );
+					$_total     = tutils()->array_get( '_llms_total', $lif_formatted_metas );
 
 					$wc_item_metas = array(
 						'_product_id'        => $_course_id,
@@ -515,7 +509,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		}
 
 		/*
-		* learnpress Review migrate to Tutor
+		* Lifter Review migrate to Tutor
 		*/
 		public function migrate_lif_reviews() {
 			global $wpdb;
@@ -842,17 +836,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						$course_post_type = tutor()->course_post_type;
 
 						$lif_reviews = $wpdb->get_results(
-							"SELECT comments.comment_post_ID,
-                    comments.comment_post_ID,
-                    comments.comment_author,
-                    comments.comment_author_email,
-                    comments.comment_author_IP,
-                    comments.comment_date,
-                    comments.comment_date_gmt,
-                    comments.comment_content,
-                    comments.user_id,
-                    cm.meta_value as tutor_rating
-                     FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';",
+							"SELECT 
+								ID,
+								post_author,
+								post_date,
+								post_date_gmt,
+								post_content,
+								post_author,
+								post_content as tutor_rating
+                   
+							FROM {$wpdb->posts} WHERE post_type = 'llms_review';",
 							ARRAY_A
 						);
 
