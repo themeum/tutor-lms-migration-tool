@@ -14,8 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$orders_count  = $utils->lifter_orders_count();
 	$reviews_count = $utils->lifter_reviews_count();
     $tt= new LIFtoTutorMigration();
-    $test = $tt->get_lif_order_items('187');
-    var_dump($test);
 	$items_count = $courses_count + $orders_count + $reviews_count;
 	?>
 
@@ -56,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="tutor-migration-tab-item">
 				<div id="tutor-auto-migrate-tab-lf" class="tutor-tab-item is-active">
 					<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
-						<form id="tlmt-lp-migrate-to-tutor-lms" action="lp_migrate_all_data_to_tutor" method="post">
+						<form id="tlmt-lp-migrate-to-tutor-lms" action="lif_migrate_all_data_to_tutor" method="post">
 							<div class="lp-migration-checkbox">
 								<div id="sectionCourse">
 									<label for="courses">

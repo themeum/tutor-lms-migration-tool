@@ -62,10 +62,18 @@ jQuery(document).ready(function ($) {
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
 
+        // console.log(this);
+        // console.log($that.attr('action'));
+     
+
         let final_types = 'lp';
         if ($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
             final_types = 'ld';
             migration_vendor = 'ld';
+        }
+        if($that.attr('action') == 'lif_migrate_all_data_to_tutor') {
+            final_types = 'lif';
+            migration_vendor = 'lif';
         }
 
         $.ajax({

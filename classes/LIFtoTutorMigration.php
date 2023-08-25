@@ -102,8 +102,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				return;
 			}
 
-			$curriculum = $course->get_lessons( 'ids' );
-
+			$curriculum = $course->get_lessons();
+			
 			$lesson_post_type = tutor()->lesson_post_type;
 			$course_post_type = tutor()->course_post_type;
 
@@ -112,38 +112,43 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			if ( $curriculum ) {
 				foreach ( $curriculum as $section ) {
 					$i++;
-
+					/**
+					 * @var \WP_Post $post
+					 */
+					$post = $section->post;
+					// var_dump($section);
+					
 					$topic = array(
 						'post_type'    => 'topics',
-						'post_title'   => $section->get_title(),
-						'post_content' => $section->get_description(),
+						'post_title'   => $post->get_title,
+						'post_content' => $post->get_description,
 						'post_status'  => 'publish',
-						'post_author'  => $course->get_author( 'id' ),
+						'post_author'  => $course->get_author,
 						'post_parent'  => $course_id,
 						'menu_order'   => $i,
 						'items'        => array(),
 					);
 
-					$lessons = $section->get_items();
-					foreach ( $lessons as $lesson ) {
-						$item_post_type = get_post_type( $lesson->get_id() );
-
+					$lessons = $section->post;
+					$item_post_type = get_post_type( $lessons->ID );
+					// var_dump($lessons->ID);
+					// var_dump($item_post_type);
 						if ( $item_post_type !== 'lesson' ) {
 							if ( $item_post_type === 'llms_quiz' ) {
 								$lesson_post_type = 'tutor_quiz';
 							}
 						}
-
 						$tutor_lessons = array(
-							'ID'          => $lesson->get_id(),
+							'ID'          => $lessons->ID,
 							'post_type'   => $lesson_post_type,
 							'post_parent' => '{topic_id}',
 						);
 
 						$topic['items'][] = $tutor_lessons;
-					}
+		
 					$tutor_course[] = $topic;
 				}
+				
 			}
 
 			if ( tutils()->count( $tutor_course ) ) {
@@ -199,7 +204,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 										$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $new_question_data );
 										$question_id = $wpdb->insert_id;
 
-										$answer_items = $wpdb->get_results( "SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} " );
+										$answer_items = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}lifterlms_quiz_attempts where question_id ={$quiz_id}  " );
 
 										if ( tutils()->count( $answer_items ) ) {
 											foreach ( $answer_items as $answer_item ) {
@@ -425,7 +430,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function migrate_lif_orders() {
 			global $wpdb;
 
-			$lif_orders = $wpdb->get_results( "SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = array( 'llms-active', 'llms-completed' ) ;" );
+			$lif_orders = $wpdb->get_results( "SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed' " );
 
 			$item_i = (int) get_option( '_tutor_migrated_items_count' );
 			foreach ( $lif_orders as $lif_order ) {
