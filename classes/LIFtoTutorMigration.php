@@ -97,31 +97,36 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			global $wpdb;
 
 			$course = llms_get_post( $course_id );
-
+		
 			if ( ! $course ) {
 				return;
 			}
+		
+		
+			$course        = new LLMS_Course( $course_id );
+			$sections      = $course->get_sections();
 
-			$curriculum = $course->get_lessons();
+			//$curriculum = $course->get_lessons();
 			
 			$lesson_post_type = tutor()->lesson_post_type;
 			$course_post_type = tutor()->course_post_type;
 
 			$tutor_course = array();
 			$i            = 0;
-			if ( $curriculum ) {
-				foreach ( $curriculum as $section ) {
+			if ( $sections ) {
+				foreach ( $sections as $section ) {
+					// die();
 					$i++;
 					/**
 					 * @var \WP_Post $post
 					 */
-					$post = $section->post;
-					// var_dump($section);
+					
+				
 					
 					$topic = array(
 						'post_type'    => 'topics',
-						'post_title'   => $post->get_title,
-						'post_content' => $post->get_description,
+						'post_title'   => $section->post->post_title,
+						'post_content' => $section->post->post_content,
 						'post_status'  => 'publish',
 						'post_author'  => $course->get_author,
 						'post_parent'  => $course_id,
@@ -129,23 +134,29 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'items'        => array(),
 					);
 
-					$lessons = $section->post;
-					$item_post_type = get_post_type( $lessons->ID );
-					// var_dump($lessons->ID);
-					// var_dump($item_post_type);
+					
+					$lessons = $section->get_lessons();
+					
+					foreach ($lessons as $lesson){
+					$item_post_type = get_post_type( $lesson->id );
+				
 						if ( $item_post_type !== 'lesson' ) {
 							if ( $item_post_type === 'llms_quiz' ) {
 								$lesson_post_type = 'tutor_quiz';
 							}
 						}
+						$vd= $lesson->get_video();
 						$tutor_lessons = array(
-							'ID'          => $lessons->ID,
+							'ID'          => $lesson->id,
 							'post_type'   => $lesson_post_type,
+							'post_title'  => $lesson->post->post_title,
+							'post_content'=>$lesson->get_video(),
 							'post_parent' => '{topic_id}',
 						);
 
 						$topic['items'][] = $tutor_lessons;
-		
+					}
+					
 					$tutor_course[] = $topic;
 				}
 				
@@ -153,9 +164,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( tutils()->count( $tutor_course ) ) {
 				foreach ( $tutor_course as $course_topic ) {
-
+					//var_dump($course_topic);
 					// Remove items from this topic
 					$lessons = $course_topic['items'];
+					//$lessons = $section->get_lessons();
+
 					unset( $course_topic['items'] );
 
 					// Insert Topic post type
@@ -163,7 +176,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					// Update lesson from lifter to TutorLMS
 					foreach ( $lessons as $lesson ) {
-
+						var_dump($lesson);
 						if ( $lesson['post_type'] === 'tutor_quiz' ) {
 							$quiz_id = tutils()->array_get( 'ID', $lesson );
 

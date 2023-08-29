@@ -111,8 +111,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			if($curriculum){
 				foreach ( $curriculum as $section ) {
 					$i++;
-					$section->get_title();
-					die();
+					
 					$topic = array(
 						'post_type'     => 'topics',
 						'post_title'    => $section->get_title(),
