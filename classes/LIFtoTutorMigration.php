@@ -139,11 +139,19 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					
 					foreach ($lessons as $lesson){
 					$item_post_type = get_post_type( $lesson->id );
-				
-						if ( $item_post_type !== 'lesson' ) {
-							if ( $item_post_type === 'llms_quiz' ) {
+					
+						// if ( $item_post_type !== 'lesson' ) {
+							if ( $lesson->has_quiz() ) {
+							// if ( $item_post_type === 'llms_quiz' ) {
 								$lesson_post_type = 'tutor_quiz';
-							}
+
+								$quiz = $lesson->get_quiz();
+								$questions = $quiz->get_questions();
+								
+								
+							//}
+						}else{
+							$lesson_post_type = tutor()->lesson_post_type;
 						}
 						$vd= $lesson->get_video();
 						$tutor_lessons = array(
@@ -176,29 +184,35 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					// Update lesson from lifter to TutorLMS
 					foreach ( $lessons as $lesson ) {
-						var_dump($lesson);
+						//var_dump($lesson);
 						if ( $lesson['post_type'] === 'tutor_quiz' ) {
 							$quiz_id = tutils()->array_get( 'ID', $lesson );
 
-							$questions = $wpdb->get_results(
-								"SELECT q.ID question_id,q.menu_order question_order,q.post_title,q.post_content,
-								(SELECT qm.meta_value FROM {$wpdb->postmeta} qm WHERE qm.meta_key='_llms_question_type' AND qm.post_id=q.ID) question_type
-								FROM {$wpdb->posts} q 
-								LEFT JOIN {$wpdb->postmeta} pm on pm.post_id = q.ID
-								WHERE post_type ='llms_question' AND pm.meta_key='_llms_parent_id' AND pm.meta_value={$quiz_id}   "
-							);
-
+							// $questions = $wpdb->get_results(
+							// 	"SELECT q.ID question_id,q.menu_order question_order,q.post_title,q.post_content,
+							// 	(SELECT qm.meta_value FROM {$wpdb->postmeta} qm WHERE qm.meta_key='_llms_question_type' AND qm.post_id=q.ID) question_type
+							// 	FROM {$wpdb->posts} q 
+							// 	LEFT JOIN {$wpdb->postmeta} pm on pm.post_id = q.ID
+							// 	WHERE post_type ='llms_question' AND pm.meta_key='_llms_parent_id' AND pm.post_id={$quiz_id}   "
+							// );
+							
+							
+								
 							if ( tutils()->count( $questions ) ) {
 								foreach ( $questions as $question ) {
-
+									$ques_id= $question->id;
+									$meta_key = '_llms_question_type';
+									//$ques_type_query = $wpdb->get_results("SELECT *  FROM {$wpdb->postmeta} pm WHERE pm.meta_key = '_llms_question_type' AND pm.post_id={$ques_id} ");
+									
+									$ques_type =  get_post_meta($ques_id, $meta_key, true);;
 									$question_type = null;
-									if ( $question->question_type === 'true_or_false' ) {
+									if ( $ques_type === 'true_false' ) {
 										$question_type = 'true_false';
 									}
-									if ( $question->question_type === 'single_choice' ) {
-										$question_type = 'single_choice';
+									if ( $ques_type === 'choice' ) {
+										$question_type = 'choice';
 									}
-									if ( $question->question_type === 'multiple_choice' ) {
+									if ( $ques_type === 'multiple_choice' ) {
 										$question_type = 'multi_choice';
 									}
 
@@ -213,6 +227,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 											'question_settings' => maybe_serialize( array() ),
 											'question_order' => $question->question_order,
 										);
+										
 
 										$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $new_question_data );
 										$question_id = $wpdb->insert_id;

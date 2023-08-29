@@ -13,9 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$courses_count = $utils->lp_course_count();
 	$orders_count  = $utils->lp_orders_count();
 	$reviews_count = $utils->lp_reviews_count();
-
 	$items_count = $courses_count + $orders_count + $reviews_count;
-    
 	?>
 
 	<div id="tutor-migration-wrapper">
