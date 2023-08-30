@@ -220,12 +220,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 										$new_question_data = array(
 											'quiz_id' => $quiz_id,
-											'question_title' => $question->post_title,
-											'question_description' => $question->post_content,
+											'question_title' => $question->post->post_title,
+											'question_description' => $question->post->post_content,
 											'question_type' => $question_type,
-											'question_mark' => $question->question_mark,
+											'question_mark' => $question->post->question_mark,
 											'question_settings' => maybe_serialize( array() ),
-											'question_order' => $question->question_order,
+											'question_order' => $question->post->menu_order,
 										);
 										
 
