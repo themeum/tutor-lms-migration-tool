@@ -115,7 +115,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								<sapn class="backup-now-subtile tutor-fs-7"><?php _e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
 								<form id="tutor_migration_export_form" method="post" enctype="multipart/form-data">
 									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
-									<input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
+									<input type="hidden" name="tutor_action" value="tutor_lif_export_xml">
 									<button <?php echo $items_count ? '' : 'disabled'; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black"><?php _e( 'Backup Now', 'tutor-lms-migration-tool' ); ?></button>
 								</form>
 							</div>
@@ -151,7 +151,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								<sapn class="backup-now-subtile tutor-fs-7"><?php _e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
 								<form id="tutor_migration_export_form" method="post" enctype="multipart/form-data">
 									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
-									<input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
+									<input type="hidden" name="tutor_action" value="tutor_lif_export_xml">
 									<button <?php echo $items_count ? '' : 'disabled'; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black"><?php _e( 'Backup Now', 'tutor-lms-migration-tool' ); ?></button>
 								</form>
 							</div>
