@@ -7,7 +7,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 		public function __construct() {
 			add_filter('tutor_tool_pages', array($this, 'tutor_tool_pages'));
-
+			add_action('wp_ajax_insert_tutor_migration_data', array($this, 'insert_tutor_migration_data'));
 			add_action('wp_ajax_lp_migrate_all_data_to_tutor', array($this, 'lp_migrate_all_data_to_tutor'));
 			add_action('wp_ajax_tlmt_reset_migrated_items_count', array($this, 'tlmt_reset_migrated_items_count'));
 
@@ -20,6 +20,20 @@ if ( ! class_exists('LPtoTutorMigration')){
 			add_action('tutor_action_tutor_lp_export_xml', array($this, 'tutor_lp_export_xml'));
 		}
 
+		public function insert_tutor_migration_data(){
+			global $wpdb;
+			$tutor_migration_table_data = [
+				'migration_type' => $_POST['migration_type'],
+				'migration_vendor' => $_POST['migration_vendor'],
+				'created_by' => get_current_user_id(),
+				'created_at' => current_time('mysql'),
+			];
+
+			$wpdb->insert(
+				$wpdb->prefix . 'tutor_migration',
+				$tutor_migration_table_data
+			);
+		}
 		public function tutor_tool_pages($pages){
 			$hasLPdata = get_option('learnpress_version');
 
@@ -990,6 +1004,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			$str = '<![CDATA[' . str_replace( ']]>', ']]]]><![CDATA[>', $str ) . ']]>';
 
 			return $str;
+			
 		}
 
 		/**
