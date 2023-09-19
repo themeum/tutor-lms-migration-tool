@@ -223,10 +223,22 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 										$question_type = 'true_false';
 									}
 									if ( $ques_type === 'choice' ) {
-										$question_type = 'choice';
+										$question_type = 'multiple_choice';
 									}
-									if ( $ques_type === 'multiple_choice' ) {
-										$question_type = 'multi_choice';
+									if ( $ques_type === 'picture_choice' ) {
+										$question_type = 'image_matching';
+									}
+									if ( $ques_type === 'blank' ) {
+										$question_type = 'fill_in_the_blank';
+									}
+									if ( $ques_type === 'short_answer' || $ques_type === 'long_answer' || $ques_type === 'code'  ) {
+										$question_type = 'short_answer';
+									}
+									if ( $ques_type === 'reorder' ) {
+										$question_type = 'ordering';
+									}
+									if ( $ques_type === 'upload' ) {
+										$question_type = 'image_answering';
 									}
 
 									if ( $question_type ) {
@@ -244,18 +256,20 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 										$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $new_question_data );
 										$question_id = $wpdb->insert_id;
-
-										$answer_items = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}lifterlms_quiz_attempts where question_id ={$quiz_id}  " );
+										//$input_type = ( 'yes' === $question->get( 'multi_choices' ) ) ? 'checkbox' : 'radio';
+    									$answer_items    = $question->get_choices();
+										//$answer_items = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}lifterlms_quiz_attempts where question_id ={$quiz_id}  " );
 
 										if ( tutils()->count( $answer_items ) ) {
 											foreach ( $answer_items as $answer_item ) {
-												$answer_data = maybe_unserialize( $answer_item->answer_data );
-
+												$choice =   $answer_item->get('choice');
+												$correct =  $answer_item->get('correct');
+												
 												$answer_data = array(
 													'belongs_question_id'   => $question_id,
 													'belongs_question_type' => $question_type,
-													'answer_title'          => tutils()->array_get( 'text', $answer_data ),
-													'is_correct'            => tutils()->array_get( 'is_true', $answer_data ) == 'yes' ? 1 : 0,
+													'answer_title'          => $choice,
+													'is_correct'            => $correct === true ? 1 : 0,
 													'answer_order'          => $answer_item->answer_order,
 												);
 

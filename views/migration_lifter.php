@@ -238,7 +238,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
 					<?php _e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
 					<br>
-					<?php _e( 'LearnPress to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+					<?php _e( 'Lifter LMS to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
 				</div>
 				<div class="tutor-d-flex">
 					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
