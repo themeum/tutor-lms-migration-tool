@@ -276,7 +276,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> <?php _e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?> </div>
-			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> <?php _e( 'The migration from LearnPress to Tutor LMS is successfully done.', 'tutor-lms-migration-tool' ); ?> </div>
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> <?php _e( 'The migration from LifterLMS to Tutor LMS is successfully done.', 'tutor-lms-migration-tool' ); ?> </div>
 
 			<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
 				<?php _e( 'Go to dashboard', 'tutor-lms-migration-tool' ); ?>
@@ -298,7 +298,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php _e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?> 
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> 
-				<?php _e( 'Oops... The migration from LearnPress to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?> 
+				<?php _e( 'Oops... The migration from LifterLMS to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?> 
 			</div>
 			<a href="" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
 				<?php _e( 'Try Again', 'tutor-lms-migration-tool' ); ?>
