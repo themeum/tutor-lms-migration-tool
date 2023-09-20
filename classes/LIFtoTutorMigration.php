@@ -168,8 +168,17 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					);
 
 					$lessons = $section->get_lessons();
+					
 
 					foreach ( $lessons as $lesson ) {
+					
+							$assignments = llms_lesson_get_assignment($lesson);
+							$has_assignment = llms_lesson_has_assignment( $lesson );
+						
+						if($has_assignment){
+							$assignment_post_type = 'tutor_assignments';
+							$assignment             = $assignments;
+						}
 						if ( $lesson->has_quiz() ) {
 							$lesson_post_type = 'tutor_quiz';
 							$quiz             = $lesson->get_quiz();
@@ -185,8 +194,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_content' => $lesson->get_video(),
 								'post_parent'  => '{topic_id}',
 							);
+							$tutor_assignment = array(
+								'ID'           => $assignment->id,
+								'post_type'    => $assignment_post_type,
+								'post_title'   => $assignment->post->post_title,
+								'post_content' => $assignment->get_video(),
+								'post_parent'  => '{topic_id}',
+							);
 
 							$topic['items'][] = $tutor_lessons;
+							$topic['items'][1] = $tutor_assignment;
 					}
 
 					$tutor_course[] = $topic;
@@ -279,6 +296,20 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 									}
 								}
 							}
+						}
+						if($lesson['post_type'] === 'tutor_assignments'){
+							$assignment_data = array(
+								'post_type'    => 'tutor_assignments',
+								'post_title'   => (string) $lesson->post_title,
+								'post_content' => (string) $lesson->post_content,
+								'post_status'  => 'publish',
+								'post_author'  => (string) $lesson->post_author,
+								'post_parent'  => $course_id,
+								'menu_order'   => (string) $lesson->menu_order,
+							);
+	
+							// Inserting Topics
+							$assignment_id = wp_insert_post( $assignment_data );
 						}
 
 						$lesson['post_parent'] = $topic_id;
