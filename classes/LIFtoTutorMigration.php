@@ -14,7 +14,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		add_action( 'wp_ajax_tlmt_reset_migrated_items_count', array( $this, 'tlmt_reset_migrated_items_count' ) );
 
 		add_action( 'wp_ajax__get_lif_live_progress_course_migrating_info', array( $this, '_get_lif_live_progress_course_migrating_info' ) );
-
+		add_action( 'tutor_action_migrate_lif_orders_earning', array( $this, 'migrate_lif_orders_earning' ) );
 		add_action( 'tutor_action_migrate_lif_orders', array( $this, 'migrate_lif_orders' ) );
 		add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
 
@@ -198,7 +198,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'ID'           => $assignment->id,
 								'post_type'    => $assignment_post_type,
 								'post_title'   => $assignment->post->post_title,
-								'post_content' => $assignment->get_video(),
+								'post_content' => $assignment,
 								'post_parent'  => '{topic_id}',
 							);
 
@@ -482,7 +482,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 */
 			$lif_enrollments = $wpdb->get_results(
 				"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
-				WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'"
+				WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_status' AND lifuer.meta_value='enrolled';"
 			);
 
 			foreach ( $lif_enrollments as $lif_enrollment ) {
@@ -510,10 +510,28 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			}
 		}
 
+
 		/*
 		* Lifter LMS  order migrate to WC
 		*/
 		public function migrate_lif_orders() {
+
+			 //Lifter LMS  order migrate to tutor earnings
+		
+		
+			$lif_orders = wc_get_orders( array(
+				'limit' => -1,  // Retrieve all orders
+			) );
+			foreach ( $lif_orders as $item ) {
+				$has_plan= $item->meta_exists( '_llms_access_plan');
+				$plans = wc_get_order_item_meta( $item->get_id(), '_llms_access_plan', false );
+	
+				foreach ( $plans as $plan ) {
+					$data_pan =$plan;
+			
+				}
+			}
+		
 			global $wpdb;
 
 			$lif_orders = $wpdb->get_results( "SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed' " );
