@@ -194,6 +194,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_content' => $lesson->get_video(),
 								'post_parent'  => '{topic_id}',
 							);
+							if($has_assignment){
 							$tutor_assignment = array(
 								'ID'           => $assignment->id,
 								'post_type'    => $assignment_post_type,
@@ -201,9 +202,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_content' => $assignment,
 								'post_parent'  => '{topic_id}',
 							);
-
+						}
 							$topic['items'][] = $tutor_lessons;
+							if($has_assignment){
 							$topic['items'][1] = $tutor_assignment;
+							}
 					}
 
 					$tutor_course[] = $topic;
@@ -341,13 +344,22 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			/**
 			 * Create WC Product and attaching it with course
 			 */
+			
 			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
 
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
-
+				global $wpdb;
 				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
+				$order_id_query =$wpdb->get_results("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}");
+				$course_metas = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}" );
+				//$check = metadata_exists('post', $course_id, '_llms_wc_pid');_llms_product_id
+				//$wc_llms_price= wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
+				// if(isset($order_id_query)){
+					
+				// 	update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
+				// }
 
 				if ( $_llms_price ) {
 
@@ -386,12 +398,19 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					/**
 					 * Attaching product to course
 					 */
+					//update_post_meta( $post_ID, '_tutor_course_product_id', $product_id );
 					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
 					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
 					if ( $coursePostThumbnail ) {
 						set_post_thumbnail( $product_id, $coursePostThumbnail );
 					}
-				} else {
+				}
+				elseif(!empty($order_id_query)){
+			
+					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
+					add_post_meta($course_id,'_tutor_course_product_id',$order_id_query);
+				}
+				 else {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 				}
 			}
@@ -402,7 +421,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
-
+				
 				if ( $_llms_price ) {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
 					$product_id    = wp_insert_post(
@@ -517,18 +536,58 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function migrate_lif_orders() {
 
 			 //Lifter LMS  order migrate to tutor earnings
+			 global $wpdb;
 		
-		
-			$lif_orders = wc_get_orders( array(
+			$wc_orders = wc_get_orders( array(
 				'limit' => -1,  // Retrieve all orders
 			) );
-			foreach ( $lif_orders as $item ) {
-				$has_plan= $item->meta_exists( '_llms_access_plan');
-				$plans = wc_get_order_item_meta( $item->get_id(), '_llms_access_plan', false );
-	
-				foreach ( $plans as $plan ) {
-					$data_pan =$plan;
-			
+			foreach ( $wc_orders as $wc_order ) {
+				$user_id = $wc_order->get_user_id();
+				$wc_order_items = $wc_order->get_items();
+				$order_status  = $wc_order->get_status();
+				
+				foreach ($wc_order_items as $item ) {
+					//$product_id = $item->get_id();
+					$product_id = $item->data['product_id'];
+					$wc_price = $item->get_total();
+					$order_data = $item->get_data(); // The Order data
+					$order_id = $order_data['order_id'];
+					$course_id = get_post_meta( $product_id, '_llms_product_id', true );
+					$wc_price_grand = $item->get_subtotal();
+					$commission_type   = 'percent';
+					$sharing_enabled   = tutor_utils()->get_option( 'enable_revenue_sharing' );
+					$instructor_rate   = $sharing_enabled ? tutor_utils()->get_option( 'earning_instructor_commission' ) : 0;
+					$admin_rate        = $sharing_enabled ? tutor_utils()->get_option( 'earning_admin_commission' ) : 100;
+					$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
+					$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
+					$plans = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
+					foreach ( $plans as $plan ) {
+						$plan = $plan ? llms_get_post( $plan ) : false;
+
+					}
+					if ( $plan ) {
+						// Prepare insertable earning data.
+						$earning_data = array(
+							'user_id'                  => $user_id,
+							'course_id'                => $course_id,
+							'order_id'                 => $order_id,
+							'order_status'             => $order_status,
+							'course_price_total'       => $wc_price,
+							'course_price_grand_total' => $wc_price_grand,
+
+							'instructor_amount'        => $instructor_amount,
+							'instructor_rate'          => $instructor_rate,
+							'admin_amount'             => $admin_amount,
+							'admin_rate'               => $admin_rate,
+
+							'commission_type'          => $commission_type,
+							'process_by'               => 'woocommerce',
+							'created_at'               => gmdate( 'Y-m-d H:i:s', tutor_time() ),
+						);
+						
+
+						$wpdb->insert( $wpdb->prefix . 'tutor_earnings', $earning_data );
+						}
 				}
 			}
 		
