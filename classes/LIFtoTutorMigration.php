@@ -352,14 +352,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				global $wpdb;
 				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
-				$order_id_query =$wpdb->get_results("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}");
-				$course_metas = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}" );
-				//$check = metadata_exists('post', $course_id, '_llms_wc_pid');_llms_product_id
-				//$wc_llms_price= wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
-				// if(isset($order_id_query)){
-					
-				// 	update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-				// }
+				//$llms_product_id = SELECT meta_value from wp_postmeta where meta_key='_llms_wc_pid' AND post_id = '669';
+				$order_plan_id =$wpdb->get_var("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}");
+				$llms_product_id =$wpdb->get_var("SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = {$order_plan_id}");
 
 				if ( $_llms_price ) {
 
@@ -405,10 +400,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						set_post_thumbnail( $product_id, $coursePostThumbnail );
 					}
 				}
-				elseif(!empty($order_id_query)){
+				elseif(!empty($llms_product_id)){
 			
 					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-					add_post_meta($course_id,'_tutor_course_product_id',$order_id_query);
+					add_post_meta($course_id,'_tutor_course_product_id',$llms_product_id);
 				}
 				 else {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
@@ -548,10 +543,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				
 				foreach ($wc_order_items as $item ) {
 					//$product_id = $item->get_id();
-					$product_id = $item->data['product_id'];
+					//$product_id = $item->data['product_id'];
 					$wc_price = $item->get_total();
 					$order_data = $item->get_data(); // The Order data
 					$order_id = $order_data['order_id'];
+					$product_id = $order_data['product_id'];
 					$course_id = get_post_meta( $product_id, '_llms_product_id', true );
 					$wc_price_grand = $item->get_subtotal();
 					$commission_type   = 'percent';
