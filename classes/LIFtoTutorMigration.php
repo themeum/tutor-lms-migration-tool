@@ -172,13 +172,15 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					foreach ( $lessons as $lesson ) {
 					
-							$assignments = llms_lesson_get_assignment($lesson);
+							$assignments = llms_lesson_get_assignment( $lesson );
+
 							$has_assignment = llms_lesson_has_assignment( $lesson );
 						
-						if($has_assignment){
+						if ( $has_assignment ) {
 							$assignment_post_type = 'tutor_assignments';
-							$assignment             = $assignments;
+							$assignment           = $assignments;
 						}
+
 						if ( $lesson->has_quiz() ) {
 							$lesson_post_type = 'tutor_quiz';
 							$quiz             = $lesson->get_quiz();
@@ -194,18 +196,19 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_content' => $lesson->get_video(),
 								'post_parent'  => '{topic_id}',
 							);
-							if($has_assignment){
-							$tutor_assignment = array(
-								'ID'           => $assignment->id,
-								'post_type'    => $assignment_post_type,
-								'post_title'   => $assignment->post->post_title,
-								'post_content' => $assignment,
-								'post_parent'  => '{topic_id}',
-							);
-						}
+							if ( $has_assignment ) {
+								$tutor_assignment = array(
+									'ID'           => $assignment->id,
+									'post_type'    => $assignment_post_type,
+									'post_title'   => $assignment->post->post_title,
+									'post_content' => $assignment,
+									'post_parent'  => '{topic_id}',
+								);
+							}
+
 							$topic['items'][] = $tutor_lessons;
-							if($has_assignment){
-							$topic['items'][1] = $tutor_assignment;
+							if ( $has_assignment ) {
+								$topic['items'][1] = $tutor_assignment;
 							}
 					}
 
@@ -216,7 +219,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( tutils()->count( $tutor_course ) ) {
 				foreach ( $tutor_course as $course_topic ) {
-					//var_dump($course_topic);
 					// Remove items from this topic
 					$lessons = $course_topic['items'];
 					//$lessons = $section->get_lessons();
@@ -227,7 +229,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					// Update lesson from lifter to TutorLMS
 					foreach ( $lessons as $lesson ) {
-						//var_dump($lesson);
+						
 						if ( $lesson['post_type'] === 'tutor_quiz' ) {
 							$quiz_id = tutils()->array_get( 'ID', $lesson );
 								
@@ -235,9 +237,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								foreach ( $questions as $question ) {
 									$ques_id= $question->id;
 									$meta_key = '_llms_question_type';
-									//$ques_type_query = $wpdb->get_results("SELECT *  FROM {$wpdb->postmeta} pm WHERE pm.meta_key = '_llms_question_type' AND pm.post_id={$ques_id} ");
 									
-									$ques_type =  get_post_meta($ques_id, $meta_key, true);;
+									$ques_type = get_post_meta( $ques_id, $meta_key, true );
+
 									$question_type = null;
 									if ( $ques_type === 'true_false' ) {
 										$question_type = 'true_false';
@@ -251,7 +253,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 									if ( $ques_type === 'blank' ) {
 										$question_type = 'fill_in_the_blank';
 									}
-									if ( $ques_type === 'short_answer' || $ques_type === 'long_answer' || $ques_type === 'code'  ) {
+									if ( $ques_type === 'short_answer' || $ques_type === 'long_answer' || $ques_type === 'code' ) {
 										$question_type = 'short_answer';
 									}
 									if ( $ques_type === 'reorder' ) {
@@ -276,7 +278,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 										$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $new_question_data );
 										$question_id = $wpdb->insert_id;
-										//$input_type = ( 'yes' === $question->get( 'multi_choices' ) ) ? 'checkbox' : 'radio';
     									$answer_items    = $question->get_choices();
 										//$answer_items = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}lifterlms_quiz_attempts where question_id ={$quiz_id}  " );
 
@@ -300,7 +301,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								}
 							}
 						}
-						if($lesson['post_type'] === 'tutor_assignments'){
+						if ( 'tutor_assignments' === $lesson['post_type'] ) {
 							$assignment_data = array(
 								'post_type'    => 'tutor_assignments',
 								'post_title'   => (string) $lesson->post_title,
@@ -310,10 +311,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_parent'  => $course_id,
 								'menu_order'   => (string) $lesson->menu_order,
 							);
-	
-							// Inserting Topics
+
+							// Inserting Topics.
 							$assignment_id = wp_insert_post( $assignment_data );
 						}
+
 
 						$lesson['post_parent'] = $topic_id;
 						wp_update_post( $lesson );
@@ -333,7 +335,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				}
 			}
 
-			// Migrate Course
+			// Migrate Course.
 			$tutor_course = array(
 				'ID'        => $course_id,
 				'post_type' => $course_post_type,
@@ -353,8 +355,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
 				//$llms_product_id = SELECT meta_value from wp_postmeta where meta_key='_llms_wc_pid' AND post_id = '669';
-				$order_plan_id =$wpdb->get_var("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}");
-				$llms_product_id =$wpdb->get_var("SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = {$order_plan_id}");
+				$order_plan_id = $wpdb->get_var("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}" );
+				$llms_product_id = $wpdb->get_var("SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = {$order_plan_id}" );
 
 				if ( $_llms_price ) {
 
@@ -393,19 +395,19 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					/**
 					 * Attaching product to course
 					 */
-					//update_post_meta( $post_ID, '_tutor_course_product_id', $product_id );
 					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-					if ( $coursePostThumbnail ) {
-						set_post_thumbnail( $product_id, $coursePostThumbnail );
+					$course_thumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+					if ( $course_thumbnail ) {
+						set_post_thumbnail( $product_id, $course_thumbnail );
 					}
 				}
-				elseif(!empty($llms_product_id)){
-			
+				elseif ( ! empty( $llms_product_id ) ) {
+
 					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-					add_post_meta($course_id,'_tutor_course_product_id',$llms_product_id);
+					add_post_meta( $course_id, '_tutor_course_product_id', $llms_product_id );
+
 				}
-				 else {
+				else {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 				}
 			}
@@ -438,9 +440,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						update_post_meta( $product_id, $key, $value );
 					}
 					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-					if ( $coursePostThumbnail ) {
-						set_post_thumbnail( $product_id, $coursePostThumbnail );
+					$course_thumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+					if ( $course_thumbnail ) {
+						set_post_thumbnail( $product_id, $course_thumbnail );
 					}
 				} else {
 					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
@@ -466,7 +468,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					do {
 						$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
-						$hasHash = (int) $wpdb->get_var(
+						$has_hash = (int) $wpdb->get_var(
 							$wpdb->prepare(
 								"SELECT COUNT(comment_ID) from {$wpdb->comments}
 								WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
@@ -474,7 +476,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							)
 						);
 
-					} while ( $hasHash > 0 );
+					} while ( $has_hash > 0 );
 
 					$tutor_course_complete_data = array(
 						'comment_type'     => 'course_completed',
@@ -486,7 +488,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'comment_post_ID'  => $course_id,
 					);
 
-					$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
+					$is_has_enrolled = wp_insert_comment( $tutor_course_complete_data );
 
 				}
 			}
@@ -514,9 +516,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'post_parent' => $course_id,
 					);
 
-					$isEnrolled = wp_insert_post( $tutor_enrollment_data );
+					$is_has_enrolled = wp_insert_post( $tutor_enrollment_data );
 
-					if ( $isEnrolled ) {
+					if ( $is_has_enrolled ) {
 						// Mark Current User as Students with user meta data
 						update_user_meta( $user_id, '_is_tutor_student', $order_time );
 					}
@@ -525,16 +527,18 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		}
 
 
-		/*
-		* Lifter LMS  order migrate to WC
-		*/
+		/**
+		 * Lifter LMS  order migrate to WC
+		 *
+		 * @return void
+		 */
 		public function migrate_lif_orders() {
 
 			 //Lifter LMS  order migrate to tutor earnings
 			 global $wpdb;
 		
 			$wc_orders = wc_get_orders( array(
-				'limit' => -1,  // Retrieve all orders
+				'limit' => -1,  // Retrieve all orders.
 			) );
 			foreach ( $wc_orders as $wc_order ) {
 				$user_id = $wc_order->get_user_id();
