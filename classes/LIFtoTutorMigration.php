@@ -171,14 +171,15 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					
 
 					foreach ( $lessons as $lesson ) {
-					
+						if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
 							$assignments = llms_lesson_get_assignment( $lesson );
 
 							$has_assignment = llms_lesson_has_assignment( $lesson );
 						
-						if ( $has_assignment ) {
-							$assignment_post_type = 'tutor_assignments';
-							$assignment           = $assignments;
+							if ( $has_assignment ) {
+								$assignment_post_type = 'tutor_assignments';
+								$assignment           = $assignments;
+							}
 						}
 
 						if ( $lesson->has_quiz() ) {
@@ -196,19 +197,23 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								'post_content' => $lesson->get_video(),
 								'post_parent'  => '{topic_id}',
 							);
-							if ( $has_assignment ) {
-								$tutor_assignment = array(
-									'ID'           => $assignment->id,
-									'post_type'    => $assignment_post_type,
-									'post_title'   => $assignment->post->post_title,
-									'post_content' => $assignment,
-									'post_parent'  => '{topic_id}',
-								);
+							if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
+								if ( $has_assignment ) {
+									$tutor_assignment = array(
+										'ID'           => $assignment->id,
+										'post_type'    => $assignment_post_type,
+										'post_title'   => $assignment->post->post_title,
+										'post_content' => $assignment,
+										'post_parent'  => '{topic_id}',
+									);
+								}
 							}
 
 							$topic['items'][] = $tutor_lessons;
-							if ( $has_assignment ) {
-								$topic['items'][1] = $tutor_assignment;
+							if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
+								if ( $has_assignment ) {
+									$topic['items'][1] = $tutor_assignment;
+								}
 							}
 					}
 
@@ -534,62 +539,67 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 */
 		public function migrate_lif_orders() {
 
-			 //Lifter LMS  order migrate to tutor earnings
-			 global $wpdb;
-		
-			$wc_orders = wc_get_orders( array(
-				'limit' => -1,  // Retrieve all orders.
-			) );
-			foreach ( $wc_orders as $wc_order ) {
-				$user_id = $wc_order->get_user_id();
-				$wc_order_items = $wc_order->get_items();
-				$order_status  = $wc_order->get_status();
-				
-				foreach ($wc_order_items as $item ) {
-					//$product_id = $item->get_id();
-					//$product_id = $item->data['product_id'];
-					$wc_price = $item->get_total();
-					$order_data = $item->get_data(); // The Order data
-					$order_id = $order_data['order_id'];
-					$product_id = $order_data['product_id'];
-					$course_id = get_post_meta( $product_id, '_llms_product_id', true );
-					$wc_price_grand = $item->get_subtotal();
-					$commission_type   = 'percent';
-					$sharing_enabled   = tutor_utils()->get_option( 'enable_revenue_sharing' );
-					$instructor_rate   = $sharing_enabled ? tutor_utils()->get_option( 'earning_instructor_commission' ) : 0;
-					$admin_rate        = $sharing_enabled ? tutor_utils()->get_option( 'earning_admin_commission' ) : 100;
-					$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
-					$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
-					$plans = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
-					foreach ( $plans as $plan ) {
-						$plan = $plan ? llms_get_post( $plan ) : false;
+			//Lifter LMS  order migrate to tutor earnings
+			global $wpdb;
+			if ( function_exists( 'wc_get_orders' ) ) {
 
-					}
-					if ( $plan ) {
-						// Prepare insertable earning data.
-						$earning_data = array(
-							'user_id'                  => $user_id,
-							'course_id'                => $course_id,
-							'order_id'                 => $order_id,
-							'order_status'             => $order_status,
-							'course_price_total'       => $wc_price,
-							'course_price_grand_total' => $wc_price_grand,
+				$wc_orders = wc_get_orders(
+					array(
+						'limit' => -1,  // Retrieve all orders.
+					)
+				);
+				foreach ( $wc_orders as $wc_order ) {
+					$user_id        = $wc_order->get_user_id();
+					$wc_order_items = $wc_order->get_items();
+					$order_status   = $wc_order->get_status();
+					foreach ( $wc_order_items as $item ) {
+						// $product_id = $item->get_id();
+						// $product_id = $item->data['product_id'];
+						$wc_price          = $item->get_total();
+						$order_data        = $item->get_data(); // The Order data
+						$order_id          = $order_data['order_id'];
+						$product_id        = $order_data['product_id'];
+						$course_id         = get_post_meta( $product_id, '_llms_product_id', true );
+						$wc_price_grand    = $item->get_subtotal();
+						$commission_type   = 'percent';
+						$sharing_enabled   = tutor_utils()->get_option( 'enable_revenue_sharing' );
+						$instructor_rate   = $sharing_enabled ? tutor_utils()->get_option( 'earning_instructor_commission' ) : 0;
+						$admin_rate        = $sharing_enabled ? tutor_utils()->get_option( 'earning_admin_commission' ) : 100;
+						$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
+						$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
+						$plans             = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
+						foreach ( $plans as $plan ) {
+							$plan = $plan ? llms_get_post( $plan ) : false;
 
-							'instructor_amount'        => $instructor_amount,
-							'instructor_rate'          => $instructor_rate,
-							'admin_amount'             => $admin_amount,
-							'admin_rate'               => $admin_rate,
-
-							'commission_type'          => $commission_type,
-							'process_by'               => 'woocommerce',
-							'created_at'               => gmdate( 'Y-m-d H:i:s', tutor_time() ),
-						);
-						
-
-						$wpdb->insert( $wpdb->prefix . 'tutor_earnings', $earning_data );
 						}
+						if ( $plan ) {
+							// Prepare insertable earning data.
+							$earning_data = array(
+								'user_id'                  => $user_id,
+								'course_id'                => $course_id,
+								'order_id'                 => $order_id,
+								'order_status'             => $order_status,
+								'course_price_total'       => $wc_price,
+								'course_price_grand_total' => $wc_price_grand,
+
+								'instructor_amount'        => $instructor_amount,
+								'instructor_rate'          => $instructor_rate,
+								'admin_amount'             => $admin_amount,
+								'admin_rate'               => $admin_rate,
+
+								'commission_type'          => $commission_type,
+								'process_by'               => 'woocommerce',
+								'created_at'               => gmdate( 'Y-m-d H:i:s', tutor_time() ),
+							);
+
+
+							$wpdb->insert( $wpdb->prefix . 'tutor_earnings', $earning_data );
+						}
+					}
 				}
+
 			}
+
 		
 			global $wpdb;
 
