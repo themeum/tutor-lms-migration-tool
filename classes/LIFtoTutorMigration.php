@@ -1008,10 +1008,93 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						}
 						$xml .= $this->close_element( 'course_meta' );
 
-						$course = llms_get_post( $course_id );
+						$course           = new LLMS_Course( $course_id );
 
 						$lesson_post_type = tutor()->lesson_post_type;
 						$course_post_type = tutor()->course_post_type;
+
+					if ( $course) {
+						$curriculum = $course->get_sections();
+
+						$i            = 0;
+
+						if($curriculum) {
+							foreach ( $curriculum as $section ) {
+								$i ++;
+
+								$xml .= $this->start_element('topics');
+
+								/**
+								 * Topic
+								 */
+								$xml .= "<post_type>topics</post_type>\n";
+								$xml .= "<post_title>{$section->post->post_title}</post_title>\n";
+
+								$topic_content = ! empty($section->post->post_content) ? $this->xml_cdata($section->post->post_content) : '';
+
+								$xml .= "<post_content>{$topic_content}</post_content>\n";
+								$xml .= "<post_status>publish</post_status>\n";
+								$xml .= "<post_author>{$course->get_author}</post_author>\n";
+								$xml .= "<post_parent>{$course_id}</post_parent>";
+								$xml .= "<menu_order>{$i}</menu_order>\n";
+
+								/**
+								 * Lessons
+								 */
+								$i = 0;
+								$section_count = 0;
+								$topic_id = 0;
+								$xml_inner = array();
+								$final = array();
+								$lessons = $section->get_lessons();
+
+								foreach ( $lessons as $lesson ) {
+									$item_post_type = $lesson->item_type;
+
+									if ( $lesson->has_quiz() ) {
+										$lesson_post_type = 'tutor_quiz';
+										$quiz             = $lesson->get_quiz();
+										$questions        = $quiz->get_questions();
+			
+									} else {
+										$lesson_post_type = tutor()->lesson_post_type;
+									}
+
+									//Item
+									$xml.= $this->start_element('items');
+
+									$xml .= "<item_id>{$lesson->id}</item_id>\n";
+									$xml .= "<post_type>{$lesson_post_type}</post_type>\n";
+									$xml.= "<post_author>{$lesson->post_author}</post_author>\n";
+									$xml .= "<post_date>{$lesson->post_date}</post_date>\n";
+									$xml .= "<post_title>{$lesson->post->post_title}</post_title>\n";
+									$xml.= "<post_content>{$this->xml_cdata($lesson->get_video())}</post_content>\n";
+									$xml .= "<post_parent>{$course_id}</post_parent>\n";
+
+									$xml .= $this->start_element('item_meta');
+
+									$item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} ");
+
+									if (is_array($item_metas) && count($item_metas)){
+										foreach ($item_metas as $item_meta){
+											$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
+										}
+									}
+
+									$xml.= $this->close_element('item_meta');
+
+
+									$xml.= $this->close_element('items');
+							
+								}
+
+								//Close Topic Tag
+								$xml .= $this->close_element('topics');
+							}
+						}
+			
+					}
+
 
 						$lif_reviews = $wpdb->get_results(
 							"SELECT 
@@ -1048,6 +1131,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$xml .= $this->close_element( 'channel' );
 				return $xml;
 		}
+		
 
 		public function start_element( $element = '' ) {
 			return "\n<{$element}>\n";
