@@ -135,7 +135,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								<span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
 							</div>
 							<form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
-								<input type="hidden" name="tutor_action" value="tutor_import_from_xml">
+								<input type="hidden" name="tutor_action" value="tutor_import_from_xml_lif">
 								<div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
 									<div class="tutor-color-black"><?php _e( 'Drag & Drop XML file here', 'tutor-lms-migration-tool' ); ?></div>
 									or <a href="" class="tutor-color-primary"><?php _e( 'Browse File', 'tutor-lms-migration-tool' ); ?></a>

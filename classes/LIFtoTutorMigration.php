@@ -18,7 +18,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		add_action( 'tutor_action_migrate_lif_orders', array( $this, 'migrate_lif_orders' ) );
 		add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
 
-		add_action( 'wp_ajax_tutor_import_from_xml', array( $this, 'tutor_import_from_xml' ) );
+		add_action( 'wp_ajax_tutor_import_from_xml_lif', array( $this, 'tutor_import_from_xml_lif' ) );
 		add_action( 'tutor_action_tutor_lif_export_xml', array( $this, 'tutor_lif_export_xml' ) );
 	}
 
@@ -527,7 +527,25 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						// Mark Current User as Students with user meta data
 						update_user_meta( $user_id, '_is_tutor_student', $order_time );
 					}
+					//llms_course_752_progress
+					$student  = new LLMS_Student($user_id);
+					$progress = $student->get_progress( $course_id, 'course' );
+					if(100===$progress){
+						$tutor_course_complete_data = array(
+							'comment_type'   => 'course_completed',
+							'comment_agent'   => 'TutorLMSPlugin',
+							'comment_approved'   => 'approved',
+							'comment_content'   => $progress,
+							'user_id' => $user_id,
+							'comment_author' => $user_id,
+							'comment_post_ID' => $course_id,
+						);
+	
+						$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
+					}
+
 				}
+				
 			}
 		}
 
@@ -742,7 +760,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 *
 		 * Import From XML
 		 */
-		public function tutor_import_from_xml() {
+		public function tutor_import_from_xml_lif() {
 			global $wpdb;
 			$wpdb->query( 'START TRANSACTION' );
 			$error = true;
@@ -1083,9 +1101,144 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 									$xml.= $this->close_element('item_meta');
 
+									if ( $lesson_post_type === 'tutor_quiz' ) {
+										$quiz_id = tutils()->array_get( 'ID', $lesson );
+										$quiz             = $lesson->get_quiz();
+										$questions        = $quiz->get_questions();
+										if ( tutils()->count( $questions ) ) {
+											foreach ( $questions as $question ) {
+												$ques_id= $question->id;
+												$meta_key = '_llms_question_type';
+												
+												$ques_type = get_post_meta( $ques_id, $meta_key, true );
+			
+												$question_type = null;
+												if ( $ques_type === 'true_false' ) {
+													$question_type = 'true_false';
+												}
+												if ( $ques_type === 'choice' ) {
+													$question_type = 'multiple_choice';
+												}
+												if ( $ques_type === 'picture_choice' ) {
+													$question_type = 'image_matching';
+												}
+												if ( $ques_type === 'blank' ) {
+													$question_type = 'fill_in_the_blank';
+												}
+												if ( $ques_type === 'short_answer' || $ques_type === 'long_answer' || $ques_type === 'code' ) {
+													$question_type = 'short_answer';
+												}
+												if ( $ques_type === 'reorder' ) {
+													$question_type = 'ordering';
+												}
+												if ( $ques_type === 'upload' ) {
+													$question_type = 'image_answering';
+												}
+			
+												if ( $question_type ) {
+			
+											
+													
 
+												
+			
+													
+													
+													$answer_items    = $question->get_choices();
+													
+
+													
+													if ( tutils()->count( $answer_items ) ) {
+														foreach ( $answer_items as $answer_item ) {
+															$choice =   $answer_item->get('choice');
+															$correct =  $answer_item->get('correct');
+															$question_id = $answer_item->get_question_id();
+															
+															$answer_data = array(
+																'belongs_question_id'   => $question_id,
+																'belongs_question_type' => $question_type,
+																'answer_title'          => $choice,
+																'is_correct'            => $correct === true ? 1 : 0,
+																'answer_order'          => $answer_item->answer_order,//1
+															);
+			
+															
+														}
+													}
+
+													
+														
+														$question1['quiz_id'] = $quiz_id;
+														$question1['question_title'] = $question->post->post_title;
+														$question1['question_description'] =  $question->post->post_content;
+														$question1['question_mark'] = $question->post->question_mark;
+														$question1['question_settings'] = maybe_serialize(array(
+															'question_type' => $question_type,
+															'question_mark' => $question->post->question_mark
+														));
+								
+														$xml .= $this->start_element('questions');
+														foreach ($question1 as $question_key => $question_value) {
+															$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
+														}
+														
+
+														if ($question_id) {
+															foreach ((array)maybe_unserialize($answer_items) as $key => $value) {
+																$i = 0;
+																$answer1 = array();
+																foreach ((array)$value as $k => $val) {
+																	if ($i == 0) {
+																		$answer1['answer_title'] = $val;
+																		if ($answer_items == 'cloze_answer') {
+																			$final_question = wp_strip_all_tags( $val );
+																			preg_match_all('/{.*?\}/', $final_question, $matches);
+																			if (isset($matches[0])) {
+																				foreach ($matches[0] as $key => $v) {
+																					$v = explode( ']', $v );
+																					if (isset($v[0])) {
+																						$answer_str[] = str_replace(array('{[','{','}'), '', $v[0]);
+																					}
+																				}
+																				$final_question = str_replace($matches[0], '{dash}', $final_question);
+																			}
+																			$answer1['answer_two_gap_match'] = implode('|', $answer_str);
+																			$answer1['answer_title'] = $final_question;
+																		}
+																	} elseif ($i == 2) {
+																		$answer1['is_correct'] = $val ? 0 : 1;
+																	} elseif ($i == 3) {
+																		$answer1['belongs_question_id'] = $question_id;
+																		$answer1['belongs_question_type'] = $question_type;
+																		$answer1['answer_view_format'] = 'text';
+																		$answer1['answer_order'] = $i+1;
+																		$answer1['image_id'] = 0;
+																	}
+																	$i++;
+																}
+								
+																if (count($answer1) > 0) {
+																	$xml .= $this->start_element('answers');
+																	foreach ($answer1 as $answers_key => $answers_value){
+																		$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
+																	}
+																	$xml .= $this->close_element('answers');
+																}
+								
+															}
+														}
+								
+														$xml .= $this->close_element('questions');
+													
+
+													
+			
+												
+												}
+											}
+										}
+									}
 									$xml.= $this->close_element('items');
-							
 								}
 
 								//Close Topic Tag
@@ -1131,6 +1284,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$xml .= $this->close_element( 'channel' );
 				return $xml;
 		}
+
+	
 		
 
 		public function start_element( $element = '' ) {
@@ -1145,9 +1300,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$str = utf8_encode( $str );
 			}
 			$str = '<![CDATA[' . str_replace( ']]>', ']]]]><![CDATA[>', $str ) . ']]>';
-
 			return $str;
-		}
+        }
 
 
 	}
