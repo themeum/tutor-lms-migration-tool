@@ -530,7 +530,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					//llms_course_752_progress
 					$student  = new LLMS_Student($user_id);
 					$progress = $student->get_progress( $course_id, 'course' );
-					if(100===$progress){
+					if(100==$progress){
 						$tutor_course_complete_data = array(
 							'comment_type'   => 'course_completed',
 							'comment_agent'   => 'TutorLMSPlugin',
