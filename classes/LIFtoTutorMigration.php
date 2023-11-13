@@ -586,6 +586,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
 						$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
 						$plans             = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
+						$plan			   ='';
 						foreach ( $plans as $plan ) {
 							$plan = $plan ? llms_get_post( $plan ) : false;
 
@@ -1229,7 +1230,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						}
 			
 					}
-					
+
 						$lif_reviews = $wpdb->get_results(
 							"SELECT 
 								ID,
