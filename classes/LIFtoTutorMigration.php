@@ -1137,17 +1137,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			
 												if ( $question_type ) {
 			
-											
-													
-
-												
-			
-													
-													
 													$answer_items    = $question->get_choices();
-													
 
-													
 													if ( tutils()->count( $answer_items ) ) {
 														foreach ( $answer_items as $answer_item ) {
 															$choice =   $answer_item->get('choice');
@@ -1159,15 +1150,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 																'belongs_question_type' => $question_type,
 																'answer_title'          => $choice,
 																'is_correct'            => $correct === true ? 1 : 0,
-																'answer_order'          => $answer_item->answer_order,//1
+																'answer_order'          => $answer_item->answer_order,
 															);
-			
-															
 														}
 													}
-
-													
-														
 														$question1['quiz_id'] = $quiz_id;
 														$question1['question_title'] = $question->post->post_title;
 														$question1['question_description'] =  $question->post->post_content;
@@ -1229,10 +1215,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 														}
 								
 														$xml .= $this->close_element('questions');
-													
-
-													
-			
 												
 												}
 											}
@@ -1247,8 +1229,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						}
 			
 					}
-
-
+					
 						$lif_reviews = $wpdb->get_results(
 							"SELECT 
 								ID,

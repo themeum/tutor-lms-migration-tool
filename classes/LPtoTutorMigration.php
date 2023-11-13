@@ -697,9 +697,13 @@ if ( ! class_exists('LPtoTutorMigration')){
 								foreach ($item->questions as $question) {
 									$answers = $question->answers;
 
+									$q2 = json_encode($question);
+								
+									$q4 = json_decode($q2);
 									$question = (array) $question;
 									$question['quiz_id'] = $item_id;
 									$question['question_description'] = (string) $question['question_description'];
+								
 									unset($question['answers']);
 
 									$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
@@ -905,7 +909,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 												if ($question_type) {
 													$xml .= $this->start_element('questions');
 													$new_question_data = array(
-														'quiz_id'              => '{quiz_id}',
+														'quiz_id'              => $quiz_id,
 														'question_title'       => $question->post_title,
 														'question_description' => $question->post_content,
 														'question_type'        => $question_type,
@@ -915,27 +919,27 @@ if ( ! class_exists('LPtoTutorMigration')){
 													);
 
 													foreach ($new_question_data as $question_key => $question_value){
-														$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
+														$xml .= "<{$question_key}>$question_value</{$question_key}>\n";
 													}
 
 													$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
 
 													if (tutils()->count($answer_items)){
 														foreach ($answer_items as $answer_item){
-															$answer_data = maybe_unserialize($answer_item->answer_data);
+															$answer_data = maybe_unserialize($answer_item);
 
 															$answer_data = array(
-																'belongs_question_id'   => '{question_id}',
+																'belongs_question_id'   => $answer_item->question_id,
 																'belongs_question_type' => $question_type,
-																'answer_title'          => tutils()->array_get('text', $answer_data),
+																'answer_title'          => $answer_item->title,
 																'is_correct'            => tutils()->array_get('is_true', $answer_data) == 'yes' ? 1 : 0,
-																'answer_order'          => $answer_item->answer_order,
+																'answer_order'          => $answer_item->order,
 															);
 
 															$xml .= $this->start_element('answers');
 
 															foreach ($answer_data as $answers_key => $answers_value){
-																$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
+																$xml .= "<{$answers_key}>$answers_value</{$answers_key}>\n";
 															}
 															$xml .= $this->close_element('answers');
 														}
