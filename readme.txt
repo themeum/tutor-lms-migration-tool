@@ -3,7 +3,7 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
-Tested up to: 6.0.2
+Tested up to: 6.4.1
 Requires PHP: 7.4
 Stable tag: 2.2.0
 License: GPLv3
@@ -12,8 +12,9 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Move all your course, quiz, order data information and everything else from your LMS to the better Tutor LMS by simply clicking a button.
 
 == Description ==
+Migrate to [Tutor LMS](https://www.themeum.com/product/tutor-lms/) for a better, richer, and smarter [eLearning](https://wordpress.org/plugins/tutor/) experience. 
 
-If you want to transfer your existing database from your currently installed LMS plugin (which contains all the course, quizzes information, order data and so on of your teaching site) with all your information intact, to the better Tutor LMS then the Tutor LMS Migration Tool plugin is the perfect choice for you.
+If you are using the LearnDash, LearnPress, or LifterLMS plugin and want to migrate to Tutor LMS, this plugin can help you migrate without losing your valuable data (Courses, Lessons, Quizzes, Sales Data, Reviews, Students, Instructors, Course Enrollment and Course Complete Status).
 
 No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool with its easy user interface. With its simple one-click auto migration settings you can have all the information from your old LMS plugin transferred without any database error.
 
@@ -25,6 +26,7 @@ Currently Tutor LMS Migration support migration options from
 
 * LearnPress
 * LearnDash
+* LifterLMS
 
 = Pre-requisites =
 
@@ -109,6 +111,15 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+= 2.2.0 - 15 November, 2023 =
+
+*New: LifterLMS courses will be migrated to Tutor LMS now.
+*New: LifterLMS lessons will be migrated to Tutor LMS now.
+*New: LifterLMS quizzes will be migrated to Tutor LMS now.
+*New: LifterLMS assignments will be migrated to Tutor LMS now.
+*New: LifterLMS enrolment records will be migrated to Tutor LMS now.
+*New: LifterLMS eCommerce products will be migrated to Tutor LMS now.
+*Fix: Resolved LearnPress to Tutor LMS quiz migration error.
 
 = 2.1.0 - 29 September, 2022 =
 

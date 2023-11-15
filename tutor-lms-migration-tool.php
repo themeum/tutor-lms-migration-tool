@@ -120,7 +120,7 @@ if ( is_plugin_active('tutor/tutor.php') ) {
 
 
 	// Migrate Lifter Instructor to Tutor Instructor.
-	$lifter_migration_history = $utils->fetch_history( 'instructor' );
+	$lifter_migration_history = $utils->fetch_history( 'lif' );
 
 	if ( count( $lifter_migration_history ) ) {
 		add_action(

@@ -696,10 +696,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 							if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
 								foreach ($item->questions as $question) {
 									$answers = $question->answers;
-
-									$q2 = json_encode($question);
-								
-									$q4 = json_decode($q2);
 									$question = (array) $question;
 									$question['quiz_id'] = $item_id;
 									$question['question_description'] = (string) $question['question_description'];
