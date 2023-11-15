@@ -357,10 +357,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 				global $wpdb;
-				$_llms_price      = get_post_meta( $course_id, '_llms_price', true );
+				$order_plan_id = $wpdb->get_var("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}" );
+				$_llms_price      = get_post_meta( $order_plan_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
 				//$llms_product_id = SELECT meta_value from wp_postmeta where meta_key='_llms_wc_pid' AND post_id = '669';
-				$order_plan_id = $wpdb->get_var("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}" );
+				
 				$llms_product_id = $wpdb->get_var("SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = {$order_plan_id}" );
 
 				if ( $_llms_price ) {
@@ -369,7 +370,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					$product_id = wp_insert_post(
 						array(
-							'post_title'   => $course->get_title() . ' Product',
+							'post_title'   => $course->post->post_title . ' Product',
 							'post_content' => '',
 							'post_status'  => 'publish',
 							'post_type'    => 'product',
