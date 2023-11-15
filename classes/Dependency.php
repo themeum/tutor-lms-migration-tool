@@ -36,11 +36,11 @@ class Dependency {
 						</div>
 						<div class="etlms-install-notice-content">
 							<h2 style="margin-bottom: 5px">
-								<i class="tutor-icon-warning-f" style="color:#ffb200;"></i> <?php esc_html_e( 'WARNING: YOU NEED TO INSTALL THE REQUIRED TUTOR LMS VERSION', 'tutor-lms-migration-tool' ); ?></h2>
+								<i class="tutor-icon-warning-f" style="color:#ffb200;"></i> <?php esc_html_e( 'WARNING: YOU NEED TO INSTALL THE REQUIRED TUTOR LMS', 'tutor-lms-migration-tool' ); ?></h2>
 							<p style="margin-bottom: 5px">
 					<?php
 						esc_html_e(
-							'It seems you have installed the wrong version Of Tutor LMS. For a smoother Tutor LMS experience, you need to install minimum ' . TLMT_TUTOR_CORE_REQ_VERSION . ' version.',
+							'Install Tutor LMS first before migrating your courses. ',
 							'tutor-lms-migration-tool'
 						);
 					?>
@@ -51,7 +51,7 @@ class Dependency {
 						</div>
 					</div>
 					<div class="etlms-install-notice-button">
-						<a  class="button button-primary install-dtlms-dependency-plugin-button" data-slug="tutor" href="https://github.com/themeum/tutor/releases/tag/<?php esc_attr_e( TLMT_TUTOR_CORE_LATEST_VERSION ) ?>" target="_blank"><?php esc_html_e( 'Upgrade Tutor LMS' ); ?></a>
+						<a  class="button button-primary install-dtlms-dependency-plugin-button" data-slug="tutor" href="https://downloads.wordpress.org/plugin/tutor.zip" target="_blank"><?php esc_html_e( 'Install Tutor LMS', 'tutor-lms-migration-tool' ); ?></a>
 					</div>
 				</div>
 			</div>

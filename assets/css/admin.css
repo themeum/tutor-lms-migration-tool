@@ -669,6 +669,9 @@
 #tutor-migration-browse-file-link a{
     text-decoration: underline;
 }
+span.tutor-icon-brand-lifter:before {
+    content: "\e962";
+}
 @media (max-width: 991px) { 
     #tutor-migration-wrapper .migrate-now-btn-wrapper {
         margin-top: 20px;

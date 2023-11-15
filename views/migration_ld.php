@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) )
                         <?php _e('Migration','tutor-lms-migration-tool'); ?>
                     </div>
                     <div class="tutor-migration-top-subtitle tutor-fs-6">
-                        <?php _e('Explore our integrated online learning destination that helps everyone gain the skills.','tutor-lms-migration-tool'); ?>
+                        <?php _e('Seamlessly migrate your Learndash courses to Tutor LMS with the Tutor LMS Migration Tool.','tutor-lms-migration-tool'); ?>
                     </div>
                 </div>
                 <div class="tutor-d-flex tutor-justify-end tutor-align-center">
@@ -71,7 +71,7 @@ if ( ! defined( 'ABSPATH' ) )
                                             <div class="lp-migration-singlebox-desc">
                                                 <div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">Courses</div>
                                                 <div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-                                                    <?php _e('Destination that helps everyone gain the skills.','tutor-lms-migration-tool'); ?>
+                                                    <?php _e('Transfer courses, lessons, quizzes, assignments, etc to Tutor LMS.','tutor-lms-migration-tool'); ?>
                                                 </div>
                                                 <div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
                                             </div>
@@ -89,7 +89,7 @@ if ( ! defined( 'ABSPATH' ) )
                                                     <?php _e('Sales Data','tutor-lms-migration-tool'); ?>
                                                 </div>
                                                 <div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-                                                    <?php _e('Explore our integrated online learning','tutor-lms-migration-tool'); ?>
+                                                    <?php _e('Migrate revenue and sales data to Tutor LMS.','tutor-lms-migration-tool'); ?>
                                                 </div>
                                                 <div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
                                             </div>
@@ -107,7 +107,7 @@ if ( ! defined( 'ABSPATH' ) )
                                                     <?php _e('Reviews','tutor-lms-migration-tool'); ?>
                                                 </div>
                                                 <div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-                                                    <?php _e('Reviews left by your customers for your courses.','tutor-lms-migration-tool'); ?>
+                                                    <?php _e('All of the course reviews will be carried over to Tutor LMS.','tutor-lms-migration-tool'); ?>
                                                 </div>
                                                 <div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
                                             </div>

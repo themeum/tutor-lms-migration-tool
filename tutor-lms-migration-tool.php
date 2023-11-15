@@ -4,7 +4,7 @@ Plugin Name: Tutor LMS - Migration Tool
 Plugin URI: https://www.themeum.com/
 Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
 Author: Themeum
-Version: 2.1.0
+Version: 2.2.0
 Author URI: http://themeum.com
 Requires at least: 5.3
 Tested up to: 6.0.2
@@ -12,19 +12,20 @@ Requires PHP: 7.4
 License: GPLv2 or later
 Text Domain: tutor-lms-migration-tool
 */
-include('classes/Dependency.php');
+require 'classes/Dependency.php';
 
 use TutorLMSMigrationTool\TLMT\Dependency;
 
-if ( ! defined( 'ABSPATH' ) )
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
 
 /**
  * Defining Constant
  * @since v.1.0.0
  */
 
-define('TLMT_VERSION', '2.1.0');
+define('TLMT_VERSION', '2.2.0');
 define('TLMT_FILE', __FILE__);
 define('TLMT_PATH', plugin_dir_path( TLMT_FILE ));
 define('TLMT_URL', plugin_dir_url( TLMT_FILE ));
@@ -79,38 +80,61 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 
 if ( is_plugin_active('tutor/tutor.php') ) {
 
-$utils = new Utils;
+	$utils = new Utils;
 
-// Migrate Learndash Instructor to Tutor Instructor
-$ld_migration_history = $utils->fetch_history('ld');
+	// Migrate Learndash Instructor to Tutor Instructor.
+	$ld_migration_history = $utils->fetch_history('ld');
 
-if(count($ld_migration_history)){
-	add_action(
-		'wp_login',
-		function( $user_login, $user ) { // We want $user
-			if ( in_array( 'wdm_instructor', $user->roles ) ) {
-				$user->set_role( 'tutor_instructor' );
-			}
-		},
-		10,
-		2
-	);
-}
+		if ( count( $ld_migration_history ) ) {
+			add_action(
+				'wp_login',
+				function( $user_login, $user ) {
+					// We want $user.
+					if ( in_array( 'wdm_instructor', $user->roles ) ) {
+						$user->set_role( 'tutor_instructor' );
+					}
+				},
+				10,
+				2
+			);
+		}
 
-// Migrate Learnpress Instructor to Tutor Instructor
-$lp_migration_history = $utils->fetch_history('lp');
 
-if(count($lp_migration_history)){
-	add_action(
-		'wp_login',
-		function( $user_login, $user ) { // We want $user
-			if ( in_array( 'lp_teacher', $user->roles ) ) {
-				$user->set_role( 'tutor_instructor' );
-			}
-		},
-		10,
-		2
-	);
-}
+	// Migrate Learnpress Instructor to Tutor Instructor.
+	$lp_migration_history = $utils->fetch_history( 'lp' );
+
+	if ( count( $lp_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user
+				if ( in_array( 'lp_teacher', $user->roles ) ) {
+					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
+
+
+
+	// Migrate Lifter Instructor to Tutor Instructor.
+	$lifter_migration_history = $utils->fetch_history( 'lif' );
+
+	if ( count( $lifter_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user .
+				if ( in_array( 'instructor', $user->roles ) ) {
+					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
+
 
 }

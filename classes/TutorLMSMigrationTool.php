@@ -166,6 +166,9 @@ final class TutorLMSMigrationTool {
 	public function includes() {
 		include TLMT_PATH . 'classes/LPtoTutorMigration.php';
 		include TLMT_PATH . 'classes/LDtoTutorMigration.php';
+		if(is_plugin_active('lifterlms/lifterlms.php')){
+			include TLMT_PATH . 'classes/LIFtoTutorMigration.php';
+		}
 		include TLMT_PATH . 'classes/LDtoTutorExport.php';
 		include TLMT_PATH . 'classes/Utils.php';
 	}
@@ -173,6 +176,10 @@ final class TutorLMSMigrationTool {
 	public function used_classes() {
 		$this->classes[] = 'LPtoTutorMigration';
 		$this->classes[] = 'LDtoTutorMigration';
+		if(is_plugin_active('lifterlms/lifterlms.php')){
+			$this->classes[] = 'LIFtoTutorMigration';
+		}
+		
 	}
 
 	/**
