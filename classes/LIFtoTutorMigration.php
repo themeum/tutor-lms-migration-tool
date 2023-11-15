@@ -21,7 +21,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			add_action( 'wp_ajax__get_lif_live_progress_course_migrating_info', array( $this, '_get_lif_live_progress_course_migrating_info' ) );
 			add_action( 'tutor_action_migrate_lif_orders_earning', array( $this, 'migrate_lif_orders_earning' ) );
 			add_action( 'tutor_action_migrate_lif_orders', array( $this, 'migrate_lif_orders' ) );
-			add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
+			//add_action( 'tutor_action_migrate_lif_reviews', array( $this, 'migrate_lif_reviews' ) );
 			add_action( 'wp_ajax_tutor_import_from_xml_lif', array( $this, 'tutor_import_from_xml_lif' ) );
 			add_action( 'tutor_action_tutor_lif_export_xml', array( $this, 'tutor_lif_export_xml' ) );
 		}
@@ -293,7 +293,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 													'belongs_question_type' => $question_type,
 													'answer_title'          => $choice,
 													'is_correct'            => $correct === true ? 1 : 0,
-													'answer_order'          => $answer_item->answer_order,
+													'answer_order'          => '',
 												);
 
 												$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer_data );
@@ -1154,7 +1154,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 																	'belongs_question_type' => $question_type,
 																	'answer_title'          => $choice,
 																	'is_correct'            => $correct === true ? 1 : 0,
-																	'answer_order'          => $answer_item->answer_order,
+																	'answer_order'          => '',
 																);
 															}
 														}

@@ -88,22 +88,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 									</label>
 								</div>
-								<div id="sectionReviews" class="tutor-py-16">
-									<label for="reviews">
-										<div class="lp-migration-singlebox">
-											<div class="lp-migration-singlebox-checkbox">
-												<span class="j-spinner"></span>
-											</div>
-											<div class="lp-migration-singlebox-desc">
-												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title"><?php _e( 'Comments', 'tutor-lms-migration-tool' ); ?></div>
-												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php _e( 'All of the course comments will be carried over to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
-												</div>
-												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
-											</div>
-										</div>
-									</label>
-								</div>
 							</div>
 							<div id="progressCounter"></div>
 						</form>
@@ -113,7 +97,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
 								<sapn class="backup-now-subtile tutor-fs-7"><?php _e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
 								<form id="tutor_migration_export_form" method="post" enctype="multipart/form-data">
-									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
+									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lif">
 									<input type="hidden" name="tutor_action" value="tutor_lif_export_xml">
 									<button <?php echo $items_count ? '' : 'disabled'; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black"><?php _e( 'Backup Now', 'tutor-lms-migration-tool' ); ?></button>
 								</form>
