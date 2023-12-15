@@ -7,7 +7,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 		public function __construct() {
 			add_filter('tutor_tool_pages', array($this, 'tutor_tool_pages'));
-
+			add_action('wp_ajax_insert_tutor_migration_data', array($this, 'insert_tutor_migration_data'));
 			add_action('wp_ajax_lp_migrate_all_data_to_tutor', array($this, 'lp_migrate_all_data_to_tutor'));
 			add_action('wp_ajax_tlmt_reset_migrated_items_count', array($this, 'tlmt_reset_migrated_items_count'));
 
@@ -20,6 +20,20 @@ if ( ! class_exists('LPtoTutorMigration')){
 			add_action('tutor_action_tutor_lp_export_xml', array($this, 'tutor_lp_export_xml'));
 		}
 
+		public function insert_tutor_migration_data(){
+			global $wpdb;
+			$tutor_migration_table_data = [
+				'migration_type' => $_POST['migration_type'],
+				'migration_vendor' => $_POST['migration_vendor'],
+				'created_by' => get_current_user_id(),
+				'created_at' => current_time('mysql'),
+			];
+
+			$wpdb->insert(
+				$wpdb->prefix . 'tutor_migration',
+				$tutor_migration_table_data
+			);
+		}
 		public function tutor_tool_pages($pages){
 			$hasLPdata = get_option('learnpress_version');
 
@@ -103,7 +117,6 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 
 			$curriculum = $course->get_curriculum() ;
-
 			$lesson_post_type = tutor()->lesson_post_type;
 			$course_post_type = tutor()->course_post_type;
 
@@ -112,7 +125,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			if($curriculum){
 				foreach ( $curriculum as $section ) {
 					$i++;
-
+					
 					$topic = array(
 						'post_type'     => 'topics',
 						'post_title'    => $section->get_title(),
@@ -683,10 +696,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 							if (isset($item->questions) && is_object($item->questions) && count($item->questions)){
 								foreach ($item->questions as $question) {
 									$answers = $question->answers;
-
 									$question = (array) $question;
 									$question['quiz_id'] = $item_id;
 									$question['question_description'] = (string) $question['question_description'];
+								
 									unset($question['answers']);
 
 									$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $question);
@@ -892,7 +905,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 												if ($question_type) {
 													$xml .= $this->start_element('questions');
 													$new_question_data = array(
-														'quiz_id'              => '{quiz_id}',
+														'quiz_id'              => $quiz_id,
 														'question_title'       => $question->post_title,
 														'question_description' => $question->post_content,
 														'question_type'        => $question_type,
@@ -902,27 +915,27 @@ if ( ! class_exists('LPtoTutorMigration')){
 													);
 
 													foreach ($new_question_data as $question_key => $question_value){
-														$xml .= "<{$question_key}>{$this->xml_cdata($question_value)}</{$question_key}>\n";
+														$xml .= "<{$question_key}>$question_value</{$question_key}>\n";
 													}
 
 													$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
 
 													if (tutils()->count($answer_items)){
 														foreach ($answer_items as $answer_item){
-															$answer_data = maybe_unserialize($answer_item->answer_data);
+															$answer_data = maybe_unserialize($answer_item);
 
 															$answer_data = array(
-																'belongs_question_id'   => '{question_id}',
+																'belongs_question_id'   => $answer_item->question_id,
 																'belongs_question_type' => $question_type,
-																'answer_title'          => tutils()->array_get('text', $answer_data),
+																'answer_title'          => $answer_item->title,
 																'is_correct'            => tutils()->array_get('is_true', $answer_data) == 'yes' ? 1 : 0,
-																'answer_order'          => $answer_item->answer_order,
+																'answer_order'          => $answer_item->order,
 															);
 
 															$xml .= $this->start_element('answers');
 
 															foreach ($answer_data as $answers_key => $answers_value){
-																$xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
+																$xml .= "<{$answers_key}>$answers_value</{$answers_key}>\n";
 															}
 															$xml .= $this->close_element('answers');
 														}
@@ -991,6 +1004,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 			$str = '<![CDATA[' . str_replace( ']]>', ']]]]><![CDATA[>', $str ) . ']]>';
 
 			return $str;
+			
 		}
 
 		/**
