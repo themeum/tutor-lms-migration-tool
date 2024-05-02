@@ -1,42 +1,51 @@
 <?php
-/*
-Plugin Name: Tutor LMS - Migration Tool
-Plugin URI: https://www.themeum.com/
-Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
-Author: Themeum
-Version: 2.2.0
-Author URI: http://themeum.com
-Requires at least: 5.3
-Tested up to: 6.0.2
-Requires PHP: 7.4
-License: GPLv2 or later
-Text Domain: tutor-lms-migration-tool
-*/
-require 'classes/Dependency.php';
-
-use TutorLMSMigrationTool\TLMT\Dependency;
+/**
+ * Plugin Name: Tutor LMS - Migration Tool
+ * Plugin URI: https://www.themeum.com/
+ * Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
+ * Author: Themeum
+ * Version: 2.2.0
+ * Author URI: http://themeum.com
+ * Requires at least: 5.3
+ * Tested up to: 6.0.2
+ * Requires PHP: 7.4
+ * License: GPLv2 or later
+ * Text Domain: tutor-lms-migration-tool
+ *
+ * @package TutorLMSMigrationTool
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require 'classes/Dependency.php';
+
+use TutorLMSMigrationTool\TLMT\Dependency;
+
 /**
  * Defining Constant
+ *
  * @since v.1.0.0
  */
 
-define('TLMT_VERSION', '2.2.0');
-define('TLMT_FILE', __FILE__);
-define('TLMT_PATH', plugin_dir_path( TLMT_FILE ));
-define('TLMT_URL', plugin_dir_url( TLMT_FILE ));
-define('TLMT_BASENAME', plugin_basename( TLMT_FILE ));
-define('TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool');
-define('TLMT_TUTOR_CORE_REQ_VERSION', '2.0.10');
-define('TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.10');
+define( 'TLMT_VERSION', '2.2.0' );
+define( 'TLMT_FILE', __FILE__ );
+define( 'TLMT_PATH', plugin_dir_path( TLMT_FILE ) );
+define( 'TLMT_URL', plugin_dir_url( TLMT_FILE ) );
+define( 'TLMT_BASENAME', plugin_basename( TLMT_FILE ) );
+define( 'TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool' );
+define( 'TLMT_TUTOR_CORE_REQ_VERSION', '2.0.10' );
+define( 'TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.10' );
 
-register_activation_hook(__FILE__, 'tutor_migration_tool_activate');
+register_activation_hook( __FILE__, 'tutor_migration_tool_activate' );
 
-function tutor_migration_tool_activate () {
+/**
+ * On plugin activation
+ *
+ * @return void
+ */
+function tutor_migration_tool_activate() {
 	global $wpdb;
 
 	$charset_collate = $wpdb->get_charset_collate();
@@ -50,25 +59,30 @@ function tutor_migration_tool_activate () {
 		PRIMARY KEY (`id`)
 	) $charset_collate";
 
-	if(!function_exists('dbDelta')) {
+	if ( ! function_exists( 'dbDelta' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	}
 
-	dbDelta($schema);
+	dbDelta( $schema );
 }
 
-function tutor_migration_tool_deleted(){
+/**
+ * On plugin uninstall
+ *
+ * @return void
+ */
+function tutor_migration_tool_deleted() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'tutor_migration';
-		$query = "DROP TABLE IF EXISTS {$table_name}";
-		$wpdb->query($query);
+		$query      = "DROP TABLE IF EXISTS {$table_name}";
+		$wpdb->query( $query ); //phpcs:ignore
 }
 
-register_uninstall_hook(__FILE__, 'tutor_migration_tool_deleted');
+register_uninstall_hook( __FILE__, 'tutor_migration_tool_deleted' );
 
-if ( ! class_exists('TutorLMSMigrationTool')){
+if ( ! class_exists( 'TutorLMSMigrationTool' ) ) {
 
-	$dependency = new Dependency;
+	$dependency = new Dependency();
 	if ( ! $dependency->is_tutor_core_has_req_verion() ) {
 		add_action( 'admin_notices', array( $dependency, 'show_admin_notice' ) );
 		return;
@@ -78,26 +92,26 @@ if ( ! class_exists('TutorLMSMigrationTool')){
 	TutorLMSMigrationTool::instance();
 }
 
-if ( is_plugin_active('tutor/tutor.php') ) {
+if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 
-	$utils = new Utils;
+	$utils = new Utils();
 
 	// Migrate Learndash Instructor to Tutor Instructor.
-	$ld_migration_history = $utils->fetch_history('ld');
+	$ld_migration_history = $utils->fetch_history( 'ld' );
 
-		if ( count( $ld_migration_history ) ) {
-			add_action(
-				'wp_login',
-				function( $user_login, $user ) {
-					// We want $user.
-					if ( in_array( 'wdm_instructor', $user->roles ) ) {
-						$user->set_role( 'tutor_instructor' );
-					}
-				},
-				10,
-				2
-			);
-		}
+	if ( count( $ld_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user.
+				if ( in_array( 'wdm_instructor', $user->roles ) ) {
+					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
 
 
 	// Migrate Learnpress Instructor to Tutor Instructor.
@@ -107,7 +121,7 @@ if ( is_plugin_active('tutor/tutor.php') ) {
 		add_action(
 			'wp_login',
 			function( $user_login, $user ) {
-				// We want $user
+				// We want $user.
 				if ( in_array( 'lp_teacher', $user->roles ) ) {
 					$user->set_role( 'tutor_instructor' );
 				}
@@ -135,6 +149,4 @@ if ( is_plugin_active('tutor/tutor.php') ) {
 			2
 		);
 	}
-
-
 }
