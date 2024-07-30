@@ -34,6 +34,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 */
 		public function insert_tutor_migration_data() {
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+			
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
+			
 			$tutor_migration_table_data = array(
 				'migration_type'   => $_POST['migration_type'],
 				'migration_vendor' => $_POST['migration_vendor'],
