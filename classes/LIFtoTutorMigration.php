@@ -77,6 +77,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Delete Item Count
 		 */
 		public function tlmt_reset_migrated_items_count() {
+			tutor_utils()->checking_nonce();
+			
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
+
 			delete_option( '_tutor_migrated_items_count' );
 		}
 		/**
@@ -85,6 +91,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @return void
 		 */
 		public function lif_migrate_all_data_to_tutor() {
+			tutor_utils()->checking_nonce();
+			
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
 
 			if ( isset( $_POST['migrate_type'] ) ) {
 				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
@@ -550,6 +561,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			// Lifter LMS  order migrate to tutor earnings
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+			
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
+			
 			if ( function_exists( 'wc_get_orders' ) ) {
 
 				$wc_orders = wc_get_orders(
@@ -758,6 +776,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 */
 		public function tutor_import_from_xml_lif() {
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
+
 			$wpdb->query( 'START TRANSACTION' );
 			$error = true;
 			if ( isset( $_FILES['tutor_import_file'] ) ) {
@@ -977,6 +1002,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @return void
 		 */
 		public function tutor_lif_export_xml() {
+
+			tutor_utils()->checking_nonce();
+
+			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+			}
+
 			header( 'Content-Type: application/octet-stream' );
 			header( 'Content-Disposition: attachment; filename=lifter_data_for_tutor.xml' );
 			header( 'Expires: 0' );
