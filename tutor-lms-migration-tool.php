@@ -29,7 +29,7 @@ use TutorLMSMigrationTool\TLMT\Dependency;
  * @since v.1.0.0
  */
 
-define( 'TLMT_VERSION', '2.2.0' );
+define( 'TLMT_VERSION', '2.2.1' );
 define( 'TLMT_FILE', __FILE__ );
 define( 'TLMT_PATH', plugin_dir_path( TLMT_FILE ) );
 define( 'TLMT_URL', plugin_dir_url( TLMT_FILE ) );
