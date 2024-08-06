@@ -4,10 +4,10 @@
  * Plugin URI: https://www.themeum.com/
  * Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
  * Author: Themeum
- * Version: 2.2.0
+ * Version: 2.2.1
  * Author URI: http://themeum.com
  * Requires at least: 5.3
- * Tested up to: 6.0.2
+ * Tested up to: 6.6
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * Text Domain: tutor-lms-migration-tool
