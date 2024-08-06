@@ -68,4 +68,15 @@ class Utils {
         return (int) $wpdb->get_var("SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type='llms_review';");
     }
 
+    /**
+     * Check if user has access to tutor courses.
+     *
+     * @return void
+     */
+    public static function check_course_access(){
+        if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+	        wp_send_json( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
+        }
+    }
+
 }

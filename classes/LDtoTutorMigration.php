@@ -19,9 +19,8 @@ defined( 'ABSPATH' ) || exit;
                 
                 tutor_utils()->checking_nonce();
 
-			    if ( ! current_user_can( 'publish_tutor_courses') ) {
-				    wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			    }
+			    Utils::check_course_access();
+
                 $tutor_migration_table_data = [
                     'migration_type' => $_POST['migration_type'],
                     'migration_vendor' => $_POST['migration_vendor'],
@@ -62,9 +61,8 @@ defined( 'ABSPATH' ) || exit;
 
                 tutor_utils()->checking_nonce();
 
-			    if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				    wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			    }
+			    Utils::check_course_access();
+
                 
                 delete_option('_tutor_migrated_items_count');
             }
@@ -74,9 +72,8 @@ defined( 'ABSPATH' ) || exit;
             {
                 tutor_utils()->checking_nonce();
 
-			    if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				    wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			    }
+			    Utils::check_course_access();
+
 
                 if (isset($_POST['migrate_type'])) {
                     $migrate_type = sanitize_text_field($_POST['migrate_type']);
@@ -334,9 +331,8 @@ defined( 'ABSPATH' ) || exit;
 
                 tutor_utils()->checking_nonce();
 
-			    if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				    wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			    }
+			    Utils::check_course_access();
+
 
                 $tutor_monetize_by = tutils()->get_option('monetize_by');
 

@@ -25,9 +25,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			tutor_utils()->checking_nonce();
 
-			if ( ! current_user_can( 'publish_tutor_courses') ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
 			$tutor_migration_table_data = [
 				'migration_type' => $_POST['migration_type'],
@@ -67,18 +65,14 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function tlmt_reset_migrated_items_count(){
 			tutor_utils()->checking_nonce();
 			
-			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 			delete_option('_tutor_migrated_items_count');
 		}
 
 		public function lp_migrate_all_data_to_tutor(){
 			tutor_utils()->checking_nonce();
 			
-			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
             if (isset($_POST['migrate_type'])){
 			    $migrate_type = sanitize_text_field($_POST['migrate_type']);
@@ -468,9 +462,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			tutor_utils()->checking_nonce();
 
-			if ( ! current_user_can( 'publish_tutor_courses') ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
 			$lp_orders = $wpdb->get_results("SELECT * FROM {$wpdb->posts} WHERE post_type = 'lp_order' AND post_status = 'lp-completed' ;");
 
@@ -555,9 +547,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			tutor_utils()->checking_nonce();
 
-			if ( ! current_user_can( 'publish_tutor_courses') ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
 			$lp_review_ids = $wpdb->get_col("SELECT comments.comment_ID FROM {$wpdb->comments} comments INNER JOIN {$wpdb->commentmeta} cm ON cm.comment_id = comments.comment_ID AND cm.meta_key = '_lpr_rating' WHERE comments.comment_type = 'review';");
 
@@ -610,9 +600,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			tutor_utils()->checking_nonce();
 
-			if ( ! current_user_can( 'publish_tutor_courses') ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
 			$wpdb->query('START TRANSACTION');
             $error = true;
@@ -798,9 +786,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function tutor_lp_export_xml(){
 			tutor_utils()->checking_nonce();
 
-			if ( ! current_user_can( 'publish_tutor_courses' ) ) {
-				wp_send_json_error( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
-			}
+			Utils::check_course_access();
 
 			header('Content-Type: application/octet-stream');
 			header('Content-Disposition: attachment; filename=learnpress_data_for_tutor.xml');
