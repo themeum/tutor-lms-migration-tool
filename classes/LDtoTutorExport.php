@@ -14,6 +14,11 @@ if (! class_exists('LDtoTutorExport')) {
         }
 
         public function tutor_ld_export_xml(){
+            tutor_utils()->checking_nonce();
+			
+			Utils::check_course_access();
+
+
             header('Content-Type: application/octet-stream');
             header('Content-Disposition: attachment; filename=LearnDash_Data_for_Tutor.xml');
             header('Expires: 0');
@@ -362,6 +367,13 @@ if (! class_exists('LDtoTutorExport')) {
 		 */
 		public function tutor_import_from_ld(){
             global $wpdb;
+
+            tutor_utils()->checking_nonce();
+
+			Utils::check_course_access();
+
+
+
             $wpdb->query('START TRANSACTION');
             $error = true;
 			if (isset($_FILES['tutor_import_file'])){

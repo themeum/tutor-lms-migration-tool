@@ -290,24 +290,33 @@ jQuery(document).ready(function ($) {
 
     $(document).on('click', '.backup-now-btn', function(event) {
         event.preventDefault();
+        let button = $(this);
+        let form = button.closest('form#tutor_migration_export_form');
+    
         $.post(ajaxurl, { 
             migration_type : 'Exported',
-            migration_vendor : $('#tutor_migration_vendor').val(),
+            migration_vendor : form.children("#tutor_migration_vendor").val(),
             action: 'insert_tutor_migration_data'
         });
-        $('form#tutor_migration_export_form').submit();
+        form.submit();
     })
 
     $(document).on('click', '#manual-migrate-now-btn', function(event) {
+        let button = $(this);
         var fileType = $('input[name="tutor_import_file"]')[0].files[0].type;
         if(fileType != 'text/xml') {
             alert('Not supported file. Upload xml file here!');
             return;
         }
         var action_name = $('#tutor-manual-migrate-form input[name="tutor_action"]').val();
+        let tutor_nonce = $("#tutor-manual-migrate-form input[name='_tutor_nonce']").val();
+        let http_referer= $("#tutor-manual-migrate-form input[name='_wp_http_referer']").val();
+        
         var formData = new FormData();
         formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
         formData.append("action", action_name);
+        formData.append("_tutor_nonce", tutor_nonce);
+        formData.append("_wp_http_referer", http_referer);
         $.ajax({
             type: "POST",
             url: ajaxurl,

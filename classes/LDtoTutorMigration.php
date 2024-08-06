@@ -16,6 +16,11 @@ defined( 'ABSPATH' ) || exit;
 
             public function insert_tutor_migration_data(){
                 global $wpdb;
+                
+                tutor_utils()->checking_nonce();
+
+			    Utils::check_course_access();
+
                 $tutor_migration_table_data = [
                     'migration_type' => $_POST['migration_type'],
                     'migration_vendor' => $_POST['migration_vendor'],
@@ -53,12 +58,23 @@ defined( 'ABSPATH' ) || exit;
 
             public function ld_reset_migrated_items_count()
             {
+
+                tutor_utils()->checking_nonce();
+
+			    Utils::check_course_access();
+
+                
                 delete_option('_tutor_migrated_items_count');
             }
 
 
             public function ld_migrate_all_data_to_tutor()
             {
+                tutor_utils()->checking_nonce();
+
+			    Utils::check_course_access();
+
+
                 if (isset($_POST['migrate_type'])) {
                     $migrate_type = sanitize_text_field($_POST['migrate_type']);
 
@@ -312,6 +328,11 @@ defined( 'ABSPATH' ) || exit;
             */
             public function ld_order_migrate(){
                 global $wpdb;
+
+                tutor_utils()->checking_nonce();
+
+			    Utils::check_course_access();
+
 
                 $tutor_monetize_by = tutils()->get_option('monetize_by');
 
