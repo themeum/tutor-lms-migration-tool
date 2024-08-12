@@ -34,6 +34,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 */
 		public function insert_tutor_migration_data() {
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+			
+			Utils::check_course_access();
+			
 			$tutor_migration_table_data = array(
 				'migration_type'   => $_POST['migration_type'],
 				'migration_vendor' => $_POST['migration_vendor'],
@@ -77,6 +82,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Delete Item Count
 		 */
 		public function tlmt_reset_migrated_items_count() {
+			tutor_utils()->checking_nonce();
+			
+			Utils::check_course_access();
+
 			delete_option( '_tutor_migrated_items_count' );
 		}
 		/**
@@ -85,6 +94,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @return void
 		 */
 		public function lif_migrate_all_data_to_tutor() {
+			tutor_utils()->checking_nonce();
+			
+			Utils::check_course_access();
 
 			if ( isset( $_POST['migrate_type'] ) ) {
 				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
@@ -550,6 +562,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			// Lifter LMS  order migrate to tutor earnings
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+			
+			Utils::check_course_access();
+			
 			if ( function_exists( 'wc_get_orders' ) ) {
 
 				$wc_orders = wc_get_orders(
@@ -758,6 +775,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 */
 		public function tutor_import_from_xml_lif() {
 			global $wpdb;
+
+			tutor_utils()->checking_nonce();
+
+			Utils::check_course_access();
+
 			$wpdb->query( 'START TRANSACTION' );
 			$error = true;
 			if ( isset( $_FILES['tutor_import_file'] ) ) {
@@ -977,6 +999,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @return void
 		 */
 		public function tutor_lif_export_xml() {
+
+			tutor_utils()->checking_nonce();
+
+			Utils::check_course_access();
+
 			header( 'Content-Type: application/octet-stream' );
 			header( 'Content-Disposition: attachment; filename=lifter_data_for_tutor.xml' );
 			header( 'Expires: 0' );
