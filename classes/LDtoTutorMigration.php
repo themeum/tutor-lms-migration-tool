@@ -195,7 +195,7 @@ defined( 'ABSPATH' ) || exit;
                     }
                 }
 
-                $ld_enrollments = $wpdb->get_results("SELECT * from {$wpdb->prefix}learndash_user_activity WHERE course_id = {$course_id} AND activity_type = 'access' AND activity_status = 0");
+                $ld_enrollments = $wpdb->get_results( $wpdb->prepare( "SELECT * from {$wpdb->prefix}learndash_user_activity WHERE course_id = %d AND activity_type = 'access' AND activity_status = 0", $course_id ) );
 
                 foreach ($ld_enrollments as $ld_enrollment) {
                     $user_id = $ld_enrollment->user_id;
@@ -387,7 +387,7 @@ defined( 'ABSPATH' ) || exit;
                         }
 
                         update_post_meta($order->ID, '_customer_user', $order->post_author);
-                        $user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$order->post_author} ");
+                        $user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d", $order->post_author ) );
                         update_post_meta($order->ID, '_billing_address_index', $user_email );
                         update_post_meta($order->ID, '_billing_email', $user_email );
                         
@@ -408,7 +408,7 @@ defined( 'ABSPATH' ) || exit;
                         wp_update_post($migrate_order_data);
 
                         $_ld_price = get_post_meta( $order->ID, '_sfwd-courses', true );
-                        $user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$order->post_author} ");
+                        $user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $order->post_author ) );
                         $meta_data = array(
                             '_edd_payment_meta' => array(),
                             '_edd_payment_gateway' => '',
@@ -428,7 +428,7 @@ defined( 'ABSPATH' ) || exit;
                             update_post_meta($order->ID, $key, $value);
                         }
 
-                        $display_name = $wpdb->get_var("SELECT display_name from {$wpdb->users} WHERE ID = {$order->post_author} ");
+                        $display_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name from {$wpdb->users} WHERE ID = %d ", $order->post_author ));
                         $edd_item_metas = array(
                             'user_id' => $order->post_author,
                             'email' => $user_email,
@@ -495,9 +495,12 @@ defined( 'ABSPATH' ) || exit;
 
                         $result = array();
                         if ($is_table) {
-                            $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                            $result = $wpdb->get_row(
+                                $wpdb->prepare( "SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = %d", $question_id ),
+                                ARRAY_A);
                         } else {
-                            $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                            $result = $wpdb->get_row(
+                                $wpdb->prepare( "SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = %d", $question_id ), ARRAY_A);
                         }
 
                         $question = array();
