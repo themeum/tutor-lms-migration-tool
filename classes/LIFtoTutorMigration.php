@@ -365,10 +365,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 				global $wpdb;
-				$order_plan_id    = $wpdb->get_var( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = {$course_id}" );
+				$order_plan_id    = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = %d ", $course_id ) );
 				$_llms_price      = get_post_meta( $order_plan_id, '_llms_price', true );
 				$_llms_sale_price = get_post_meta( $course_id, '_llms_sale_price', true );
-				$llms_product_id = $wpdb->get_var( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = {$order_plan_id}" );
+				$llms_product_id  = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key='_llms_wc_pid' AND post_id = %d ", $order_plan_id ) );
 
 				if ( $_llms_price ) {
 
@@ -464,9 +464,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 */
 
 			$lif_course_complete_datas = $wpdb->get_results(
-				"
-				SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
-			WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'"
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
+					WHERE lifuer.post_id = %d AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'",
+					$course_id
+				)
 			);
 
 			foreach ( $lif_course_complete_datas as $lif_course_complete_data ) {
@@ -507,8 +509,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			 * Enrollment Migration to this course
 			 */
 			$lif_enrollments = $wpdb->get_results(
-				"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
-				WHERE lifuer.post_id = {$course_id} AND lifuer.meta_key='_status' AND lifuer.meta_value='enrolled';"
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
+					WHERE lifuer.post_id = %d AND lifuer.meta_key='_status' AND lifuer.meta_value='enrolled';",
+					$course_id
+				)
 			);
 
 			foreach ( $lif_enrollments as $lif_enrollment ) {
@@ -657,11 +662,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					$order_item_id = (int) $wpdb->insert_id;
 
 					$lif_item_metas = $wpdb->get_results(
-						"
-					SELECT meta_key, meta_value 
-						FROM {$wpdb->postmeta}
-						WHERE meta_key in ('_llms_product_id','_llms_order_type','_llms_original_total','_llms_total')  AND post_id = {$item->id}
-					"
+						$wpdb->prepare( 
+							"SELECT meta_key, meta_value 
+							FROM {$wpdb->postmeta}
+							WHERE meta_key in ('_llms_product_id','_llms_order_type','_llms_original_total','_llms_total')  AND post_id = %d",
+							$item->id
+						)
 					);
 
 					$lif_formatted_metas = array();
@@ -705,7 +711,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				update_post_meta( $order_id, '_customer_ip_address', get_post_meta( $order_id, '_user_ip_address', true ) );
 				update_post_meta( $order_id, '_customer_user_agent', get_post_meta( $order_id, '_user_agent', true ) );
 
-				$user_email = $wpdb->get_var( "SELECT user_email from {$wpdb->users} WHERE ID = {$lif_order->post_author} " );
+				$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $lif_order->post_author ) );
 				update_post_meta( $order_id, '_billing_address_index', $user_email );
 				update_post_meta( $order_id, '_billing_email', $user_email );
 			}
@@ -755,17 +761,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function get_lif_order_items( $order_id ) {
 			global $wpdb;
 
-			$query = $wpdb->prepare(
-				"
-				SELECT orders.id as order_id, 
+			$results = $wpdb->get_results( $wpdb->prepare(
+				"SELECT orders.id as order_id, 
 				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_id') as course_id,
 				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_title') as course_title
 				FROM $wpdb->posts as orders
-				WHERE orders.post_type='llms_order' AND id=%d ",
+				WHERE orders.post_type='llms_order' AND id = %d ",
 				$order_id
-			);
+			) );
 
-			return $wpdb->get_results( $query );
+			return $results;
 		}
 
 
@@ -1049,7 +1054,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							$xml .= "<{$course_col}>{$course_col_value}</{$course_col}>\n";
 						}
 
-						$course_metas = $wpdb->get_results( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}" );
+						$course_metas = $wpdb->get_results( $wpdb->prepare( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = %d ", $course_id ) );
 
 						$xml .= $this->start_element( 'course_meta' );
 						foreach ( $course_metas as $course_meta ) {
@@ -1122,7 +1127,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 										$xml .= $this->start_element( 'item_meta' );
 
-										$item_metas = $wpdb->get_results( "SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} " );
+										$item_metas = $wpdb->get_results( $wpdb->prepare( "SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d ", $lesson->id ) );
 
 										if ( is_array( $item_metas ) && count( $item_metas ) ) {
 											foreach ( $item_metas as $item_meta ) {
