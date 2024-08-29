@@ -112,7 +112,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 2.2.2 - 27 August, 2024 =
+= 2.2.2 - 29 August, 2024 =
 
 Fix: Security vulnerabilities
 
