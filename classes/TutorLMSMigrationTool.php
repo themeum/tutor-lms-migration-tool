@@ -54,7 +54,6 @@ final class TutorLMSMigrationTool {
 		add_filter( 'plugin_action_links_' . plugin_basename( TLMT_FILE ), array( $this, 'plugin_action_links' ) );
 
 		if ( $this->check_installed() ) {
-			$this->includes();
 			$this->used_classes();
 			$this->classes_initialize();
 		} else {
@@ -214,21 +213,6 @@ final class TutorLMSMigrationTool {
 	}
 
 	/**
-	 * Includes.
-	 *
-	 * @return void
-	 */
-	public function includes() {
-		include TLMT_PATH . 'classes/LPtoTutorMigration.php';
-		include TLMT_PATH . 'classes/LDtoTutorMigration.php';
-		if ( is_plugin_active( 'lifterlms/lifterlms.php' ) ) {
-			include TLMT_PATH . 'classes/LIFtoTutorMigration.php';
-		}
-		include TLMT_PATH . 'classes/LDtoTutorExport.php';
-		include TLMT_PATH . 'classes/Utils.php';
-	}
-
-	/**
 	 * Used classed.
 	 *
 	 * @return void
@@ -239,7 +223,6 @@ final class TutorLMSMigrationTool {
 		if ( is_plugin_active( 'lifterlms/lifterlms.php' ) ) {
 			$this->classes[] = 'LIFtoTutorMigration';
 		}
-
 	}
 
 	/**
