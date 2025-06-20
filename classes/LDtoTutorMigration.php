@@ -82,15 +82,58 @@ defined( 'ABSPATH' ) || exit;
                         case 'courses':
                             $this->ld_migrate_course_to_tutor();
                             break;
-
                         case 'orders':
                             $this->ld_order_migrate();
                             break;
+                        case 'reviews':
+                            $this->ld_reviews_migrate();
                     }
                     
                     wp_send_json_success();
                 }
                 wp_send_json_error();
+            }
+
+            /**
+             * Learndash course review migration to Tutor.
+             *
+             * @return void wp_json response
+             */
+            public function ld_reviews_migrate() {
+                global $wpdb;
+                $ld_reviews = get_comments( array( 'type' => 'ld_review' ) );
+                $item_idx   = (int) get_option( '_tutor_migrated_items_count' );
+
+                if ( count( $ld_reviews ) ) {
+                    foreach( $ld_reviews as $review ) {
+                        $item_idx++;
+                        update_option( '_tutor_migrated_items_count', $item_idx );
+
+                        $review_migration = array();
+                        $review_migration['comment_type']     = 'tutor_course_rating';
+                        $review_migration['comment_agent']    = 'TutorLMSPlugin';
+                        $review_migration['comment_approved'] = 'approved';
+
+                        $result =  $wpdb->update( $wpdb->comments, $review_migration, array( 'comment_ID' => $review->comment_ID ));
+
+                        if ( ! $result ) {
+                            wp_send_json_error();
+                        }
+
+                        $wpdb->update(
+                            $wpdb->commentmeta,
+                            array( 'meta_key' => 'tutor_rating' ),
+                            array(
+                                'comment_ID' => $review->comment_ID,
+                                'meta_key'   => 'rating',
+                            )
+                        );
+
+					    delete_comment_meta( $review->comment_ID, 'review_title' );
+                    }
+                }
+
+                wp_send_json_success();
             }
 
             /*
