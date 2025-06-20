@@ -15,8 +15,12 @@ interface PostMeta {
 	/**
 	 * Migrate post meta
 	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $post_id Post id.
+	 *
 	 * @return void
 	 */
-	public function migrate();
+	public function migrate( int $post_id );
 
 }
