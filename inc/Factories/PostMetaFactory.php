@@ -8,11 +8,13 @@
  * @since 2.3.0
  */
 
-namespace Themeum\TutorLMSMigrationTool;
+namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
+use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
  * Create the post meta objects based on migration type and meta type

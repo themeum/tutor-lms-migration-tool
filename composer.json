@@ -6,7 +6,10 @@
         ],
         "psr-4": {
             "Themeum\\TutorLMSMigrationTool\\": "inc/"
-        }
+        },
+        "files": [
+            "inc/Functions.php"
+        ]
     },
     "authors": [
         {
