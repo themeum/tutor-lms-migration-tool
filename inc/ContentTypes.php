@@ -17,9 +17,9 @@ namespace Themeum\TutorLMSMigrationTool;
  */
 abstract class ContentTypes {
 
-	const COURSE          = 'course';
+	const COURSE          = 'courses';
 	const COURSE_META     = 'course_meta';
-	const COURSE_REVIEWS  = 'course_reviews';
+	const COURSE_REVIEWS  = 'reviews';
 	const COURSE_PROGRESS = 'course_progress';
 
 	const SALES       = 'sales';
@@ -34,4 +34,11 @@ abstract class ContentTypes {
 
 	const QUIZ      = 'quiz';
 	const QUIZ_META = 'quiz_meta';
+
+	const LD_REVIEW_TYPE           = 'ld_review';
+	const LD_RATING_META_KEY       = 'rating';
+	const LD_REVIEW_TITLE_META_KEY = 'review_title';
+
+	const TUTOR_REVIEW_TYPE     = 'tutor_course_rating';
+	const TUTOR_RATING_META_KEY = 'tutor_rating';
 }
