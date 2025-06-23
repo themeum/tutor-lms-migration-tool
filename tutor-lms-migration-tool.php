@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require 'classes/Dependency.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 use TutorLMSMigrationTool\TLMT\Dependency;
 
@@ -80,17 +80,18 @@ function tutor_migration_tool_deleted() {
 
 register_uninstall_hook( __FILE__, 'tutor_migration_tool_deleted' );
 
-if ( ! class_exists( 'TutorLMSMigrationTool' ) ) {
+TutorLMSMigrationTool::instance();
 
-	$dependency = new Dependency();
-	if ( ! $dependency->is_tutor_core_has_req_verion() ) {
-		add_action( 'admin_notices', array( $dependency, 'show_admin_notice' ) );
-		return;
+add_action(
+	'plugins_loaded',
+	function() {
+		$dependency = new Dependency();
+		if ( ! $dependency->is_tutor_core_has_req_verion() ) {
+			add_action( 'admin_notices', array( $dependency, 'show_admin_notice' ) );
+			return;
+		}
 	}
-
-	include_once 'classes/TutorLMSMigrationTool.php';
-	TutorLMSMigrationTool::instance();
-}
+);
 
 if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 
