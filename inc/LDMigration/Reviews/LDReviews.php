@@ -18,15 +18,15 @@ class LDReviews implements Reviews {
 
 	/**
 	 * Migrate learndash reviews to tutor.
-     *
-     * @since 2.3.0
+	 *
+	 * @since 2.3.0
 	 *
 	 * @return void wp_json response
 	 */
 	public function migrate_reviews() {
 		global $wpdb;
-        $ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
-        $item_idx   = (int) get_option( '_tutor_migrated_items_count' );
+		$ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
+		$item_idx   = (int) get_option( '_tutor_migrated_items_count' );
 
 		if ( count( $ld_reviews ) ) {
 			foreach ( $ld_reviews as $review ) {
