@@ -118,6 +118,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 						// Attached thumbnail
 						$this->insert_thumbnail( $ld_course->ID, $course_id );
+
+						/**
+						 * Insert Student Progress
+						 * @since 2.2.3
+						 */
+						$this->insert_student_progress();
 					}
 				}
 			}
@@ -657,6 +663,38 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					}
 				}
 			}
+		}
+		private function insert_student_progress() {
+			global $wpdb;
+
+			$activity_type 		= "'" . implode( "', '", array( 'lesson', 'topic', 'quiz' )  ) . "'";
+			$ld_course_progress = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT 
+						* 
+					FROM {$wpdb->prefix}learndash_user_activity 
+					WHERE activity_type IN ( $activity_type ) 
+					AND activity_status = %d",
+					1
+				)
+			);
+
+			foreach ($ld_course_progress as $progress) {
+				$user_id    = $progress->user_id ?? null;
+				$course_id  = $progress->course_id ?? null;
+				$post_id    = $progress->post_id ?? null;
+				$type       = $progress->activity_type ?? null;
+				$completed  = $progress->activity_completed ?? null;
+
+				if (!$user_id || !$course_id || !tutils()->is_enrolled($course_id, $user_id)) {
+					continue;
+				}
+			
+				if ($type === 'topic') {
+					update_user_meta($user_id, "_tutor_completed_lesson_id_{$post_id}", $completed);
+				}
+			}
+			
 		}
 	}
 }
