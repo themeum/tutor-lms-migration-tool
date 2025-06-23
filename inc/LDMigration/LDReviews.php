@@ -8,7 +8,7 @@
  * @since 2.3.0
  */
 
-namespace Themeum\TutorLMSMigrationTool\LDMigration\Reviews;
+namespace Themeum\TutorLMSMigrationTool\LDMigration;
 
 use Reviews;
 use Themeum\TutorLMSMigrationTool\ContentTypes;

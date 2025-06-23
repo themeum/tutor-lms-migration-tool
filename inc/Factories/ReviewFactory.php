@@ -12,7 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
 use Reviews;
-use Themeum\TutorLMSMigrationTool\LDMigration\Reviews\LDReviews;
+use Themeum\TutorLMSMigrationTool\LDMigration\LDReviews;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
