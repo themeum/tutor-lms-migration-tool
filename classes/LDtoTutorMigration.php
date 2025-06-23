@@ -84,7 +84,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( isset( $_POST['migrate_type'] ) ) {
 				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
-                $ld_review    = ReviewFactory::create( MigrationTypes::LD_TO_TUTOR );
+				$ld_review    = ReviewFactory::create( MigrationTypes::LD_TO_TUTOR );
 
 				switch ( $migrate_type ) {
 					case ContentTypes::COURSE:
@@ -93,9 +93,9 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					case ContentTypes::ORDERS:
 						$this->ld_order_migrate();
 						break;
-                    case ContentTypes::COURSE_REVIEWS:
-                        $ld_review->migrate_reviews();
-                        break;
+					case ContentTypes::COURSE_REVIEWS:
+						$ld_review->migrate_reviews();
+						break;
 				}
 
 				wp_send_json_success();
@@ -138,7 +138,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 			}
 			wp_send_json_success();
-
 		}
 
 		public function attached_prerequisite( $course_id ) {
@@ -674,7 +673,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					}
 				}
 			}
-
 		}
 	}
 }

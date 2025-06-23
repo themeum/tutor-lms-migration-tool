@@ -10,12 +10,12 @@
 
 
 interface Reviews {
-    /**
-     * Migrate course reviews to tutor.
-     *
-     * @since 2.3.0
-     *
-     * @return void wp_json response
-     */
-    public function migrate_reviews();
+	/**
+	 * Migrate course reviews to tutor.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return void wp_json response
+	 */
+	public function migrate_reviews();
 }
