@@ -1,6 +1,6 @@
 <?php
 /**
- * Reviews Interface.
+ * Orders Interface.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -9,15 +9,16 @@
  */
 
 /**
- * Reviews interface for review migration class.
+ * Orders interface for review migration class.
  */
-interface Reviews {
+interface Orders {
+
 	/**
-	 * Migrate course reviews to tutor.
+	 * Migrate orders from learndash to tutor.
 	 *
 	 * @since 2.3.0
 	 *
 	 * @return void wp_json response
 	 */
-	public function migrate_reviews();
+	public function migrate_orders();
 }
