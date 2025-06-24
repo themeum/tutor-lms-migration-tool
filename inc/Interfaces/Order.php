@@ -7,11 +7,12 @@
  * @link https://themeum.com
  * @since 2.3.0
  */
+namespace Themeum\TutorLMSMigrationTool\Interfaces;
 
 /**
  * Orders interface for review migration class.
  */
-interface Orders {
+interface Order {
 
 	/**
 	 * Migrate orders from learndash to tutor.
@@ -20,5 +21,5 @@ interface Orders {
 	 *
 	 * @return void wp_json response
 	 */
-	public function migrate_orders();
+	public function migrate();
 }

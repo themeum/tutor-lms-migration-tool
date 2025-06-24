@@ -11,6 +11,7 @@
  */
 
 use Themeum\TutorLMSMigrationTool\Factories\PostMetaFactory;
+use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
 
 if ( ! function_exists( 'tlmt_has_tutor_pro' ) ) {
 	/**
@@ -51,3 +52,26 @@ if ( ! function_exists( 'tlmt_get_meta_obj' ) ) {
 }
 
 
+
+if ( ! function_exists( 'tlmt_get_review_obj' ) ) {
+
+	/**
+	 * Obtain a review migration class object.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $migration_type the migration type.
+	 *
+	 * @throws \Throwable if migration type is not supported.
+	 *
+	 * @return Review obj
+	 */
+	function tlmt_get_review_obj( $migration_type ) {
+		try {
+			$obj = ReviewFactory::create( $migration_type );
+			return $obj;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
+	}
+}

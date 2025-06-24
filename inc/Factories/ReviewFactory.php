@@ -11,8 +11,8 @@
 namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
-use Reviews;
-use Themeum\TutorLMSMigrationTool\LDMigration\LDReviews;
+use Themeum\TutorLMSMigrationTool\Interfaces\Review;
+use Themeum\TutorLMSMigrationTool\LDMigration\Reviews as LDReviews;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -30,7 +30,7 @@ abstract class ReviewFactory {
 	 *
 	 * @return Reviews
 	 */
-	public static function create( string $migration_type ): Reviews {
+	public static function create( string $migration_type ): Review {
 		switch ( $migration_type ) {
 			case MigrationTypes::LD_TO_TUTOR:
 				return new LDReviews();

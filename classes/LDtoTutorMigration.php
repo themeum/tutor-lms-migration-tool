@@ -9,7 +9,6 @@
  */
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
-use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
@@ -84,7 +83,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( isset( $_POST['migrate_type'] ) ) {
 				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
-				$ld_review    = ReviewFactory::create( MigrationTypes::LD_TO_TUTOR );
 
 				switch ( $migrate_type ) {
 					case ContentTypes::COURSE:
@@ -94,13 +92,44 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						$this->ld_order_migrate();
 						break;
 					case ContentTypes::COURSE_REVIEWS:
-						$ld_review->migrate_reviews();
+						$this->ld_reviews_migrate();
 						break;
 				}
 
 				wp_send_json_success();
 			}
 			wp_send_json_error();
+		}
+
+		/**
+		 * Migrate learndash reviews to tutor.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @return void wp_json response.
+		 */
+		public function ld_reviews_migrate() {
+			$ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
+			$item_idx   = (int) get_option( '_tutor_migrated_items_count' );
+
+			try{
+				$reviews = tlmt_get_review_obj( MigrationTypes::LD_TO_TUTOR );
+			} catch( \Throwable $th ) {
+				wp_send_json_error();
+			}
+
+			if ( count( $ld_reviews ) ) {
+				foreach ( $ld_reviews as $review ) {
+					$item_idx++;
+					update_option( '_tutor_migrated_items_count', $item_idx );
+					try{
+						$reviews->migrate( $review );
+					} catch( \Throwable $th ) {
+						wp_send_json_error();
+					}
+				}
+			}
+			wp_send_json_success();
 		}
 
 		/*
@@ -119,7 +148,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
-                        do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
 
 						$this->migrate_course( $ld_course->ID, $course_id );
 
@@ -158,7 +187,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				set_post_thumbnail( $new_thumbnail_id, $thumbnail );
 			}
 		}
-
 
 		/**
 		 * Insert Enbrolement LD to Tutor
