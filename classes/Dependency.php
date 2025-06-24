@@ -46,7 +46,7 @@ class Dependency {
 					?>
 							</p>
 							<p style="color: #757C8E;">
-								<?php esc_html_e( 'Note: '.TLMT_PLUGIN_NAME. ' ' . TLMT_VERSION .' will be installed but you will not be able to avail any of its’ features as well specific Tutor LMS add-ons.', 'tutor-lms-migration-tool' ); ?>
+								<?php esc_html_e( 'Note: ' . TLMT_PLUGIN_NAME . ' ' . TLMT_VERSION . ' will be installed but you will not be able to avail any of its’ features as well specific Tutor LMS add-ons.', 'tutor-lms-migration-tool' ); ?>
 							</p>
 						</div>
 					</div>
@@ -66,13 +66,18 @@ class Dependency {
 	 * @since v2.0.0
 	 */
 	public function is_tutor_core_has_req_verion(): bool {
-		$file_path              = WP_PLUGIN_DIR . '/tutor/tutor.php';
-		$plugin_data            = get_file_data(
+		$file_path = WP_PLUGIN_DIR . '/tutor/tutor.php';
+		if ( ! file_exists( $file_path ) ) {
+			return false;
+		}
+
+		$plugin_data = get_file_data(
 			$file_path,
 			array(
 				'Version' => 'Version',
 			)
 		);
+
 		$tutor_version          = $plugin_data['Version'];
 		$tutor_core_req_version = TLMT_TUTOR_CORE_REQ_VERSION;
 		$is_compatible          = version_compare( $tutor_version, $tutor_core_req_version, '>=' );

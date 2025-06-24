@@ -1,4 +1,13 @@
 <?php
+/**
+ * Manage LearnDash to Tutor migration
+ *
+ * @package TutorLMSMigrationTool
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.3.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'LDtoTutorMigration' ) ) {
