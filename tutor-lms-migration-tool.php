@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Themeum\TutorLMSMigrationTool\Init;
 use TutorLMSMigrationTool\TLMT\Dependency;
 
 /**
@@ -81,6 +82,9 @@ function tutor_migration_tool_deleted() {
 register_uninstall_hook( __FILE__, 'tutor_migration_tool_deleted' );
 
 TutorLMSMigrationTool::instance();
+
+// Init.
+new Init();
 
 add_action(
 	'plugins_loaded',
