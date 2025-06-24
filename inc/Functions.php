@@ -25,7 +25,7 @@ if ( ! function_exists( 'tlmt_has_tutor_pro' ) ) {
 	}
 }
 
-if ( ! function_exists( 'get_meta_obj' ) ) {
+if ( ! function_exists( 'tlmt_get_meta_obj' ) ) {
 	/**
 	 * Check whether tutor pro is installed or not
 	 *
@@ -40,7 +40,7 @@ if ( ! function_exists( 'get_meta_obj' ) ) {
 	 *
 	 * @return PostMeta object
 	 */
-	function get_meta_obj( $meta_type, $migration_type ) {
+	function tlmt_get_meta_obj( $meta_type, $migration_type ) {
 		try {
 			$obj = PostMetaFactory::create( $meta_type, $migration_type );
 			return $obj;
