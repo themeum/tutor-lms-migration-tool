@@ -34,4 +34,6 @@ abstract class ContentTypes {
 
 	const QUIZ      = 'quiz';
 	const QUIZ_META = 'quiz_meta';
+
+	const STUDENT_PROGRESS = 'student_progress';
 }
