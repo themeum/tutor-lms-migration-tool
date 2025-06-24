@@ -119,6 +119,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
+                        do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+
 						$this->migrate_course( $ld_course->ID, $course_id );
 
 						update_option( '_tutor_migrated_items_count', $course_i );
