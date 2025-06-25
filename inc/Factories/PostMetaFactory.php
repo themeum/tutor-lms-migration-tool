@@ -14,6 +14,7 @@ use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
+use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\LessonMeta;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -39,6 +40,8 @@ abstract class PostMetaFactory {
 				switch ( $meta_type ) {
 					case ContentTypes::COURSE_META:
 						return new CourseMeta();
+					case ContentTypes::LESSON_META:
+						return new LessonMeta();
 					default:
 						break;
 				}
