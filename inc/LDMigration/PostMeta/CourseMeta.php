@@ -92,6 +92,8 @@ class CourseMeta implements PostMeta {
 			'sfwd-courses_course_materials',
 			'sfwd-courses_course_price',
 			'sfwd-courses_course_price_type',
+			'sfwd-courses_course_start_date',
+			'sfwd-courses_course_end_date',
 		);
 	}
 
@@ -116,14 +118,30 @@ class CourseMeta implements PostMeta {
 
 		if ( $has_tutor_pro ) {
 			$course_settings = array(
-				'maximum_students'     => 0,
-				'enrollment_expiry'    => 0,
-				'enable_content_drip'  => 0,
-				'content_drip_type'    => '',
-				'enrollment_starts_at' => '',
-				'enrollment_ends_at'   => '',
-				'pause_enrollment'     => '',
+				'maximum_students'         => 0,
+				'enrollment_expiry'        => 0,
+				'enable_content_drip'      => 0,
+				'content_drip_type'        => '',
+				'course_enrollment_period' => '',
+				'enrollment_starts_at'     => '',
+				'enrollment_ends_at'       => '',
+				'pause_enrollment'         => '',
 			);
+
+			// Enroll start date.
+			$enrollment_start_date = $meta['sfwd-courses_course_start_date'] ?? false;
+			if ( $enrollment_start_date ) {
+				$start_date = gmdate( 'Y-m-d H:i:s', $enrollment_start_date );
+
+				$course_settings['course_enrollment_period'] = 'yes';
+				$course_settings['enrollment_starts_at']     = $start_date;
+
+				if ( ! empty( $meta['sfwd-courses_course_end_date'] ) ) {
+					$end_date = gmdate( 'Y-m-d H:i:s', $meta['sfwd-courses_course_end_date'] );
+
+					$course_settings['enrollment_ends_at'] = $end_date;
+				}
+			}
 		}
 
 		$tutor_meta_map = array();
@@ -145,6 +163,11 @@ class CourseMeta implements PostMeta {
 			$tutor_meta_map['_tutor_course_price_type'] = 'paid';
 		} elseif ( 'closed' === $price_type && $has_tutor_pro ) {
 			$course_settings['pause_enrollment'] = 'yes';
+			if ( ! empty( $tutor_meta_map['tutor_course_regular_price'] ) ) {
+				$tutor_meta_map['_tutor_course_price_type'] = 'paid';
+			} else {
+				$tutor_meta_map['_tutor_course_price_type'] = 'free';
+			}
 		} else {
 			$tutor_meta_map['_tutor_course_price_type'] = 'free';
 		}
