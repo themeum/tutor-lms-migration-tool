@@ -93,6 +93,7 @@ class CourseMeta implements PostMeta {
 			'sfwd-courses_course_price',
 			'sfwd-courses_course_price_type',
 			'sfwd-courses_course_start_date',
+			'sfwd-courses_course_end_date',
 		);
 	}
 
@@ -130,10 +131,16 @@ class CourseMeta implements PostMeta {
 			// Enroll start date.
 			$enrollment_start_date = $meta['sfwd-courses_course_start_date'] ?? false;
 			if ( $enrollment_start_date ) {
-				$date = gmdate( 'Y-m-d H:i:s', $enrollment_start_date );
+				$start_date = gmdate( 'Y-m-d H:i:s', $enrollment_start_date );
 
 				$course_settings['course_enrollment_period'] = 'yes';
-				$course_settings['enrollment_starts_at']     = $date;
+				$course_settings['enrollment_starts_at']     = $start_date;
+
+				if ( ! empty( $meta['sfwd-courses_course_end_date'] ) ) {
+					$end_date = gmdate( 'Y-m-d H:i:s', $meta['sfwd-courses_course_end_date'] );
+
+					$course_settings['enrollment_ends_at'] = $end_date;
+				}
 			}
 		}
 
