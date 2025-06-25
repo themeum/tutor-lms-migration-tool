@@ -39,6 +39,6 @@ abstract class StudentProgressFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
 	}
 }

@@ -33,7 +33,7 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_meta' ), 10, 2 );
-		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ));
+		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ) );
 	}
 
 	/**
@@ -78,12 +78,19 @@ class ActionHandler {
 		update_option( self::MIGRATION_ERR_OPT_NAME, maybe_serialize( $error_data ) );
 	}
 
+	/**
+	 * Migrates student progress based on the given migration type.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $migration_type The type of migration to perform.
+	 */
 	public function migrate_student_progress( string $migration_type ) {
 		try {
 			$student_progress_obj = StudentProgressFactory::create( $migration_type );
 			$student_progress_obj->migrate();
 		} catch ( \Throwable $th ) {
-			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, "Failed to migrate student progress. " . $th->getMessage() );
+			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to migrate student progress. ' . $th->getMessage() );
 		}
 	}
 }
