@@ -112,9 +112,9 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
 			$item_idx   = (int) get_option( '_tutor_migrated_items_count' );
 
-			try{
+			try {
 				$reviews = tlmt_get_review_obj( MigrationTypes::LD_TO_TUTOR );
-			} catch( \Throwable $th ) {
+			} catch ( \Throwable $th ) {
 				wp_send_json_error();
 			}
 
@@ -122,9 +122,9 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				foreach ( $ld_reviews as $review ) {
 					$item_idx++;
 					update_option( '_tutor_migrated_items_count', $item_idx );
-					try{
+					try {
 						$reviews->migrate( $review );
-					} catch( \Throwable $th ) {
+					} catch ( \Throwable $th ) {
 						wp_send_json_error();
 					}
 				}
@@ -359,9 +359,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 		}
 
-		/*
-		* Learndash eCommerce orders migration to WC & EDD
-		*/
+		/**
+		 * Learndash orders to tutor migration for native, WC and EDD.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @return void wp_json response.
+		 */
 		public function ld_order_migrate() {
 			global $wpdb;
 
@@ -374,7 +378,34 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$ld_orders = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';" );
 			$item_i    = (int) get_option( '_tutor_migrated_items_count' );
 
-			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			if ( 'tutor' === $tutor_monetize_by ) {
+
+				try {
+					$order_obj = tlmt_get_order_obj( $tutor_monetize_by, MigrationTypes::LD_TO_TUTOR );
+				} catch ( \Throwable $th ) {
+					wp_send_json_error();
+				}
+
+				foreach ( $ld_orders as $order ) {
+					$item_i++;
+					update_option( '_tutor_migrated_items_count', $item_i );
+					$course_id = get_post_meta( $order->ID, 'post_id', true );
+
+					if ( ! $course_id ) {
+						continue;
+					}
+
+					try {
+						$order_obj->migrate( $order, $course_id );
+					} catch ( \Throwable $th ) {
+						wp_send_json_error();
+					}
+				}
+
+				$order_obj->remove_orders();
+			}
+
+			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' ) {
 
 				foreach ( $ld_orders as $order ) {
 					$item_i++;
@@ -388,7 +419,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					wp_update_post( $migrate_order_data );
 
 					// Order Item
-					$course_id = get_post_meta( $order->ID, 'course_id', true );
+					$course_id = get_post_meta( $order->ID, 'post_id', true );
 					$item_data = array(
 						'order_item_name' => get_the_title( $course_id ),
 						'order_item_type' => 'line_item',
@@ -398,7 +429,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$order_item_id = (int) $wpdb->insert_id;
 
 					// Order Item Meta
-					$_ld_price     = get_post_meta( $order->ID, '_sfwd-courses', true );
+					$_ld_price     = get_post_meta( $course_id, '_sfwd-courses', true );
 					$wc_item_metas = array(
 						'_product_id'        => $order->ID,
 						'_variation_id'      => 0,

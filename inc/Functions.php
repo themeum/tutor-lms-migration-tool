@@ -10,6 +10,7 @@
  * @since 2.3.0
  */
 
+use Themeum\TutorLMSMigrationTool\Factories\OrderFactory;
 use Themeum\TutorLMSMigrationTool\Factories\PostMetaFactory;
 use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
 
@@ -69,6 +70,30 @@ if ( ! function_exists( 'tlmt_get_review_obj' ) ) {
 	function tlmt_get_review_obj( $migration_type ) {
 		try {
 			$obj = ReviewFactory::create( $migration_type );
+			return $obj;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
+	}
+}
+
+if ( ! function_exists( 'tlmt_get_order_obj' ) ) {
+
+	/**
+	 * Obtain a review migration class object.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $monetization_type the monetization type.
+	 * @param string $migration_type the migration type.
+	 *
+	 * @throws \Throwable if migration type is not supported.
+	 *
+	 * @return Order obj
+	 */
+	function tlmt_get_order_obj( $monetization_type, $migration_type ) {
+		try {
+			$obj = OrderFactory::create( $monetization_type, $migration_type );
 			return $obj;
 		} catch ( \Throwable $th ) {
 			throw $th;
