@@ -30,84 +30,70 @@ class ActionHandler {
 	 * Register hooks
 	 */
 	public function __construct() {
-		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_meta' ), 10, 2 );
-		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_lesson_meta' ), 10, 2 );
-		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_quiz_meta' ), 10, 2 );
+		add_action( 'tlmt_course_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 	}
 
 	/**
-	 * Migrate course meta
+	 * Migrate post meta
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param int    $course_id Course id.
+	 * @param int    $post_id Post id.
 	 * @param string $migration_type Migration type.
 	 *
 	 * @return void
 	 */
-	public function migrate_course_meta( $course_id, $migration_type ) {
+	public function migrate_post_meta( $post_id, $migration_type ) {
+		$post_type    = get_post_type( $post_id );
+		$content_type = $this->get_meta_content_type( $post_type );
+		if ( ! $content_type ) {
+			return;
+		}
+
 		try {
-			$course          = get_post( $course_id );
-			$course_meta_obj = tlmt_get_meta_obj( ContentTypes::COURSE_META, $migration_type );
+			$post     = get_post( $post_id );
+			$meta_obj = tlmt_get_meta_obj( $content_type, $migration_type );
 
 			try {
-				$course_meta_obj->migrate( $course_id );
+				$meta_obj->migrate( $post_id );
 			} catch ( \Throwable $th ) {
-				$this->update_migration_error( 'course_meta', "Failed to create meta data for this course: $course->post_title " );
+				$this->update_migration_error( $content_type, "Failed to migrate meta data for this post: $post->post_title post_type: $post_type" );
 			}
 		} catch ( \Throwable $th ) {
-			$this->update_migration_error( 'course_meta', "Failed to create meta data for this course: $course->post_title " );
+			$this->update_migration_error( $content_type, "Failed to migrate meta data for this post: $post->post_title post_type: $post_type" );
 		}
 	}
 
 	/**
-	 * Migrate lesson meta
+	 * Get meta content type by post type
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param int    $lesson_id Lesson id.
-	 * @param string $migration_type Migration type.
+	 * @param string $post_type Post type.
 	 *
-	 * @return void
+	 * @return string|null
 	 */
-	public function migrate_lesson_meta( $lesson_id, $migration_type ) {
-		try {
-			$lesson   = get_post( $lesson_id );
-			$meta_obj = tlmt_get_meta_obj( ContentTypes::COURSE_META, $migration_type );
+	public function get_meta_content_type( string $post_type ) {
+		$content_type = null;
+		switch ( $post_type ) {
+			case tutor()->course_post_type:
+				$content_type = ContentTypes::COURSE_META;
+				break;
+			case tutor()->lesson_post_type:
+				$content_type = ContentTypes::LESSON_META;
+				break;
+			case tutor()->quiz_post_type:
+				$content_type = ContentTypes::QUIZ_META;
+				break;
 
-			try {
-				$meta_obj->migrate( $lesson_id );
-			} catch ( \Throwable $th ) {
-				$this->update_migration_error( 'lesson_meta', "Failed to create meta data for this lesson: $lesson->post_title " );
-			}
-		} catch ( \Throwable $th ) {
-			$this->update_migration_error( 'lesson_meta', "Failed to create meta data for this lesson: $lesson->post_title " );
+			default:
+				// code...
+				break;
 		}
-	}
 
-	/**
-	 * Migrate lesson meta
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param int    $quiz_id Quiz id.
-	 * @param string $migration_type Migration type.
-	 *
-	 * @return void
-	 */
-	public function migrate_quiz_meta( $quiz_id, $migration_type ) {
-		try {
-			$quiz     = get_post( $quiz_id );
-			$meta_obj = tlmt_get_meta_obj( ContentTypes::COURSE_META, $migration_type );
-
-			try {
-				$meta_obj->migrate( $quiz_id );
-			} catch ( \Throwable $th ) {
-				$this->update_migration_error( 'quiz_meta', "Failed to create meta data for this quiz: $quiz->post_title " );
-			}
-		} catch ( \Throwable $th ) {
-			$this->update_migration_error( 'quiz_meta', "Failed to create meta data for this quiz: $quiz->post_title " );
-		}
+		return $content_type;
 	}
 
 	/**
