@@ -31,6 +31,7 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_meta' ), 10, 2 );
+		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_lesson_meta' ), 10, 2 );
 	}
 
 	/**
@@ -55,6 +56,31 @@ class ActionHandler {
 			}
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( 'course_meta', "Failed to create meta data for this course: $course->post_title " );
+		}
+	}
+
+	/**
+	 * Migrate lesson meta
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $lesson Lesson id.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_lesson_meta( $lesson_id, $migration_type ) {
+		try {
+			$lesson   = get_post( $lesson_id );
+			$meta_obj = tlmt_get_meta_obj( ContentTypes::COURSE_META, $migration_type );
+
+			try {
+				$meta_obj->migrate( $lesson_id );
+			} catch ( \Throwable $th ) {
+				$this->update_migration_error( 'lesson_meta', "Failed to create meta data for this lesson: $lesson->post_title " );
+			}
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error( 'lesson_meta', "Failed to create meta data for this lesson: $lesson->post_title " );
 		}
 	}
 

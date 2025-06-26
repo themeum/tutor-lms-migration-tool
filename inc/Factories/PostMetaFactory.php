@@ -15,6 +15,7 @@ use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\LessonMeta;
+use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\QuizMeta;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -42,6 +43,8 @@ abstract class PostMetaFactory {
 						return new CourseMeta();
 					case ContentTypes::LESSON_META:
 						return new LessonMeta();
+					case ContentTypes::QUIZ_META:
+						return new QuizMeta();
 					default:
 						break;
 				}
