@@ -45,6 +45,7 @@ class StudentProgress implements StudentProgressInterface {
 			$type      = $progress->activity_type ?? null;
 			$completed = $progress->activity_completed ?? null;
 
+			// @todo need to uncomment after course migration merge.
 			// if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
 			// continue;
 			// }
@@ -155,7 +156,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @throws \Exception If the insert operation fails or if activity meta is invalid.
 	 *
-	 * @return int The ID of the inserted quiz attempt.
+	 * @return array The ID of the inserted quiz attempt and the statistic reference ID.
 	 */
 	private function insert_quiz_attempts( $progress_info ) {
 
@@ -182,7 +183,8 @@ class StudentProgress implements StudentProgressInterface {
 			throw new \Exception( 'Database insert failed: ' . $wpdb->last_error ); //phpcs:ignore
 		}
 
-		return $wpdb->insert_id;
+		// If Statistics option in Quiz settings is disable then statistic_ref_id will be 0.
+		return (int) $activity_meta['statistic_ref_id'] ? array( $wpdb->insert_id, (int) $activity_meta['statistic_ref_id'] ) : array();
 	}
 
 	/**
@@ -191,18 +193,19 @@ class StudentProgress implements StudentProgressInterface {
 	 *  @since 2.3.0
 	 *
 	 * @param int    $quiz_attempt_id The ID of the Tutor LMS `tutor_quiz_attempts` table.
+	 * @param int    $statistic_ref_id The statistic reference ID from LearnDash.
 	 * @param object $progress_info   Object containing progress data.
 	 *
 	 * @throws \Exception If the bulk insert fails or database error occurs.
 	 *
 	 * @return void
 	 */
-	private function insert_quiz_attempt_answers( $quiz_attempt_id, $progress_info ) {
+	private function insert_quiz_attempt_answers( $quiz_attempt_id, $statistic_ref_id, $progress_info ) {
 
 		global $wpdb;
 
 		$data               = array();
-		$ld_quiz_statistics = $this->get_learndash_quiz_stats( $progress_info );
+		$ld_quiz_statistics = $this->get_learndash_quiz_stats( $statistic_ref_id );
 		$question_ids       = get_post_meta( $progress_info->post_id, 'learndash_to_tutor_migration' );
 
 		foreach ( $ld_quiz_statistics as $ld_quiz_statistic ) {
@@ -232,33 +235,26 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 *  @since 2.3.0
 	 *
-	 * @param object $progress Object containing progress data.
+	 * @param int $statistic_ref_id The statistic reference ID from LearnDash.
 	 * @throws \Exception If a database error occurs during the query.
 	 *
 	 * @return array List of quiz statistic result objects.
 	 */
-	private function get_learndash_quiz_stats( $progress ) {
+	private function get_learndash_quiz_stats( $statistic_ref_id ) {
 		global $wpdb;
 
+		//phpcs:disable
 		$result = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT
-						statistic.*,
-						statistic_ref.quiz_post_id
+						*
 					FROM 
 						{$wpdb->prefix}learndash_pro_quiz_statistic AS statistic
-					LEFT JOIN 
-						{$wpdb->prefix}learndash_pro_quiz_statistic_ref AS statistic_ref
-					 ON 
-						statistic.statistic_ref_id = statistic_ref.statistic_ref_id
-					WHERE statistic_ref.user_id = %d
-						 AND statistic_ref.quiz_post_id = %d
-						 AND statistic_ref.course_post_id = %d",
-				$progress->user_id,
-				$progress->post_id,
-				$progress->course_id
+					WHERE statistic_ref_id = %d",
+				$statistic_ref_id
 			)
 		);
+		//phpcs:enable
 
 		if ( $wpdb->last_error ) {
 			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
@@ -278,10 +274,10 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function add_quiz_attempt_to_tutor( $progress ) {
 
-		$quiz_attempt_id = $this->insert_quiz_attempts( $progress );
+		list( $quiz_attempt_id, $statistic_ref_id ) = $this->insert_quiz_attempts( $progress );
 
 		if ( $quiz_attempt_id ) {
-			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $progress );
+			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $statistic_ref_id, $progress );
 		}
 	}
 }
