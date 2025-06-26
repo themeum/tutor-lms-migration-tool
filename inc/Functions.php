@@ -52,6 +52,41 @@ if ( ! function_exists( 'tlmt_get_meta_obj' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_media_ids_from_content' ) ) {
+	/**
+	 * Get media ids from given content
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $content Content string.
+	 *
+	 * @return array
+	 */
+	function get_media_ids_from_content( $content = '' ) {
+		if ( empty( $content ) ) {
+			return array();
+		}
+
+		$media_ids = array();
+
+		// Match all image tags and extract src URLs.
+		preg_match_all( '/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $content, $matches );
+
+		if ( ! empty( $matches[1] ) ) {
+			foreach ( $matches[1] as $image_url ) {
+				// Try to get attachment ID from URL.
+				$attachment_id = attachment_url_to_postid( $image_url );
+				if ( $attachment_id ) {
+					$media_ids[] = $attachment_id;
+				}
+			}
+		}
+
+		return $media_ids;
+	}
+}
+
+
 
 
 if ( ! function_exists( 'tlmt_get_review_obj' ) ) {
