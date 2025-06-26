@@ -1,6 +1,6 @@
 <?php
 /**
- * Learndash Orders migration class.
+ * Learndash Orders to Tutor Orders migration class.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
