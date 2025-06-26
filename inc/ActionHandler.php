@@ -32,6 +32,7 @@ class ActionHandler {
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_meta' ), 10, 2 );
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_lesson_meta' ), 10, 2 );
+		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_quiz_meta' ), 10, 2 );
 	}
 
 	/**
@@ -64,7 +65,7 @@ class ActionHandler {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param int    $lesson Lesson id.
+	 * @param int    $lesson_id Lesson id.
 	 * @param string $migration_type Migration type.
 	 *
 	 * @return void
@@ -81,6 +82,31 @@ class ActionHandler {
 			}
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( 'lesson_meta', "Failed to create meta data for this lesson: $lesson->post_title " );
+		}
+	}
+
+	/**
+	 * Migrate lesson meta
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $quiz_id Quiz id.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_quiz_meta( $quiz_id, $migration_type ) {
+		try {
+			$quiz     = get_post( $quiz_id );
+			$meta_obj = tlmt_get_meta_obj( ContentTypes::COURSE_META, $migration_type );
+
+			try {
+				$meta_obj->migrate( $quiz_id );
+			} catch ( \Throwable $th ) {
+				$this->update_migration_error( 'quiz_meta', "Failed to create meta data for this quiz: $quiz->post_title " );
+			}
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error( 'quiz_meta', "Failed to create meta data for this quiz: $quiz->post_title " );
 		}
 	}
 

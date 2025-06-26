@@ -115,7 +115,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
-                        do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
 
 						$this->migrate_course( $ld_course->ID, $course_id );
 
@@ -596,6 +596,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
 					}
 				}
+
+				do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 			}
 		}
 
