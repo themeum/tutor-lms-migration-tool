@@ -155,7 +155,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						update_option( '_tutor_migrated_items_count', $course_i );
 
 						// Attached Product
-						$this->attached_product( $course_id, $ld_course->post_title );
+						do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LD_TO_TUTOR );
 
 						// Attached Prerequisite
 						$this->attached_prerequisite( $course_id );
@@ -261,13 +261,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		 */
 		public function attached_product( $course_id, $course_title ) {
 
-			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
 
 			/**
 			 * Create WC Product and linked with the course
 			 */
-			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc'  ) {
 
 				update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 				$monetize_by = tutils()->get_option( 'monetize_by' );
@@ -322,41 +321,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					}
 				}
 			}
-
-			/**
-			 * Create EDD Product and linked with the course
-			 */
-			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
-				$_ld_price = get_post_meta( $course_id, '_sfwd-courses', true );
-				if ( $_ld_price['sfwd-courses_course_price'] ) {
-					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-					$product_id    = wp_insert_post(
-						array(
-							'post_title'   => $course_title . ' Product',
-							'post_content' => '',
-							'post_status'  => 'publish',
-							'post_type'    => 'download',
-						)
-					);
-					$product_metas = array(
-						'edd_price'                        => $_ld_price['sfwd-courses_course_price'],
-						'edd_variable_prices'              => array(),
-						'edd_download_files'               => array(),
-						'_edd_bundled_products'            => array( '0' ),
-						'_edd_bundled_products_conditions' => array( 'all' ),
-					);
-					foreach ( $product_metas as $key => $value ) {
-						update_post_meta( $product_id, $key, $value );
-					}
-					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-					if ( $coursePostThumbnail ) {
-						set_post_thumbnail( $product_id, $coursePostThumbnail );
-					}
-				} else {
-					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
-				}
-			}
 		}
 
 		/**
@@ -378,7 +342,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$ld_orders = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';" );
 			$item_i    = (int) get_option( '_tutor_migrated_items_count' );
 
-			if ( 'tutor' === $tutor_monetize_by ) {
+			if ( 'tutor' === $tutor_monetize_by || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
 				try {
 					$order_obj = tlmt_get_order_obj( $tutor_monetize_by, MigrationTypes::LD_TO_TUTOR );

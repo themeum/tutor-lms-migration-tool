@@ -31,6 +31,7 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_meta' ), 10, 2 );
+		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
 	}
 
 	/**
@@ -57,6 +58,33 @@ class ActionHandler {
 			$this->update_migration_error( 'course_meta', "Failed to create meta data for this course: $course->post_title " );
 		}
 	}
+
+	/**
+	 * Migrate products.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $course_id the course id.
+	 * @param string $migration_type the migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_products( $course_id, $migration_type ) {
+		try {
+			$course      = get_post( $course_id );
+			$monetize_by = tutor_utils()->get_option( 'monetize_by' );
+			$product_obj = tlmt_get_product_obj( $monetize_by, $migration_type );
+
+			try {
+				$product_obj->migrate( $course_id, $course->post_title );
+			} catch ( \Throwable $th ) {
+				$this->update_migration_error( 'product', "Failed to attach product to course: $course->post_title " );
+			}
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error( 'product', "Failed to attach product to course: $course->post_title " );
+		}
+	}
+
 
 	/**
 	 * Update migration error message

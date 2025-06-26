@@ -12,6 +12,7 @@
 
 use Themeum\TutorLMSMigrationTool\Factories\OrderFactory;
 use Themeum\TutorLMSMigrationTool\Factories\PostMetaFactory;
+use Themeum\TutorLMSMigrationTool\Factories\ProductFactory;
 use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
 
 if ( ! function_exists( 'tlmt_has_tutor_pro' ) ) {
@@ -115,7 +116,7 @@ if ( ! function_exists( 'tlmt_get_review_obj' ) ) {
 if ( ! function_exists( 'tlmt_get_order_obj' ) ) {
 
 	/**
-	 * Obtain a review migration class object.
+	 * Obtain a order migration class object.
 	 *
 	 * @since 2.3.0
 	 *
@@ -129,6 +130,31 @@ if ( ! function_exists( 'tlmt_get_order_obj' ) ) {
 	function tlmt_get_order_obj( $monetization_type, $migration_type ) {
 		try {
 			$obj = OrderFactory::create( $monetization_type, $migration_type );
+			return $obj;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
+	}
+}
+
+
+if ( ! function_exists( 'tlmt_get_product_obj' ) ) {
+
+	/**
+	 * Obtain a product migration class object.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $monetization_type the monetization type.
+	 * @param string $migration_type the migration type.
+	 *
+	 * @throws \Throwable if migration type is not supported.
+	 *
+	 * @return Product obj
+	 */
+	function tlmt_get_product_obj( $monetization_type, $migration_type ) {
+		try {
+			$obj = ProductFactory::create( $monetization_type, $migration_type );
 			return $obj;
 		} catch ( \Throwable $th ) {
 			throw $th;
