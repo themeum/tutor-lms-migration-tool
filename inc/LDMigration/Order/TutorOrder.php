@@ -102,7 +102,7 @@ class TutorOrder implements Order {
 	 *
 	 * @return array
 	 */
-	public function get_payment_payloads( $order ) {
+	private function get_payment_payloads( $order ) {
 
 		$payment_data = get_post_meta( $order->ID );
 		$payment_data = array_map( fn( $val ) => $val[0], $payment_data );

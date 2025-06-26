@@ -14,13 +14,10 @@ use Themeum\TutorLMSMigrationTool\Interfaces\Order;
 
 class EDDOrder implements Order {
 
-    public function migrate($order, $course_id)
-    {
-        
-    }
+	public function migrate( $order, $course_id ) {
+	}
 
-    public function remove_orders()
-    {
-        //Code..
-    }
+	public function remove_orders() {
+		//Code..
+	}
 }

@@ -161,3 +161,25 @@ if ( ! function_exists( 'tlmt_get_product_obj' ) ) {
 		}
 	}
 }
+
+
+if ( ! function_exists( 'set_product_thumbnail') ) {
+
+	/**
+	 * Set product thumbnail from course.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $course_id the course id.
+	 * @param int $product_id the product id.
+	 *
+	 * @return void
+	 */
+	function set_product_thumbnail( $course_id, $product_id ) {
+		$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+
+		if ( $coursePostThumbnail ) {
+			set_post_thumbnail( $product_id, $coursePostThumbnail );
+		}
+	}
+}

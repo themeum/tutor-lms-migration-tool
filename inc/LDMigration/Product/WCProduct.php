@@ -1,6 +1,8 @@
 <?php
+
+
 /**
- * Learndash Product to Tutor EDD product migration class.
+ * Learndash Product to Tutor WC product migration class.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -12,18 +14,16 @@ namespace Themeum\TutorLMSMigrationTool\LDMigration\Product;
 
 use Themeum\TutorLMSMigrationTool\Interfaces\Product;
 
-/**
- * Product migration class to migrate product from learndash to tutor EDD.
- */
-class EDDProduct implements Product {
 
+
+class WCProduct implements Product {
 	/**
-	 * Migration method to migrate from learndash to edd product.
+	 * Migrate learndash product to tutor WC product.
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param integer $course_id the course id.
-	 * @param string  $course_title the course title.
+	 * @param integer $course_id
+	 * @param string $course_title
 	 *
 	 * @throws \Throwable
 	 *
@@ -34,22 +34,23 @@ class EDDProduct implements Product {
 		update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 
 		if ( $course_details['sfwd-courses_course_price'] ) {
+
 			try {
 				$product_id = wp_insert_post(
 					array(
 						'post_title'   => $course_title . ' Product',
 						'post_content' => '',
 						'post_status'  => 'publish',
-						'post_type'    => 'download',
+						'post_type'    => 'product',
 					)
 				);
 			} catch ( \Throwable $th ) {
 				return $th;
 			}
 
-			$product_metas = $this->prepare_product_meta( $course_details['sfwd-courses_course_price'] );
+			$product_meta = $this->prepare_product_meta( $course_details['sfwd-courses_course_price'] );
 
-			foreach ( $product_metas as $key => $value ) {
+			foreach ( $product_meta as $key => $value ) {
 				update_post_meta( $product_id, $key, $value );
 			}
 
@@ -64,21 +65,33 @@ class EDDProduct implements Product {
 	}
 
 	/**
-	 * Prepare EDD product meta.
+	 * Prepare WC product meta.
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param string|int $price the product price.
+	 * @param int|string $price the product price.
 	 *
 	 * @return array
 	 */
 	private function prepare_product_meta( $price ) {
-		$product_metas = array(
-			'edd_price'              => $price,
-			'_edd_download_earnings' => 0,
-			'_edd_download_sales'    => 0,
+		$product_meta = array(
+			'_regular_price'     => $price,
+			'total_sales'        => 0,
+			'_tax_status'        => 'taxable',
+			'_tax_class'         => '',
+			'_manage_stock'      => 'no',
+			'_backorders'        => 'no',
+			'_sold_individually' => 'yes',
+			'_virtual'           => 'yes',
+			'_downloadable'      => 'no',
+			'_download_limit'    => -1,
+			'_download_expiry'   => -1,
+			'_stock'             => null,
+			'_stock_status'      => 'instock',
+			'_price'             => $price,
+			'_tutor_product'     => 'yes',
 		);
 
-		return $product_metas;
+		return $product_meta;
 	}
 }
