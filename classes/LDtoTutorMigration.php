@@ -17,6 +17,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 	class LDtoTutorMigration {
 
 		public function __construct() {
+
 			add_filter( 'tutor_tool_pages', array( $this, 'ld_tool_pages' ) );
 			add_action( 'wp_ajax_insert_tutor_migration_data', array( $this, 'insert_tutor_migration_data' ) );
 			add_action( 'wp_ajax_ld_migrate_all_data_to_tutor', array( $this, 'ld_migrate_all_data_to_tutor' ) );
@@ -115,7 +116,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
-                        do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
 
 						$this->migrate_course( $ld_course->ID, $course_id );
 
@@ -135,6 +136,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 						/**
 						 * Insert Student Progress
+						 *
 						 * @since 2.3.0
 						 */
 						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
@@ -568,6 +570,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 									if ( $result['answer_type'] == 'cloze_answer' ) {
 										$final_question = wp_strip_all_tags( $val );
 										preg_match_all( '/{.*?\}/', $final_question, $matches );
+										$answer_str = array();
 										if ( isset( $matches[0] ) ) {
 											foreach ( $matches[0] as $key => $v ) {
 												$v = explode( ']', $v );
@@ -589,7 +592,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 									$answer['answer_order']          = $i;
 									$answer['image_id']              = 0;
 								}
-								$i++;
+								++$i;
 							}
 							$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer );
 						}

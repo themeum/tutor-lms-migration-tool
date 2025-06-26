@@ -45,9 +45,9 @@ class StudentProgress implements StudentProgressInterface {
 			$type      = $progress->activity_type ?? null;
 			$completed = $progress->activity_completed ?? null;
 
-			if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-				continue;
-			}
+			// if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+			// continue;
+			// }
 
 			switch ( $type ) {
 
@@ -120,7 +120,7 @@ class StudentProgress implements StudentProgressInterface {
 		global $wpdb;
 
         // phpcs:disable
-        $result = $wpdb->get_results(
+        $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT 
 					* 
@@ -137,7 +137,13 @@ class StudentProgress implements StudentProgressInterface {
             throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
 		}
 
-		return $result;
+		// Convert to activity meta key => activity meta value associative array.
+		$meta = array();
+		foreach ( $results as $row ) {
+			$meta[ $row->activity_meta_key ] = $row->activity_meta_value;
+		}
+
+		return $meta;
 	}
 
 	/**
