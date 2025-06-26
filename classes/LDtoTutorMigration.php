@@ -637,13 +637,21 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 
 				if ( $topic_id ) {
-					$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
+					if ( $this->is_assignment( $lesson_key ) ) {
+						$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id );
+					} else {
+						$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
+					}
 
 					update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 					do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 					foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
-						$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
+						if ( $this->is_assignment( $lesson_inner_key ) ) {
+							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
+						} else {
+							$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
+						}
 
 						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 
@@ -675,6 +683,39 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 			}
 
+		}
+
+		/**
+		 * Check whether the give lesson is assignment in tutor context
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param integer $ld_lesson_id LD Lesson id.
+		 *
+		 * @return boolean
+		 */
+		private function is_assignment( int $ld_lesson_id ) {
+			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lesson', true );
+			if ( $lesson_meta ) {
+				return isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) && 'on' === $lesson_meta['sfwd-lessons_lesson_assignment_upload'];
+			}
+
+			return false;
+		}
+
+		/**
+		 * Migrate assignment
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param integer $ld_lesson_id LD lesson id.
+		 * @param integer $tutor_topic_id Tutor topic id.
+		 *
+		 * @return int
+		 */
+		private function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id ) {
+			// @TODO.
+			return $ld_lesson_id;
 		}
 	}
 }
