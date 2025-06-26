@@ -8,6 +8,9 @@
  * @since 2.3.0
  */
 
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
+
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'LDtoTutorMigration' ) ) {
@@ -112,6 +115,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
+						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+
 						$this->migrate_course( $ld_course->ID, $course_id );
 
 						update_option( '_tutor_migrated_items_count', $course_i );
@@ -591,6 +596,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
 					}
 				}
+
+				do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 			}
 		}
 
@@ -633,7 +640,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
 
 					update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
-
+					do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 					foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
 						$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson

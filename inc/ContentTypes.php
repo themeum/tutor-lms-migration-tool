@@ -26,8 +26,8 @@ abstract class ContentTypes {
 	const ORDERS      = 'orders';
 	const WC_PRODUCTS = 'wc_products';
 
-	const LESSON      = 'lesson_meta';
-	const LESSON_META = 'lesson';
+	const LESSON      = 'lesson';
+	const LESSON_META = 'lesson_meta';
 
 	const ASSIGNMENT      = 'assignment';
 	const ASSIGNMENT_META = 'assignment_meta';

@@ -25,7 +25,7 @@ if ( ! function_exists( 'tlmt_has_tutor_pro' ) ) {
 	}
 }
 
-if ( ! function_exists( 'get_meta_obj' ) ) {
+if ( ! function_exists( 'tlmt_get_meta_obj' ) ) {
 	/**
 	 * Check whether tutor pro is installed or not
 	 *
@@ -40,13 +40,66 @@ if ( ! function_exists( 'get_meta_obj' ) ) {
 	 *
 	 * @return PostMeta object
 	 */
-	function get_meta_obj( $meta_type, $migration_type ) {
+	function tlmt_get_meta_obj( $meta_type, $migration_type ) {
 		try {
 			$obj = PostMetaFactory::create( $meta_type, $migration_type );
 			return $obj;
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
+	}
+}
+
+if ( ! function_exists( 'get_media_ids_from_content' ) ) {
+	/**
+	 * Get media ids from given content
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $content Content string.
+	 *
+	 * @return array
+	 */
+	function get_media_ids_from_content( $content = '' ) {
+		if ( empty( $content ) ) {
+			return array();
+		}
+
+		$media_ids = array();
+
+		// Match all image tags and extract src URLs.
+		preg_match_all( '/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $content, $matches );
+
+		if ( ! empty( $matches[1] ) ) {
+			foreach ( $matches[1] as $image_url ) {
+				// Try to get attachment ID from URL.
+				$attachment_id = attachment_url_to_postid( $image_url );
+				if ( $attachment_id ) {
+					$media_ids[] = $attachment_id;
+				}
+			}
+		}
+
+		return $media_ids;
+	}
+}
+
+if ( ! function_exists( 'tlmt_is_multi_dim_arr' ) ) {
+	/**
+	 * Check whether tutor pro is installed or not
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array $arr Array to check.
+	 *
+	 * @return bool
+	 */
+	function tlmt_is_multi_dim_arr( $arr ) {
+		if ( ! is_array( $arr ) ) {
+			return false;
+		}
+
+		return is_array( $arr[0] );
 	}
 }
 
