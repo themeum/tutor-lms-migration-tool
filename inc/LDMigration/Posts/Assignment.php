@@ -23,6 +23,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Assignment implements Post {
 
 	/**
+	 * Assignment post type
+	 *
+	 * @since 2.3.0
+	 *
+	 * @var string
+	 */
+	private $post_type;
+
+	/**
+	 * Set member variables
+	 */
+	public function __construct() {
+		$this->post_type = tutor()->assignment_post_type;
+	}
+
+	/**
 	 * Migrate assignment using the post id
 	 *
 	 * @param WP_Post $post Post object.
@@ -31,6 +47,11 @@ class Assignment implements Post {
 	 * @return void
 	 */
 	public function migrate( WP_Post $post, int $parent_post_id ) {
+		$update = array(
+			'ID'        => $post->ID,
+			'post_type' => $this->post_type,
+		);
 
+		wp_update_post( $update, false, false );
 	}
 }
