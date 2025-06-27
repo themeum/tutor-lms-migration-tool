@@ -17,7 +17,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 	class LDtoTutorMigration {
 
 		public function __construct() {
-
 			add_filter( 'tutor_tool_pages', array( $this, 'ld_tool_pages' ) );
 			add_action( 'wp_ajax_insert_tutor_migration_data', array( $this, 'insert_tutor_migration_data' ) );
 			add_action( 'wp_ajax_ld_migrate_all_data_to_tutor', array( $this, 'ld_migrate_all_data_to_tutor' ) );
@@ -113,7 +112,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
 				$i        = 0;
 				foreach ( $ld_courses as $ld_course ) {
-					$course_i++;
+					++$course_i;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
 						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
@@ -353,7 +352,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -413,7 +412,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -570,7 +569,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 									if ( $result['answer_type'] == 'cloze_answer' ) {
 										$final_question = wp_strip_all_tags( $val );
 										preg_match_all( '/{.*?\}/', $final_question, $matches );
-										$answer_str = array();
 										if ( isset( $matches[0] ) ) {
 											foreach ( $matches[0] as $key => $v ) {
 												$v = explode( ']', $v );
@@ -604,6 +602,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
 					}
 				}
+
+				do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 			}
 		}
 
@@ -638,20 +638,28 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					if ( $section_heading[ $section_count ]['order'] == $check ) {
 						// Insert Topics
 						$topic_id = $this->insert_post( $section_heading[ $section_count ]['post_title'], '', $author_id, 'topics', $i, $new_course_id );
-						$section_count++;
+						++$section_count;
 					}
 				}
 
 				if ( $topic_id ) {
-					$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
-
-					update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+					if ( $this->is_assignment( $lesson_key ) ) {
+						$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id );
+					} else {
+						$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
+						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
+					}
 
 					foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
-						$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
-
-						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+						if ( $this->is_assignment( $lesson_inner_key ) ) {
+							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
+						} else {
+							$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
+							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+							do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
+						}
 
 						foreach ( $lesson_inner['sfwd-quiz'] as $quiz_key => $quiz_data ) {
 							$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
@@ -669,7 +677,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
-				$i++;
+				++$i;
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
@@ -681,5 +689,58 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 			}
 		}
+
+		/**
+		 * Check whether the give lesson is assignment in tutor context
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param integer $ld_lesson_id LD Lesson id.
+		 *
+		 * @return boolean
+		 */
+		private function is_assignment( int $ld_lesson_id ) {
+			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lesson', true );
+			if ( $lesson_meta ) {
+				return isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) && 'on' === $lesson_meta['sfwd-lessons_lesson_assignment_upload'];
+			}
+
+			return false;
+		}
+
+		/**
+		 * Migrate assignment
+		 *
+		 * Fire hooks: tlmt_assignment_migrated, after assignment migration
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param integer $ld_lesson_id LD lesson id.
+		 * @param integer $tutor_topic_id Tutor topic id.
+		 *
+		 * @return int 0 if failed to migrate
+		 */
+		public function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id ) {
+			$lesson = get_post( $lesson_id );
+			if ( ! is_a( $lesson, 'WP_Post' ) ) {
+				return 0;
+			}
+
+			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lesson', true );
+			if ( ! isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) || 'on' !== $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) {
+				return 0;
+			}
+
+			try {
+				tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate( $lesson_id, $tutor_topic_id );
+
+				do_action( 'tlmt_assignment_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
+
+				return $lesson_id;
+			} catch ( \Throwable $th ) {
+				return 0;
+			}
+		}
 	}
+
 }
