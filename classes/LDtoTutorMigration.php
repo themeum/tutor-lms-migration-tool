@@ -275,14 +275,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$ld_orders = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';" );
 			$item_i    = (int) get_option( '_tutor_migrated_items_count' );
 
-			if ( 'tutor' === $tutor_monetize_by || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			try {
+				$order_obj = tlmt_get_order_obj( $tutor_monetize_by, MigrationTypes::LD_TO_TUTOR );
+			} catch ( \Throwable $th ) {
+				wp_send_json_error();
+			}
 
-				try {
-					$order_obj = tlmt_get_order_obj( $tutor_monetize_by, MigrationTypes::LD_TO_TUTOR );
-				} catch ( \Throwable $th ) {
-					wp_send_json_error();
-				}
-
+			try {
 				foreach ( $ld_orders as $order ) {
 					$item_i++;
 					update_option( '_tutor_migrated_items_count', $item_i );
@@ -292,13 +291,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						continue;
 					}
 
-					try {
-						$order_obj->migrate( $order, $course_id );
-					} catch ( \Throwable $th ) {
-						wp_send_json_error();
-					}
-				}
+					$order_obj->migrate( $order, $course_id );
 
+				}
+			} catch ( \Throwable $th ) {
+				wp_send_json_error();
+			} finally {
 				$order_obj->remove_orders();
 			}
 
@@ -358,56 +356,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d", $order->post_author ) );
 					update_post_meta( $order->ID, '_billing_address_index', $user_email );
 					update_post_meta( $order->ID, '_billing_email', $user_email );
-
-				}
-			}
-
-			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
-
-				foreach ( $ld_orders as $order ) {
-					$item_i++;
-					update_option( '_tutor_migrated_items_count', $item_i );
-
-					$migrate_order_data = array(
-						'ID'          => $order->ID,
-						'post_status' => 'publish',
-						'post_type'   => 'edd_payment',
-					);
-					wp_update_post( $migrate_order_data );
-
-					$_ld_price  = get_post_meta( $order->ID, '_sfwd-courses', true );
-					$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $order->post_author ) );
-					$meta_data  = array(
-						'_edd_payment_meta'         => array(),
-						'_edd_payment_gateway'      => '',
-						'_edd_payment_user_id'      => $order->post_author,
-						'_edd_payment_user_email'   => $user_email,
-						'_edd_payment_user_ip'      => '',
-						'_edd_payment_purchase_key' => '',
-						'_edd_payment_mode'         => 'migration',
-						'_edd_payment_tax_rate'     => 0,
-						'_edd_payment_customer_id'  => $order->post_author,
-						'_edd_payment_total'        => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'_edd_payment_tax'          => 0,
-						'_edd_completed_date'       => $order->post_date,
-					);
-
-					foreach ( $meta_data as $key => $value ) {
-						update_post_meta( $order->ID, $key, $value );
-					}
-
-					$display_name   = $wpdb->get_var( $wpdb->prepare( "SELECT display_name from {$wpdb->users} WHERE ID = %d ", $order->post_author ) );
-					$edd_item_metas = array(
-						'user_id'        => $order->post_author,
-						'email'          => $user_email,
-						'name'           => $display_name,
-						'purchase_value' => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'purchase_count' => 1,
-						'notes'          => '',
-						'date_created'   => $order->post_date,
-					);
-
-					$wpdb->insert( $wpdb->prefix . 'edd_customers', $edd_item_metas );
 
 				}
 			}

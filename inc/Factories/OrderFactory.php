@@ -12,7 +12,8 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\Interfaces\Order;
-use Themeum\TutorLMSMigrationTool\LDMigration\Order\TutorOrder;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\EDDOrder as LD_EDD_Order;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\TutorOrder as LD_Tutor_Order;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -34,9 +35,15 @@ abstract class OrderFactory {
 	public static function create( string $monetization_type, string $migration_type ): Order {
 		switch ( $migration_type ) {
 			case MigrationTypes::LD_TO_TUTOR:
-				if ( 'tutor' === $monetization_type ) {
-					return new TutorOrder();
+				if ( 'tutor' === $monetization_type || $monetization_type == '-1' || $monetization_type == 'free' ) {
+					return new LD_Tutor_Order();
 				}
+
+				if ( tutor_utils()->has_edd() && 'edd' === $monetization_type ) {
+					return new LD_EDD_Order();
+				}
+
+				break;
 			default:
 				break;
 		}
