@@ -26,6 +26,7 @@ class StudentProgress implements StudentProgressInterface {
 	const LD_CLOZE_ANSWER                     = 'cloze_answer';
 	const LD_SINGLE_CHOICE                    = 'single';
 	const LD_MULTIPLE_CHOICE                  = 'multiple';
+	const LD_FREE_CHOICE                      = 'free_answer';
 	const TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
 
 	/**
@@ -221,7 +222,7 @@ class StudentProgress implements StudentProgressInterface {
 					'quiz_id'         => $quiz_statistic->quiz_post_id,
 					'quiz_attempt_id' => $quiz_attempt_id,
 					'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
-					'question_id'     => $quiz_statistic->question_id,
+					'question_id'     => $question_id,
 					'question_marks'  => $quiz_statistic->question_points ?? 0,
 					'achieved_marks'  => $quiz_statistic->points ?? 0,
 					'is_correct'      => $quiz_statistic->correct_count > 0 ? 1 : 0,
@@ -334,6 +335,9 @@ class StudentProgress implements StudentProgressInterface {
 				$submitted_answers = $this->get_submitted_ld_quiz_answers( $statistic_answer_data );
 				return maybe_serialize( $this->get_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
+			case self::LD_FREE_CHOICE:
+				return $statistic_answer_data[0];
+
 			default:
 				// code...
 				break;
@@ -421,9 +425,8 @@ class StudentProgress implements StudentProgressInterface {
 					answer_id
 				FROM
 					{$wpdb->prefix}tutor_quiz_question_answers
-					WHERE
-					belongs_question_id = %d
-					belongs_question_type = %s
+					WHERE belongs_question_id = %d
+					AND belongs_question_type = %s
 					AND answer_title = %s",
 				$question_id,
 				self::TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE,
