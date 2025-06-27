@@ -32,7 +32,7 @@ class ErrorHandler {
 	 *
 	 * @return void
 	 */
-	public function set_error( string $error_type, string $err_msg ) {
+	public static function set_error( string $error_type, string $err_msg ) {
 		$error_data = get_option( self::MIGRATION_ERR_OPT_NAME );
 
 		if ( ! is_array( $error_data[ $error_type ] ) ) {
@@ -53,7 +53,7 @@ class ErrorHandler {
 	 *
 	 * @return array
 	 */
-	public function get_errors( bool $clear_errors = true ): array {
+	public static function get_errors( bool $clear_errors = true ): array {
 		$errors = get_option( self::MIGRATION_ERR_OPT_NAME );
 
 		if ( $clear_errors ) {
