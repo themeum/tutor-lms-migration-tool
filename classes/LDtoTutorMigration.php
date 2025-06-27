@@ -641,19 +641,19 @@ class LDtoTutorMigration {
 					$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id );
 				} else {
 					$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
+					update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+					do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 				}
-
-				update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
-				do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
+				
 				foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
 					if ( $this->is_assignment( $lesson_inner_key ) ) {
 						$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
 					} else {
 						$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
+						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
+						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 					}
-
-					update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 
 					foreach ( $lesson_inner['sfwd-quiz'] as $quiz_key => $quiz_data ) {
 						$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
@@ -706,15 +706,16 @@ class LDtoTutorMigration {
 	/**
 	 * Migrate assignment
 	 *
+	 * Fire hooks: tlmt_assignment_migrated, after assignment migration
+	 *
 	 * @since 2.3.0
 	 *
 	 * @param integer $ld_lesson_id LD lesson id.
 	 * @param integer $tutor_topic_id Tutor topic id.
 	 *
-	 * @return int
+	 * @return int 0 if failed to migrate
 	 */
 	public function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id ) {
-		// @TODO.
 		$lesson = get_post( $lesson_id );
 		if ( ! is_a( $lesson, 'WP_Post' ) ) {
 			return 0;
@@ -727,6 +728,8 @@ class LDtoTutorMigration {
 
 		try {
 			tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate( $lesson_id, $tutor_topic_id );
+
+			do_action( 'tlmt_assignment_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 
 			return $lesson_id;
 		} catch ( \Throwable $th ) {
