@@ -48,8 +48,9 @@ class Assignment implements Post {
 	 */
 	public function migrate( WP_Post $post, int $parent_post_id ) {
 		$update = array(
-			'ID'        => $post->ID,
-			'post_type' => $this->post_type,
+			'ID'          => $post->ID,
+			'post_type'   => $this->post_type,
+			'post_parent' => $parent_post_id,
 		);
 
 		wp_update_post( $update, false, false );
