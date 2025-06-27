@@ -13,6 +13,7 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
+use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\AssignmentMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\LessonMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\QuizMeta;
@@ -45,6 +46,8 @@ abstract class PostMetaFactory {
 						return new LessonMeta();
 					case ContentTypes::QUIZ_META:
 						return new QuizMeta();
+					case ContentTypes::ASSIGNMENT_META:
+						return new AssignmentMeta();
 					default:
 						break;
 				}
