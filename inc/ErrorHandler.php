@@ -1,0 +1,65 @@
+<?php
+/**
+ * Error Handler
+ *
+ * @package TutorLMSMigrationTool
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.3.0
+ */
+
+namespace Themeum\TutorLMSMigrationTool;
+
+/**
+ * Error handler class
+ */
+class ErrorHandler {
+
+	/**
+	 * Migration error option name
+	 *
+	 * @since 2.3.0
+	 */
+	const MIGRATION_ERR_OPT_NAME = 'tlmt_migration_error';
+
+	/**
+	 * Error handler
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $error_type Error type.
+	 * @param string $err_msg Error message.
+	 *
+	 * @return void
+	 */
+	public static function set_error( string $error_type, string $err_msg ) {
+		$error_data = get_option( self::MIGRATION_ERR_OPT_NAME );
+
+		if ( ! is_array( $error_data[ $error_type ] ) ) {
+			$error_data[ $error_type ][] = $err_msg;
+		} else {
+			$error_data[ $error_type ] = $err_msg;
+		}
+
+		update_option( self::MIGRATION_ERR_OPT_NAME, maybe_serialize( $error_data ), false );
+	}
+
+	/**
+	 * Get all the errors
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param bool $clear_errors Whether to clear the message or not.
+	 *
+	 * @return array
+	 */
+	public static function get_errors( bool $clear_errors = true ): array {
+		$errors = get_option( self::MIGRATION_ERR_OPT_NAME );
+
+		if ( $clear_errors ) {
+			update_option( self::MIGRATION_ERR_OPT_NAME, '', false );
+		}
+
+		return is_array( $errors ) ? $errors : array();
+	}
+}
