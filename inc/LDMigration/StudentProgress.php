@@ -19,10 +19,14 @@ use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressI
  */
 class StudentProgress implements StudentProgressInterface {
 
-	const TOPIC         = 'topic';
-	const LESSON        = 'lesson';
-	const QUIZ          = 'quiz';
-	const ATTEMPT_ENDED = 'attempt_ended';
+	const TOPIC                               = 'topic';
+	const LESSON                              = 'lesson';
+	const QUIZ                                = 'quiz';
+	const ATTEMPT_ENDED                       = 'attempt_ended';
+	const LD_CLOZE_ANSWER                     = 'cloze_answer';
+	const LD_SINGLE_CHOICE                    = 'single';
+	const LD_MULTIPLE_CHOICE                  = 'multiple';
+	const TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
 
 	/**
 	 * Migrates LearnDash course progress to Tutor LMS.
@@ -80,13 +84,13 @@ class StudentProgress implements StudentProgressInterface {
 
 		global $wpdb;
 
-        // phpcs:disable
+		// phpcs:disable
 		$result = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT 
-                    * 
-                FROM {$wpdb->prefix}learndash_user_activity 
-                WHERE 
+					* 
+				FROM {$wpdb->prefix}learndash_user_activity 
+				WHERE 
 					( activity_type = %s AND activity_status = %d )
 					OR
 					( activity_type = %s AND activity_status IN (%d, %d))",
@@ -97,7 +101,7 @@ class StudentProgress implements StudentProgressInterface {
 				0
 			)
 		);
-        // phpcs:enable
+		// phpcs:enable
 
 		if ( $wpdb->last_error ) {
 			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
@@ -120,22 +124,22 @@ class StudentProgress implements StudentProgressInterface {
 	private function get_user_activity_meta( $activity_id ) {
 		global $wpdb;
 
-        // phpcs:disable
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT 
-					* 
-				FROM 
-					{$wpdb->prefix}learndash_user_activity_meta 
-				WHERE 
-					activity_id = %d",
-                $activity_id
-            )
-        );
-        // phpcs:enable
+		// phpcs:disable
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT 
+							* 
+						FROM 
+							{$wpdb->prefix}learndash_user_activity_meta 
+						WHERE 
+							activity_id = %d",
+				$activity_id
+			)
+		);
+		// phpcs:enable
 
 		if ( $wpdb->last_error ) {
-            throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
 		}
 
 		// Convert to activity meta key => activity meta value associative array.
@@ -184,7 +188,7 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		// If Statistics option in Quiz settings is disable then statistic_ref_id will be 0.
-		return (int) $activity_meta['statistic_ref_id'] ? array( $wpdb->insert_id, (int) $activity_meta['statistic_ref_id'] ) : array();
+		return (int) $activity_meta['statistic_ref_id'] ? array( $wpdb->insert_id, $activity_meta ) : array();
 	}
 
 	/**
@@ -193,31 +197,34 @@ class StudentProgress implements StudentProgressInterface {
 	 *  @since 2.3.0
 	 *
 	 * @param int    $quiz_attempt_id The ID of the Tutor LMS `tutor_quiz_attempts` table.
-	 * @param int    $statistic_ref_id The statistic reference ID from LearnDash.
+	 * @param array  $user_activity_meta The user activity metadata.
 	 * @param object $progress_info   Object containing progress data.
 	 *
 	 * @throws \Exception If the bulk insert fails or database error occurs.
 	 *
 	 * @return void
 	 */
-	private function insert_quiz_attempt_answers( $quiz_attempt_id, $statistic_ref_id, $progress_info ) {
+	private function insert_quiz_attempt_answers( $quiz_attempt_id, $user_activity_meta ) {
 
 		global $wpdb;
 
-		$data               = array();
-		$ld_quiz_statistics = $this->get_learndash_quiz_stats( $statistic_ref_id );
-		$question_ids       = get_post_meta( $progress_info->post_id, 'learndash_to_tutor_migration' );
+		$data = array();
 
-		foreach ( $ld_quiz_statistics as $ld_quiz_statistic ) {
+		$question_ids = get_post_meta( $user_activity_meta->quiz, 'learndash_to_tutor_migration' );
+
+		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
+
+		foreach ( $user_quiz_statistics as $quiz_statistic ) {
 			foreach ( $question_ids as $question_id ) {
 				$data[] = array(
-					'user_id'         => $progress_info->user_id,
-					'quiz_id'         => $progress_info->post_id,
+					'user_id'         => $quiz_statistic->user_id,
+					'quiz_id'         => $quiz_statistic->quiz_post_id,
 					'quiz_attempt_id' => $quiz_attempt_id,
-					'question_id'     => $question_id,
-					'question_marks'  => get_post_meta( $ld_quiz_statistic->question_post_id, 'question_points', true ) ?? 0,
-					'achieved_marks'  => $ld_quiz_statistic->points ?? 0,
-					'is_correct'      => $ld_quiz_statistic->correct_count ?? 0,
+					'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
+					'question_id'     => $quiz_statistic->question_id,
+					'question_marks'  => $quiz_statistic->question_points ?? 0,
+					'achieved_marks'  => $quiz_statistic->points ?? 0,
+					'is_correct'      => $quiz_statistic->correct_count > 0 ? 1 : 0,
 				);
 			}
 		}
@@ -231,39 +238,6 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
-	 * Retrieves detailed quiz statistics from LearnDash for a specific user and quiz.
-	 *
-	 *  @since 2.3.0
-	 *
-	 * @param int $statistic_ref_id The statistic reference ID from LearnDash.
-	 * @throws \Exception If a database error occurs during the query.
-	 *
-	 * @return array List of quiz statistic result objects.
-	 */
-	private function get_learndash_quiz_stats( $statistic_ref_id ) {
-		global $wpdb;
-
-		//phpcs:disable
-		$result = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT
-						*
-					FROM 
-						{$wpdb->prefix}learndash_pro_quiz_statistic AS statistic
-					WHERE statistic_ref_id = %d",
-				$statistic_ref_id
-			)
-		);
-		//phpcs:enable
-
-		if ( $wpdb->last_error ) {
-			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
-		}
-
-		return $result;
-	}
-
-	/**
 	 * Migrates a LearnDash quiz attempt to Tutor LMS.
 	 *
 	 * @since 2.3.0
@@ -274,10 +248,193 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function add_quiz_attempt_to_tutor( $progress ) {
 
-		list( $quiz_attempt_id, $statistic_ref_id ) = $this->insert_quiz_attempts( $progress );
+		list( $quiz_attempt_id, $user_activity_meta ) = $this->insert_quiz_attempts( $progress );
 
 		if ( $quiz_attempt_id ) {
-			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $statistic_ref_id, $progress );
+			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $user_activity_meta );
 		}
+	}
+
+	/**
+	 * Fetches and processes LearnDash quiz statistic data for a specific user and quiz.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $statistic_ref_id The LearnDash statistic reference ID.
+	 * @param int $quiz_id          The ID of the LearnDash quiz.
+	 *
+	 * @throws \Exception If a database error occurs during query execution.
+	 *
+	 * @return array An array of processed quiz statistic objects.
+	 */
+	public function fetch_user_quiz_statistic( $statistic_ref_id, $quiz_id ) {
+
+		global $wpdb;
+
+		$result = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT
+					statistic.points AS points,
+					statistic.answer_data AS statistic_answer_data,
+					question.id AS question_id,
+					question.answer_data AS question_answer_data,
+					question.answer_type,
+					question.points as  question_points,
+					statistic_reference.user_id,
+					statistic_reference.quiz_post_id,
+					statistic.correct_count
+				FROM
+					{$wpdb->prefix}learndash_pro_quiz_statistic_ref AS statistic_reference
+			    INNER JOIN {$wpdb->prefix}learndash_pro_quiz_statistic AS statistic ON(statistic.statistic_ref_id = statistic_reference.statistic_ref_id)
+			    INNER JOIN {$wpdb->prefix}learndash_pro_quiz_question AS question ON(question.id = statistic.question_id)
+				WHERE
+					statistic_reference.statistic_ref_id = %d		
+					AND statistic_reference.quiz_id = %d",
+				$statistic_ref_id,
+				$quiz_id
+			)
+		);
+
+		if ( $wpdb->last_error ) {
+			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+		}
+
+		array_walk(
+			$result,
+			function ( &$row ) {
+				if ( null !== $row->statistic_answer_data ) {
+					$row->statistic_answer_data = $this->format_as_tutor_answer( $row );
+				}
+			}
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Formats LearnDash quiz answer data into Tutor LMS-compatible format.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param object $ld_quiz_statistic The LearnDash quiz statistic row object.
+	 *
+	 * @return string|null Serialized Tutor-compatible answer data or null on failure.
+	 */
+	private function format_as_tutor_answer( $ld_quiz_statistic ) {
+
+		$statistic_answer_data = json_decode( $ld_quiz_statistic->statistic_answer_data );
+
+		switch ( $ld_quiz_statistic->answer_type ) {
+
+			case self::LD_CLOZE_ANSWER:
+				return maybe_serialize( $statistic_answer_data );
+
+			case self::LD_SINGLE_CHOICE:
+			case self::LD_MULTIPLE_CHOICE:
+				$submitted_answers = $this->get_submitted_ld_quiz_answers( $statistic_answer_data );
+				return maybe_serialize( $this->get_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
+
+			default:
+				// code...
+				break;
+		}
+	}
+
+	/**
+	 * Filters submitted LearnDash quiz answers to return only selected choices.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array $statistic_answer_data The decoded answer data from LearnDash.
+	 *
+	 * @return array Array of selected answer keys.
+	 */
+	private function get_submitted_ld_quiz_answers( $statistic_answer_data ) {
+		return array_keys(
+			array_filter(
+				$statistic_answer_data,
+				function ( $value ) {
+					return 1 === $value;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Retrieves Tutor LMS answer IDs based on the submitted LearnDash answers.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array  $answers             Array of submitted answer keys.
+	 * @param object $ld_quiz_statistic   The LearnDash quiz statistic row object.
+	 *
+	 * @return array|null Array of matched Tutor answer IDs, or null if none matched.
+	 */
+	private function get_answer_ids( $answers, $ld_quiz_statistic ) {
+
+		$answer_ids                    = array();
+		$ld_quiz_question_answers_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data ) ?? null;
+
+		foreach ( $answers as $answer ) {
+
+			$ld_quiz_question_submitted_ans_data = $ld_quiz_question_answers_data[ $answer ] ?? null;
+
+			if ( ! $ld_quiz_question_submitted_ans_data instanceof \WpProQuiz_Model_AnswerTypes ) {
+				continue;
+			}
+
+			$answer_data = $ld_quiz_question_submitted_ans_data->getAnswer();
+
+			if ( empty( $answer_data ) ) {
+				continue;
+			}
+
+			$answer_id = $this->get_answer_ids_from_tutor( $answer_data, $ld_quiz_statistic->question_id );
+
+			if ( ! empty( $answer_id ) ) {
+				$answer_ids[] = $answer_id;
+			}
+		}
+
+		return ! empty( $answer_ids ) ? $answer_ids : null;
+	}
+
+	/**
+	 * Finds a Tutor LMS answer ID that matches a LearnDash answer title.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $answer_data The answer text submitted in LearnDash.
+	 * @param int    $question_id The corresponding Tutor LMS question ID.
+	 *
+	 * @throws \Exception If a database error occurs during the query.
+	 *
+	 * @return int|null The matching Tutor LMS answer ID, or null if not found.
+	 */
+	private function get_answer_ids_from_tutor( $answer_data, $question_id ) {
+
+		global $wpdb;
+
+		$answer_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT
+					answer_id
+				FROM
+					{$wpdb->prefix}tutor_quiz_question_answers
+					WHERE
+					belongs_question_id = %d
+					belongs_question_type = %s
+					AND answer_title = %s",
+				$question_id,
+				self::TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE,
+				$answer_data
+			)
+		);
+
+		if ( $wpdb->last_error ) {
+			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+		}
+
+		return ! empty( $answer_ids ) ? $answer_ids[0] : null;
 	}
 }
