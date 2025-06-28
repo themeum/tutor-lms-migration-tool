@@ -27,7 +27,9 @@ class StudentProgress implements StudentProgressInterface {
 	const LD_SINGLE_CHOICE                    = 'single';
 	const LD_MULTIPLE_CHOICE                  = 'multiple';
 	const LD_FREE_CHOICE                      = 'free_answer';
+	const LD_SORT_ANSWER                      = 'sort_answer';
 	const TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
+	const TUTOR_QUESTION_TYPE_ORDERING        = 'ordering';
 
 	/**
 	 * Migrates LearnDash course progress to Tutor LMS.
@@ -323,20 +325,24 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function format_as_tutor_answer( $ld_quiz_statistic ) {
 
-		$statistic_answer_data = json_decode( $ld_quiz_statistic->statistic_answer_data );
+		$ld_quiz_statistic->statistic_answer_data = json_decode( $ld_quiz_statistic->statistic_answer_data );
 
 		switch ( $ld_quiz_statistic->answer_type ) {
 
 			case self::LD_CLOZE_ANSWER:
-				return maybe_serialize( $statistic_answer_data );
+				return maybe_serialize( $ld_quiz_statistic->statistic_answer_data );
 
 			case self::LD_SINGLE_CHOICE:
 			case self::LD_MULTIPLE_CHOICE:
-				$submitted_answers = $this->get_submitted_ld_quiz_answers( $statistic_answer_data );
-				return maybe_serialize( $this->get_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
+				$submitted_answers = $this->get_learndash_choice_type_quiz_answers( $ld_quiz_statistic->statistic_answer_data );
+				return maybe_serialize( $this->get_learndash_choice_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
 			case self::LD_FREE_CHOICE:
-				return $statistic_answer_data[0];
+				return $ld_quiz_statistic->statistic_answer_data[0];
+
+			case self::LD_SORT_ANSWER:
+				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
+				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
 			default:
 				// code...
@@ -345,7 +351,7 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
-	 * Filters submitted LearnDash quiz answers to return only selected choices.
+	 * Filters submitted LearnDash quiz answers to return only selected choices. Only For multiple choice and single choice questions.
 	 *
 	 * @since 2.3.0
 	 *
@@ -353,7 +359,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @return array Array of selected answer keys.
 	 */
-	private function get_submitted_ld_quiz_answers( $statistic_answer_data ) {
+	private function get_learndash_choice_type_quiz_answers( $statistic_answer_data ) {
 		return array_keys(
 			array_filter(
 				$statistic_answer_data,
@@ -374,7 +380,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @return array|null Array of matched Tutor answer IDs, or null if none matched.
 	 */
-	private function get_answer_ids( $answers, $ld_quiz_statistic ) {
+	private function get_learndash_choice_type_quiz_answer_ids( $answers, $ld_quiz_statistic ) {
 
 		$answer_ids                    = array();
 		$ld_quiz_question_answers_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data ) ?? null;
@@ -393,7 +399,7 @@ class StudentProgress implements StudentProgressInterface {
 				continue;
 			}
 
-			$answer_id = $this->get_answer_ids_from_tutor( $answer_data, $ld_quiz_statistic->question_id );
+			$answer_id = $this->get_answer_ids_from_tutor( $answer_data, $ld_quiz_statistic->question_id, self::TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE );
 
 			if ( ! empty( $answer_id ) ) {
 				$answer_ids[] = $answer_id;
@@ -410,12 +416,13 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @param string $answer_data The answer text submitted in LearnDash.
 	 * @param int    $question_id The corresponding Tutor LMS question ID.
+	 * @param string $type        The type of question.
 	 *
 	 * @throws \Exception If a database error occurs during the query.
 	 *
 	 * @return int|null The matching Tutor LMS answer ID, or null if not found.
 	 */
-	private function get_answer_ids_from_tutor( $answer_data, $question_id ) {
+	private function get_answer_ids_from_tutor( $answer_data, $question_id, $type ) {
 
 		global $wpdb;
 
@@ -429,7 +436,7 @@ class StudentProgress implements StudentProgressInterface {
 					AND belongs_question_type = %s
 					AND answer_title = %s",
 				$question_id,
-				self::TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE,
+				$type,
 				$answer_data
 			)
 		);
@@ -439,5 +446,66 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		return ! empty( $answer_ids ) ? $answer_ids[0] : null;
+	}
+
+	/**
+	 * Prepares LearnDash sorting-type quiz answers by decoding and mapping the correct answer order.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param object $ld_quiz_statistic The LearnDash quiz statistic object containing question and answer data.
+	 *
+	 * @return array|null Modified statistic object as array with resolved answers, or null if no data available.
+	 */
+	private function get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic ) {
+
+		$ld_quiz_question_answers_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data ) ?? null;
+
+		if ( empty( $ld_quiz_question_answers_data ) ) {
+			return null;
+		}
+
+		foreach ( $ld_quiz_question_answers_data as $key => $value ) {
+			$expected_hash      = md5( intval( $ld_quiz_statistic->user_id ) . $ld_quiz_statistic->question_id . intval( $key ) );
+			$submitted_position = array_search( $expected_hash, $ld_quiz_statistic->statistic_answer_data, true );
+
+			if ( false !== $submitted_position ) {
+				$ld_quiz_statistic->statistic_answer_data[ $submitted_position ] = $value->getAnswer();
+			}
+		}
+
+		return (array) $ld_quiz_statistic;
+	}
+
+	/**
+	 * Converts LearnDash sorting-type submitted answers into corresponding Tutor LMS answer IDs.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array  $submitted_answers   The submitted LearnDash answer data, typically decoded from the statistic object.
+	 * @param object $ld_quiz_statistic   The LearnDash quiz statistic object providing question context.
+	 *
+	 * @return array| null An array of resolved Tutor LMS answer IDs or null.
+	 */
+	private function get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) {
+
+		$answer_data = $submitted_answers['statistic_answer_data'] ?? null;
+
+		if ( is_array( $answer_data ) ) {
+			return array_filter(
+				array_map(
+					function ( $answer ) use ( $ld_quiz_statistic ) {
+						return $this->get_answer_ids_from_tutor(
+							$answer,
+							$ld_quiz_statistic->question_id,
+							self::TUTOR_QUESTION_TYPE_ORDERING
+						);
+					},
+					$answer_data
+				)
+			);
+		}
+
+		return null;
 	}
 }
