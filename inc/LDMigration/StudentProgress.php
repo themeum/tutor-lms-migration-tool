@@ -30,6 +30,7 @@ class StudentProgress implements StudentProgressInterface {
 	const LD_SORT_ANSWER                      = 'sort_answer';
 	const LD_MATRIX_SORTING                   = 'matrix_sort_answer';
 	const LD_ASSESSMENT                       = 'assessment_answer';
+	const LD_ESSAY                            = 'essay';
 	const TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
 	const TUTOR_QUESTION_TYPE_ORDERING        = 'ordering';
 	const TUTOR_QUESTION_TYPE_MATCHING        = 'matching';
@@ -351,6 +352,9 @@ class StudentProgress implements StudentProgressInterface {
 			case self::LD_ASSESSMENT:
 				return $this->get_learndash_assessment_quiz_answers( $ld_quiz_statistic );
 
+			case self::LD_ESSAY:
+				return $this->get_learndash_essay_quiz_answers( $ld_quiz_statistic );
+
 			default:
 				// code...
 				break;
@@ -542,5 +546,31 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Retrieves the submitted answer for a LearnDash essay-type quiz question.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param object $ld_quiz_statistic The LearnDash quiz statistic object.
+	 *
+	 * @return string|null The uploaded file URL or essay content, or null if no valid submission exists.
+	 */
+	private function get_learndash_essay_quiz_answers( $ld_quiz_statistic ) {
+
+		$graded_id = $ld_quiz_statistic->statistic_answer_data->graded_id ?? null;
+
+		if ( empty( $graded_id ) ) {
+			return null;
+		}
+
+		$upload = get_post_meta( $graded_id, 'upload', true );
+
+		if ( $upload ) {
+			return $upload;
+		}
+
+		return get_post( $graded_id, ARRAY_A )['post_content'] ?? null;
 	}
 }
