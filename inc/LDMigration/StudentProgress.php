@@ -28,8 +28,11 @@ class StudentProgress implements StudentProgressInterface {
 	const LD_MULTIPLE_CHOICE                  = 'multiple';
 	const LD_FREE_CHOICE                      = 'free_answer';
 	const LD_SORT_ANSWER                      = 'sort_answer';
+	const LD_MATRIX_SORTING                   = 'matrix_sort_answer';
+	const LD_ASSESSMENT                       = 'assessment_answer';
 	const TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
 	const TUTOR_QUESTION_TYPE_ORDERING        = 'ordering';
+	const TUTOR_QUESTION_TYPE_MATCHING        = 'matching';
 
 	/**
 	 * Migrates LearnDash course progress to Tutor LMS.
@@ -341,8 +344,12 @@ class StudentProgress implements StudentProgressInterface {
 				return $ld_quiz_statistic->statistic_answer_data[0];
 
 			case self::LD_SORT_ANSWER:
+			case self::LD_MATRIX_SORTING:
 				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
 				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
+
+			case self::LD_ASSESSMENT:
+				return $this->get_learndash_assessment_quiz_answers( $ld_quiz_statistic );
 
 			default:
 				// code...
@@ -490,20 +497,48 @@ class StudentProgress implements StudentProgressInterface {
 	private function get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) {
 
 		$answer_data = $submitted_answers['statistic_answer_data'] ?? null;
+		$type        = self::LD_MATRIX_SORTING === $ld_quiz_statistic->answer_type ? self::TUTOR_QUESTION_TYPE_MATCHING : self::TUTOR_QUESTION_TYPE_ORDERING;
 
 		if ( is_array( $answer_data ) ) {
 			return array_filter(
 				array_map(
-					function ( $answer ) use ( $ld_quiz_statistic ) {
+					function ( $answer ) use ( $ld_quiz_statistic, $type ) {
 						return $this->get_answer_ids_from_tutor(
 							$answer,
 							$ld_quiz_statistic->question_id,
-							self::TUTOR_QUESTION_TYPE_ORDERING
+							$type
 						);
 					},
 					$answer_data
 				)
 			);
+		}
+
+		return null;
+	}
+
+
+	/**
+	 * Retrieves the correct LearnDash assessment-style quiz answer based on user selection.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param object $ld_quiz_statistic The LearnDash quiz statistic object.
+	 *
+	 * @return string|null The correct answer value from the assessment data, or null if not found or invalid.
+	 */
+	private function get_learndash_assessment_quiz_answers( $ld_quiz_statistic ) {
+
+		$question_answer_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data );
+
+		if ( is_array( $question_answer_data ) && $question_answer_data[0] instanceof \WpProQuiz_Model_AnswerTypes ) {
+
+			$assessment_data = learndash_question_assessment_fetch_data( $question_answer_data[0]->getAnswer(), 0, $ld_quiz_statistic->question_id );
+
+			if ( is_array( $assessment_data ) && is_array( $assessment_data['correct'] ?? null ) ) {
+				$index = intval( $ld_quiz_statistic->statistic_answer_data[0] ) - 1;
+				return $assessment_data['correct'][ $index ] ?? null;
+			}
 		}
 
 		return null;
