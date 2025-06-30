@@ -619,12 +619,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							}
 						}
 					}
-
-					if ( $is_table ) {
-						$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
-					} else {
-						$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
-					}
 				}
 
 				update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );

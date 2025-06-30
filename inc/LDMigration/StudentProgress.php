@@ -220,18 +220,18 @@ class StudentProgress implements StudentProgressInterface {
 		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
 
 		foreach ( $user_quiz_statistics as $quiz_statistic ) {
-			foreach ( $question_ids as $question_id ) {
-				$data[] = array(
-					'user_id'         => $quiz_statistic->user_id,
-					'quiz_id'         => $quiz_statistic->quiz_post_id,
-					'quiz_attempt_id' => $quiz_attempt_id,
-					'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
-					'question_id'     => $question_id['tutor_question_id'] ?? null,
-					'question_marks'  => $quiz_statistic->question_points ?? 0,
-					'achieved_marks'  => $quiz_statistic->points ?? 0,
-					'is_correct'      => $quiz_statistic->correct_count > 0 ? 1 : 0,
-				);
-			}
+
+			$tutor_question_id = $question_ids[ $quiz_statistic->question_id ][0]['tutor_question_id'] ?? null;
+			$data[]            = array(
+				'user_id'         => $quiz_statistic->user_id,
+				'quiz_id'         => $quiz_statistic->quiz_post_id,
+				'quiz_attempt_id' => $quiz_attempt_id,
+				'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
+				'question_id'     => $tutor_question_id,
+				'question_mark'   => $quiz_statistic->question_points ?? 0,
+				'achieved_mark'   => $quiz_statistic->points ?? 0,
+				'is_correct'      => $quiz_statistic->correct_count > 0 ? 1 : 0,
+			);
 		}
 
 		if ( ! empty( $data ) ) {
@@ -239,6 +239,9 @@ class StudentProgress implements StudentProgressInterface {
 			if ( ! QueryHelper::insert_multiple_rows( $table_name, $data ) ) {
 				throw new \Exception( 'Database insert failed: ' . $wpdb->last_error ); //phpcs:ignore
 			}
+
+			$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_statistic_ref', array( 'statistic_ref_id' => $user_activity_meta['statistic_ref_id'] ) );
+			$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_statistic', array( 'statistic_ref_id' => $user_activity_meta['statistic_ref_id'] ) );
 		}
 	}
 
@@ -304,14 +307,16 @@ class StudentProgress implements StudentProgressInterface {
 			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
 		}
 
-		array_walk(
-			$result,
-			function ( &$row ) {
-				if ( null !== $row->statistic_answer_data ) {
-					$row->statistic_answer_data = $this->format_as_tutor_answer( $row );
+		if ( ! empty( $result ) ) {
+			array_walk(
+				$result,
+				function ( &$row ) {
+					if ( null !== $row->statistic_answer_data ) {
+						$row->statistic_answer_data = $this->format_as_tutor_answer( $row );
+					}
 				}
-			}
-		);
+			);
+		}
 
 		return $result;
 	}
@@ -423,7 +428,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param int    $answer_key         The key of the answer in the LearnDash statistic data.
+	 * @param int    $answer_key         The index key of the answer in the LearnDash statistic data.
 	 * @param object $ld_quiz_statistic The LearnDash quiz statistic object containing question and answer data.
 	 *
 	 * @throws \Exception If a database error occurs during the query.
@@ -440,7 +445,7 @@ class StudentProgress implements StudentProgressInterface {
 
 		$answer_map = get_post_meta( intval( $ld_quiz_statistic->quiz_post_id ), 'tutor_migrated_question_answer_map', true );
 
-		return $answer_map[ $ld_quiz_statistic->question_id ]['tutor_answer_id'] ?? null;
+		return $answer_map[ $ld_quiz_statistic->question_id ][ $answer_key ]['tutor_answer_id'] ?? null;
 	}
 
 	/**
