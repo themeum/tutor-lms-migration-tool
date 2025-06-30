@@ -614,13 +614,14 @@ class LDtoTutorMigration {
 					}
 				}
 
-				// if ( $is_table ) {
-				// 	$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
-				// } else {
-				// 	$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
-				// }
+				if ( $is_table ) {
+					$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
+				} else {
+					$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
+				}
 			}
 
+			update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );
 			do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 		}
 	}
