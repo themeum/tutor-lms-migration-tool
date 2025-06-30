@@ -20,19 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ActionHandler {
 
 	/**
-	 * Migration error option name
-	 *
-	 * @since 2.3.0
-	 */
-	const MIGRATION_ERR_OPT_NAME = 'tlmt_migration_error';
-
-	/**
 	 * Register hooks
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 	}
 
 	/**
@@ -107,9 +101,6 @@ class ActionHandler {
 	 * @return void
 	 */
 	public function update_migration_error( string $key, string $error_msg ) {
-		$error_data         = get_option( self::MIGRATION_ERR_OPT_NAME );
-		$error_data[ $key ] = $error_msg;
-
-		update_option( self::MIGRATION_ERR_OPT_NAME, maybe_serialize( $error_data ) );
+		ErrorHandler::set_error( $key, $error_msg );
 	}
 }
