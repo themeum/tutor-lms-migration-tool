@@ -301,66 +301,6 @@ class LDtoTutorMigration {
 		} finally {
 			$order_obj->remove_orders();
 		}
-
-		if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' ) {
-
-			foreach ( $ld_orders as $order ) {
-				$item_i++;
-				update_option( '_tutor_migrated_items_count', $item_i );
-
-				$migrate_order_data = array(
-					'ID'          => $order->ID,
-					'post_status' => 'wc-completed',
-					'post_type'   => 'shop_order',
-				);
-				wp_update_post( $migrate_order_data );
-
-				// Order Item
-				$course_id = get_post_meta( $order->ID, 'post_id', true );
-				$item_data = array(
-					'order_item_name' => get_the_title( $course_id ),
-					'order_item_type' => 'line_item',
-					'order_id'        => $course_id,
-				);
-				$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
-				$order_item_id = (int) $wpdb->insert_id;
-
-				// Order Item Meta
-				$_ld_price     = get_post_meta( $course_id, '_sfwd-courses', true );
-				$wc_item_metas = array(
-					'_product_id'        => $order->ID,
-					'_variation_id'      => 0,
-					'_qty'               => 1,
-					'_tax_class'         => '',
-					'_line_subtotal'     => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-					'_line_subtotal_tax' => 0,
-					'_line_total'        => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-					'_line_tax'          => 0,
-					'_order_total'       => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-					'_line_tax_data'     => maybe_serialize(
-						array(
-							'total'    => array(),
-							'subtotal' => array(),
-						)
-					),
-				);
-
-				foreach ( $wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ) {
-					$wc_item_metas = array(
-						'order_item_id' => $order_item_id,
-						'meta_key'      => $wc_item_meta_key,
-						'meta_value'    => $wc_item_meta_value,
-					);
-					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_itemmeta', $wc_item_metas );
-				}
-
-				update_post_meta( $order->ID, '_customer_user', $order->post_author );
-				$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d", $order->post_author ) );
-				update_post_meta( $order->ID, '_billing_address_index', $user_email );
-				update_post_meta( $order->ID, '_billing_email', $user_email );
-
-			}
-		}
 	}
 
 	/*

@@ -14,6 +14,7 @@ use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\Interfaces\Order;
 use Themeum\TutorLMSMigrationTool\LDMigration\Order\EDDOrder as LD_EDD_Order;
 use Themeum\TutorLMSMigrationTool\LDMigration\Order\TutorOrder as LD_Tutor_Order;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\WCOrder as LD_WC_Order;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -41,6 +42,10 @@ abstract class OrderFactory {
 
 				if ( tutor_utils()->has_edd() && 'edd' === $monetization_type ) {
 					return new LD_EDD_Order();
+				}
+
+				if ( tutor_utils()->has_wc() && 'wc' === $monetization_type ) {
+					return new LD_WC_Order();
 				}
 
 				break;
