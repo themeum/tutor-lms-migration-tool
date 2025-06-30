@@ -216,8 +216,7 @@ class StudentProgress implements StudentProgressInterface {
 
 		$data = array();
 
-		$question_ids = get_post_meta( $user_activity_meta->quiz, 'learndash_to_tutor_migration' );
-
+		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ), 'tutor_migrated_question_answer_map', true );
 		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
 
 		foreach ( $user_quiz_statistics as $quiz_statistic ) {
@@ -227,7 +226,7 @@ class StudentProgress implements StudentProgressInterface {
 					'quiz_id'         => $quiz_statistic->quiz_post_id,
 					'quiz_attempt_id' => $quiz_attempt_id,
 					'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
-					'question_id'     => $question_id,
+					'question_id'     => $question_id['tutor_question_id'] ?? null,
 					'question_marks'  => $quiz_statistic->question_points ?? 0,
 					'achieved_marks'  => $quiz_statistic->points ?? 0,
 					'is_correct'      => $quiz_statistic->correct_count > 0 ? 1 : 0,
@@ -409,7 +408,7 @@ class StudentProgress implements StudentProgressInterface {
 				continue;
 			}
 
-			$answer_id = $this->get_answer_ids_from_tutor( $answer_data, $ld_quiz_statistic->question_id, self::TUTOR_QUESTION_TYPE_MULTIPLE_CHOICE );
+			$answer_id = $this->get_answer_ids_from_tutor( $answer, $ld_quiz_statistic );
 
 			if ( ! empty( $answer_id ) ) {
 				$answer_ids[] = $answer_id;
@@ -424,38 +423,24 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param string $answer_data The answer text submitted in LearnDash.
-	 * @param int    $question_id The corresponding Tutor LMS question ID.
-	 * @param string $type        The type of question.
+	 * @param int    $answer_key         The key of the answer in the LearnDash statistic data.
+	 * @param object $ld_quiz_statistic The LearnDash quiz statistic object containing question and answer data.
 	 *
 	 * @throws \Exception If a database error occurs during the query.
 	 *
 	 * @return int|null The matching Tutor LMS answer ID, or null if not found.
 	 */
-	private function get_answer_ids_from_tutor( $answer_data, $question_id, $type ) {
+	private function get_answer_ids_from_tutor( $answer_key, $ld_quiz_statistic ) {
 
-		global $wpdb;
+		$ld_quiz_statistic->question_answer_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data );
 
-		$answer_ids = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT
-					answer_id
-				FROM
-					{$wpdb->prefix}tutor_quiz_question_answers
-					WHERE belongs_question_id = %d
-					AND belongs_question_type = %s
-					AND answer_title = %s",
-				$question_id,
-				$type,
-				$answer_data
-			)
-		);
-
-		if ( $wpdb->last_error ) {
-			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+		if ( empty( $ld_quiz_statistic->quiz_post_id ) || empty( $ld_quiz_statistic->question_id ) ) {
+			return;
 		}
 
-		return ! empty( $answer_ids ) ? $answer_ids[0] : null;
+		$answer_map = get_post_meta( intval( $ld_quiz_statistic->quiz_post_id ), 'tutor_migrated_question_answer_map', true );
+
+		return $answer_map[ $ld_quiz_statistic->question_id ]['tutor_answer_id'] ?? null;
 	}
 
 	/**
@@ -480,7 +465,7 @@ class StudentProgress implements StudentProgressInterface {
 			$submitted_position = array_search( $expected_hash, $ld_quiz_statistic->statistic_answer_data, true );
 
 			if ( false !== $submitted_position ) {
-				$ld_quiz_statistic->statistic_answer_data[ $submitted_position ] = $value->getAnswer();
+				$ld_quiz_statistic->statistic_answer_data[ $submitted_position ] = $key;
 			}
 		}
 
@@ -500,17 +485,12 @@ class StudentProgress implements StudentProgressInterface {
 	private function get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) {
 
 		$answer_data = $submitted_answers['statistic_answer_data'] ?? null;
-		$type        = self::LD_MATRIX_SORTING === $ld_quiz_statistic->answer_type ? self::TUTOR_QUESTION_TYPE_MATCHING : self::TUTOR_QUESTION_TYPE_ORDERING;
 
 		if ( is_array( $answer_data ) ) {
 			return array_filter(
 				array_map(
-					function ( $answer ) use ( $ld_quiz_statistic, $type ) {
-						return $this->get_answer_ids_from_tutor(
-							$answer,
-							$ld_quiz_statistic->question_id,
-							$type
-						);
+					function ( $answer ) use ( $ld_quiz_statistic ) {
+						return $this->get_answer_ids_from_tutor( $answer, $ld_quiz_statistic );
 					},
 					$answer_data
 				)
