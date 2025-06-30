@@ -85,4 +85,16 @@ class MigrationLogger {
 		$status['errors'] = (object) ErrorHandler::get_errors();
 		return (object) $status;
 	}
+
+	/**
+	 * Clear migration status
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return void
+	 */
+	public static function clear_status() {
+		delete_option( self::MIGRATION_STATUS_OPT_NAME );
+		ErrorHandler::clear_errors();
+	}
 }

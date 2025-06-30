@@ -99,8 +99,9 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						try {
 							$this->ld_migrate_course_to_tutor();
 						} catch ( \Throwable $th ) {
-							wp_send_json_error( MigrationLogger::get_status() );
+							error_log( $th->getMessage() );
 						}
+						wp_send_json_success();
 						break;
 
 					case 'orders':
@@ -108,10 +109,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						break;
 				}
 
-				wp_send_json_success();
+				// Send response & clear on finish.
+				$status = MigrationLogger::get_status();
+				MigrationLogger::clear_status();
+				wp_send_json_success( $status );
 			}
 
-			wp_send_json_error( MigrationLogger::get_status() );
+			wp_send_json_error();
 		}
 		/**
 		 * Migration from LD courses to tutor courses

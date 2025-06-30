@@ -62,4 +62,15 @@ class ErrorHandler {
 
 		return is_array( $errors ) ? $errors : array();
 	}
+
+	/**
+	 * Get all the errors
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return void
+	 */
+	public static function clear_errors() {
+		delete_option( self::MIGRATION_ERR_OPT_NAME );
+	}
 }
