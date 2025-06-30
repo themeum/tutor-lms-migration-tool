@@ -336,11 +336,25 @@ class LDtoTutorMigration {
 		return $post_id;
 	}
 
+	/**
+	 * Migrate a quiz
+	 *
+	 * @since 1.0.0
+	 *
+	 * @since 2.3.0 $migrate_map added to know the migrated question & answers
+	 *
+	 * @param int $old_quiz_id LD quiz id.
+	 *
+	 * @return void
+	 */
 	public function migrate_quiz( $old_quiz_id ) {
 		global $wpdb;
 		$xml          = '';
 		$question_ids = get_post_meta( $old_quiz_id, 'ld_quiz_questions', true );
 		$is_table     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', "{$wpdb->prefix}learndash_pro_quiz_question" ) );
+
+		// Store the question and anser id.
+		$migrate_map = array();
 
 		if ( ! empty( $question_ids ) ) {
 			$question_ids = array_keys( $question_ids );
@@ -358,6 +372,11 @@ class LDtoTutorMigration {
 						$wpdb->prepare( "SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}wp_pro_quiz_question where id = %d", $question_id ),
 						ARRAY_A
 					);
+				}
+
+				$ld_answer_data = array();
+				if ( ! empty( $result ) ) {
+					$ld_answer_data = maybe_unserialize( $result['answer_data'] );
 				}
 
 				$question                         = array();
@@ -402,40 +421,45 @@ class LDtoTutorMigration {
 
 				// Will Return $questions
 				$question_id = $wpdb->insert_id;
+				
 				if ( $question_id ) {
-					foreach ( (array) maybe_unserialize( $result['answer_data'] ) as $key => $value ) {
-						$i      = 0;
-						$answer = array();
-						foreach ( (array) $value as $k => $val ) {
-							if ( $i == 0 ) {
-								$answer['answer_title'] = $val;
-								if ( $result['answer_type'] == 'cloze_answer' ) {
-									$final_question = wp_strip_all_tags( $val );
-									preg_match_all( '/{.*?\}/', $final_question, $matches );
-									if ( isset( $matches[0] ) ) {
-										foreach ( $matches[0] as $key => $v ) {
-											$v = explode( ']', $v );
-											if ( isset( $v[0] ) ) {
-												$answer_str[] = str_replace( array( '{[', '{', '}' ), '', $v[0] );
-											}
-										}
-										$final_question = str_replace( $matches[0], '{dash}', $final_question );
-									}
-									$answer['answer_two_gap_match'] = implode( '|', $answer_str );
-									$answer['answer_title']         = $final_question;
-								}
-							} elseif ( $i == 2 ) {
-								$answer['is_correct'] = $val ? 0 : 1;
-							} elseif ( $i == 3 ) {
-								$answer['belongs_question_id']   = $question_id;
-								$answer['belongs_question_type'] = $question['question_type'];
-								$answer['answer_view_format']    = 'text';
-								$answer['answer_order']          = $i;
-								$answer['image_id']              = 0;
-							}
-							$i++;
+					foreach ( $ld_answer_data as $key => $value ) {
+
+						$ans_arr = $value->get_object_as_array();
+
+						$tutor_answer_data = array(
+							'belongs_question_id'   => $question_id,
+							'belongs_question_type' => $question['question_type'],
+							'answer_view_format'    => 'text',
+							'answer_title'          => $ans_arr['_answer'],
+							'answer_order'         	=> 0,
+							'image_id'             	=> 0,
+							'is_correct'            => $ans_arr['_correct'],
+							'answer_two_gap_match'  => false,
+						);
+
+						if ( 'fill_in_the_blank' === $question['question_type'] ) {
+							// Extract all {string} values.
+							$str = $tutor_answer_data['answer_title'];
+							preg_match_all( '/\{(.*?)\}/', $str, $matches );
+							$extracted = implode( '|', $matches[1] );
+
+							// Replace each {string} with {dash}
+							$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
+
+							$tutor_answer_data['answer_title']         = $updated_str;
+							$tutor_answer_data['answer_two_gap_match'] = $extracted;
 						}
-						$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer );
+
+						$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
+						$answer_id = $wpdb->insert_id;
+						if ( $answer_id ) {
+							if ( ! empty( $migrate_map[ $question_id ] ) ) {
+								$migrate_map[$question_id][] = $answer_id;
+							} else {
+								$migrate_map[ $question_id ] = array( $answer_id );
+							}
+						}
 					}
 				}
 
@@ -446,6 +470,7 @@ class LDtoTutorMigration {
 				}
 			}
 
+			update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );
 			do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 		}
 	}
@@ -486,7 +511,7 @@ class LDtoTutorMigration {
 			}
 
 			if ( $topic_id ) {
-				if ( $this->is_assignment( $lesson_key ) ) {
+				if ( $this->is_assignment( $lesson_key ) && tlmt_has_tutor_pro() ) {
 					$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id );
 				} else {
 					$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
@@ -496,7 +521,7 @@ class LDtoTutorMigration {
 				
 				foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
-					if ( $this->is_assignment( $lesson_inner_key ) ) {
+					if ( $this->is_assignment( $lesson_inner_key ) && tlmt_has_tutor_pro() ) {
 						$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
 					} else {
 						$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
@@ -565,22 +590,22 @@ class LDtoTutorMigration {
 	 * @return int 0 if failed to migrate
 	 */
 	public function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id ) {
-		$lesson = get_post( $lesson_id );
+		$lesson = get_post( $ld_lesson_id );
 		if ( ! is_a( $lesson, 'WP_Post' ) ) {
 			return 0;
 		}
 
-		$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lesson', true );
+		$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lessons', true );
 		if ( ! isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) || 'on' !== $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) {
 			return 0;
 		}
 
 		try {
-			tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate( $lesson_id, $tutor_topic_id );
+			tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate( $lesson, $tutor_topic_id );
 
-			do_action( 'tlmt_assignment_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
+			do_action( 'tlmt_assignment_migrated', $ld_lesson_id, MigrationTypes::LD_TO_TUTOR );
 
-			return $lesson_id;
+			return $ld_lesson_id;
 		} catch ( \Throwable $th ) {
 			return 0;
 		}

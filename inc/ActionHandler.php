@@ -27,6 +27,7 @@ class ActionHandler {
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
+		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 	}
 
 	/**
