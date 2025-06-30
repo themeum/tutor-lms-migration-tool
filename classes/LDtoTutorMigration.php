@@ -493,36 +493,32 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			return $post_id;
 		}
 
+
+
+		/**
+		 * Migrate a quiz
+		 *
+		 * @since 1.0.0
+		 *
+		 * @since 2.3.0 $migrate_map added to know the migrated question & answers
+		 *
+		 * @param int $old_quiz_id LD quiz id.
+		 *
+		 * @return void
+		 */
 		public function migrate_quiz( $old_quiz_id ) {
 			global $wpdb;
 			$xml          = '';
 			$question_ids = get_post_meta( $old_quiz_id, 'ld_quiz_questions', true );
 			$is_table     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', "{$wpdb->prefix}learndash_pro_quiz_question" ) );
 
-	/**
-	 * Migrate a quiz
-	 *
-	 * @since 1.0.0
-	 *
-	 * @since 2.3.0 $migrate_map added to know the migrated question & answers
-	 *
-	 * @param int $old_quiz_id LD quiz id.
-	 *
-	 * @return void
-	 */
-	public function migrate_quiz( $old_quiz_id ) {
-		global $wpdb;
-		$xml          = '';
-		$question_ids = get_post_meta( $old_quiz_id, 'ld_quiz_questions', true );
-		$is_table     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', "{$wpdb->prefix}learndash_pro_quiz_question" ) );
+			// Store the question and anser id.
+			$migrate_map = array();
 
-		// Store the question and anser id.
-		$migrate_map = array();
-
-		if ( ! empty( $question_ids ) ) {
-			$question_ids = array_keys( $question_ids );
-			foreach ( $question_ids as $question_single ) {
-				$question_id = get_post_meta( $question_single, 'question_pro_id', true );
+			if ( ! empty( $question_ids ) ) {
+				$question_ids = array_keys( $question_ids );
+				foreach ( $question_ids as $question_single ) {
+					$question_id = get_post_meta( $question_single, 'question_pro_id', true );
 
 					$question                         = array();
 					$question['quiz_id']              = $old_quiz_id;
@@ -562,119 +558,104 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						)
 					);
 
-				$ld_answer_data = array();
-				if ( ! empty( $result ) ) {
-					$ld_answer_data = maybe_unserialize( $result['answer_data'] );
-				}
+					$ld_answer_data = array();
+					if ( ! empty( $result ) ) {
+						$ld_answer_data = maybe_unserialize( $result['answer_data'] );
+					}
 
-				$question                         = array();
-				$question['quiz_id']              = $old_quiz_id;
-				$question['question_title']       = $result['title'];
-				$question['question_description'] = (string) $result['question'];
-				$question['question_mark']        = $result['points'];
-				switch ( $result['answer_type'] ) {
-					case 'single':
-						$question['question_type'] = 'single_choice';
-						break;
+					$question                         = array();
+					$question['quiz_id']              = $old_quiz_id;
+					$question['question_title']       = $result['title'];
+					$question['question_description'] = (string) $result['question'];
+					$question['question_mark']        = $result['points'];
+					switch ( $result['answer_type'] ) {
+						case 'single':
+							$question['question_type'] = 'single_choice';
+							break;
 
-					case 'multiple':
-						$question['question_type'] = 'multiple_choice';
-						break;
+						case 'multiple':
+							$question['question_type'] = 'multiple_choice';
+							break;
 
-					case 'sort_answer':
-						$question['question_type'] = 'ordering';
-						break;
+						case 'sort_answer':
+							$question['question_type'] = 'ordering';
+							break;
 
-					case 'essay':
-						$question['question_type'] = 'open_ended';
-						break;
+						case 'essay':
+							$question['question_type'] = 'open_ended';
+							break;
 
-					case 'cloze_answer':
-						$question['question_type'] = 'fill_in_the_blank';
-						break;
+						case 'cloze_answer':
+							$question['question_type'] = 'fill_in_the_blank';
+							break;
 
-					default:
-						// code...
-						break;
-				}
+						default:
+							// code...
+							break;
+					}
 
-				$question['question_settings'] = maybe_serialize(
-					array(
-						'question_type' => $result['answer_type'],
-						'question_mark' => $result['points'],
-					)
-				);
+					$question['question_settings'] = maybe_serialize(
+						array(
+							'question_type' => $result['answer_type'],
+							'question_mark' => $result['points'],
+						)
+					);
 
-				$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $question );
+					$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $question );
 
-				// Will Return $questions
-				$question_id = $wpdb->insert_id;
-				
-				if ( $question_id ) {
-					foreach ( $ld_answer_data as $key => $value ) {
+					// Will Return $questions
+					$question_id = $wpdb->insert_id;
 
-						$ans_arr = $value->get_object_as_array();
+					if ( $question_id ) {
+						foreach ( $ld_answer_data as $key => $value ) {
 
-						$tutor_answer_data = array(
-							'belongs_question_id'   => $question_id,
-							'belongs_question_type' => $question['question_type'],
-							'answer_view_format'    => 'text',
-							'answer_title'          => $ans_arr['_answer'],
-							'answer_order'         	=> 0,
-							'image_id'             	=> 0,
-							'is_correct'            => $ans_arr['_correct'],
-							'answer_two_gap_match'  => false,
-						);
+							$ans_arr = $value->get_object_as_array();
 
-						if ( 'fill_in_the_blank' === $question['question_type'] ) {
-							// Extract all {string} values.
-							$str = $tutor_answer_data['answer_title'];
-							preg_match_all( '/\{(.*?)\}/', $str, $matches );
-							$extracted = implode( '|', $matches[1] );
+							$tutor_answer_data = array(
+								'belongs_question_id'   => $question_id,
+								'belongs_question_type' => $question['question_type'],
+								'answer_view_format'    => 'text',
+								'answer_title'          => $ans_arr['_answer'],
+								'answer_order'          => 0,
+								'image_id'              => 0,
+								'is_correct'            => $ans_arr['_correct'],
+								'answer_two_gap_match'  => false,
+							);
 
-							// Replace each {string} with {dash}
-							$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
+							if ( 'fill_in_the_blank' === $question['question_type'] ) {
+								// Extract all {string} values.
+								$str = $tutor_answer_data['answer_title'];
+								preg_match_all( '/\{(.*?)\}/', $str, $matches );
+								$extracted = implode( '|', $matches[1] );
 
-							$tutor_answer_data['answer_title']         = $updated_str;
-							$tutor_answer_data['answer_two_gap_match'] = $extracted;
-						}
+								// Replace each {string} with {dash}
+								$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
 
-						$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
-						$answer_id = $wpdb->insert_id;
-						if ( $answer_id ) {
-							if ( ! empty( $migrate_map[ $question_id ] ) ) {
-								$migrate_map[$question_id][] = $answer_id;
-							} else {
-								$migrate_map[ $question_id ] = array( $answer_id );
+								$tutor_answer_data['answer_title']         = $updated_str;
+								$tutor_answer_data['answer_two_gap_match'] = $extracted;
+							}
+
+							$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
+							$answer_id = $wpdb->insert_id;
+							if ( $answer_id ) {
+								if ( ! empty( $migrate_map[ $question_id ] ) ) {
+									$migrate_map[ $question_id ][] = $answer_id;
+								} else {
+									$migrate_map[ $question_id ] = array( $answer_id );
+								}
 							}
 						}
 					}
+
+					do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 				}
 
+				update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );
 				do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 			}
-
-			update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );
-			do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 		}
-	}
 
-	public function migrate_course( $course_id, $new_course_id ) {
-		global $wpdb;
-		$section_heading = get_post_meta( $course_id, 'course_sections', true );
-		$section_heading = $section_heading ? json_decode( $section_heading, true ) : array(
-			array(
-				'order'      => 0,
-				'post_title' => 'Tutor Topics',
-			),
-		);
 
-		$total_data = LDLMS_Factory_Post::course_steps( $course_id );
-		$total_data = $total_data->get_steps();
-
-		if ( empty( $total_data ) ) {
-			return;
-		}
 
 		public function migrate_course( $course_id, $new_course_id ) {
 			global $wpdb;
