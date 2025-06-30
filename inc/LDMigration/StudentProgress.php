@@ -56,10 +56,9 @@ class StudentProgress implements StudentProgressInterface {
 			$type      = $progress->activity_type ?? null;
 			$completed = $progress->activity_completed ?? null;
 
-			// @todo need to uncomment after course migration merge.
-			// if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-			// continue;
-			// }
+			if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+				continue;
+			}
 
 			switch ( $type ) {
 
