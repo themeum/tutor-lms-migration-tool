@@ -112,7 +112,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
 				$i        = 0;
 				foreach ( $ld_courses as $ld_course ) {
-					++$course_i;
+					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
 						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
@@ -164,7 +164,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 
 		/**
-		 * Insert Enbrolement LD to Tutor
+		 * Insert Enrollment LD to Tutor
 		 */
 		public function insert_enrollment( $course_id ) {
 			global $wpdb;
@@ -352,7 +352,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
 				foreach ( $ld_orders as $order ) {
-					++$item_i;
+					$item_i++;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -412,7 +412,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
 				foreach ( $ld_orders as $order ) {
-					++$item_i;
+					$item_i++;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -590,7 +590,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 									$answer['answer_order']          = $i;
 									$answer['image_id']              = 0;
 								}
-								++$i;
+								$i++;
 							}
 							$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer );
 						}
@@ -669,7 +669,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
-				++$i;
+				$i++;
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
