@@ -589,6 +589,19 @@ class LDtoTutorMigration {
 							'answer_two_gap_match'  => false,
 						);
 
+						if ( 'fill_in_the_blank' === $question['question_type'] ) {
+							// Extract all {string} values.
+							$str = $tutor_answer_data['answer_title'];
+							preg_match_all( '/\{(.*?)\}/', $str, $matches );
+							$extracted = implode( '|', $matches[1] );
+
+							// Replace each {string} with {dash}
+							$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
+
+							$tutor_answer_data['answer_title']         = $updated_str;
+							$tutor_answer_data['answer_two_gap_match'] = $extracted;
+						}
+
 						$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
 						$answer_id = $wpdb->insert_id;
 						if ( $answer_id ) {
@@ -601,11 +614,11 @@ class LDtoTutorMigration {
 					}
 				}
 
-				if ( $is_table ) {
-					$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
-				} else {
-					$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
-				}
+				// if ( $is_table ) {
+				// 	$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
+				// } else {
+				// 	$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
+				// }
 			}
 
 			do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
