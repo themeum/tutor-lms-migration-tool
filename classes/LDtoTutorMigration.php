@@ -9,12 +9,15 @@
  */
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\MigrationLogger;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 	class LDtoTutorMigration {
+
+		const LD_COURSE_TYPE = 'sfwd-courses';
 
 		public function __construct() {
 			add_filter( 'tutor_tool_pages', array( $this, 'ld_tool_pages' ) );
@@ -76,6 +79,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 
+		/**
+		 * LD to Tutor migration
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
 		public function ld_migrate_all_data_to_tutor() {
 			tutor_utils()->checking_nonce();
 
@@ -86,7 +96,11 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 				switch ( $migrate_type ) {
 					case 'courses':
-						$this->ld_migrate_course_to_tutor();
+						try {
+							$this->ld_migrate_course_to_tutor();
+						} catch ( \Throwable $th ) {
+							wp_send_json_error( MigrationLogger::get_status() );
+						}
 						break;
 
 					case 'orders':
@@ -96,46 +110,73 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 				wp_send_json_success();
 			}
-			wp_send_json_error();
-		}
 
-		/*
-		* Course Migration
-		*/
+			wp_send_json_error( MigrationLogger::get_status() );
+		}
+		/**
+		 * Migration from LD courses to tutor courses
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param boolean $return_type Return type.
+		 *
+		 * @throws \Exception If course not available.
+		 * @throws \Throwable If any error occurs.
+		 *
+		 * @return void
+		 */
 		public function ld_migrate_course_to_tutor( $return_type = false ) {
 			global $wpdb;
 			$ld_courses = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');" );
 
-			$course_type = tutor()->course_post_type;
+			$total_courses = tutils()->count( $ld_courses );
+			$course_type   = tutor()->course_post_type;
 
-			if ( tutils()->count( $ld_courses ) ) {
+			if ( $total_courses ) {
+				MigrationLogger::update_migration_status( $total_courses );
+
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
-				$i        = 0;
 				foreach ( $ld_courses as $ld_course ) {
 					$course_i++;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
-						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+						try {
+							$this->migrate_course( $ld_course->ID, $course_id );
 
-						$this->migrate_course( $ld_course->ID, $course_id );
+							do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
 
-						update_option( '_tutor_migrated_items_count', $course_i );
+							update_option( '_tutor_migrated_items_count', $course_i );
 
-						// Attached Product
-						$this->attached_product( $course_id, $ld_course->post_title );
+							// Attached Product.
+							$this->attached_product( $course_id, $ld_course->post_title );
 
-						// Attached Prerequisite
-						$this->attached_prerequisite( $course_id );
+							// Attached Prerequisite.
+							$this->attached_prerequisite( $course_id );
 
-						// Add Enrollments
-						$this->insert_enrollment( $course_id );
+							// Add Enrollments.
+							$this->insert_enrollment( $course_id );
 
-						// Attached thumbnail
-						$this->insert_thumbnail( $ld_course->ID, $course_id );
+							// Attached thumbnail.
+							$this->insert_thumbnail( $ld_course->ID, $course_id );
+
+							MigrationLogger::update_course_migration_status( $course_id, true );
+						} catch ( \Throwable $th ) {
+							// Revert the status if failed to migrate.
+							$revert = array(
+								'ID'          => $course_id,
+								'post_status' => self::LD_COURSE_TYPE,
+							);
+
+							wp_update_post( $revert );
+
+							MigrationLogger::update_course_migration_status( $course_id, true );
+							throw $th;
+						}
 					}
 				}
 			}
-			wp_send_json_success();
+
+			throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
 
 		}
 
