@@ -257,9 +257,9 @@ final class TutorLMSMigrationTool {
 	public function admin_scripts() {
 		wp_enqueue_style( 'tlmt-admin', TLMT_URL . 'assets/css/admin.css', array(), TLMT_VERSION );
 		if ( function_exists( 'tutils' ) ) {
-			wp_enqueue_script( 'tlmt-admin', TLMT_URL . 'assets/js/admin.js', array( 'jquery', 'tutor-admin' ), TLMT_VERSION, true );
+			wp_enqueue_script( 'tlmt-admin', TLMT_URL . 'assets/js/admin.js', array( 'jquery', 'tutor-admin', 'wp-i18n' ), filemtime( TLMT_PATH . 'assets/js/admin.js' ), true );
 		} else {
-			wp_enqueue_script( 'tlmt-admin', TLMT_URL . 'assets/js/admin.js', array( 'jquery' ), TLMT_VERSION, true );
+			wp_enqueue_script( 'tlmt-admin', TLMT_URL . 'assets/js/admin.js', array( 'jquery', 'wp-i18n' ), filemtime( TLMT_PATH . 'assets/js/admin.js' ), true );
 		}
 	}
 

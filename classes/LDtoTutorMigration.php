@@ -10,11 +10,14 @@
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\MigrationLogger;
 
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 	class LDtoTutorMigration {
+
+		const LD_COURSE_TYPE = 'sfwd-courses';
 
 		public function __construct() {
 			add_filter( 'tutor_tool_pages', array( $this, 'ld_tool_pages' ) );
@@ -76,6 +79,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 
+		/**
+		 * LD to Tutor migration
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
 		public function ld_migrate_all_data_to_tutor() {
 			tutor_utils()->checking_nonce();
 
@@ -86,7 +96,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 				switch ( $migrate_type ) {
 					case 'courses':
-						$this->ld_migrate_course_to_tutor();
+						try {
+							$this->ld_migrate_course_to_tutor();
+						} catch ( \Throwable $th ) {
+							error_log( $th->getMessage() );
+						}
+						wp_send_json_success();
 						break;
 
 					case 'orders':
@@ -94,55 +109,85 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						break;
 				}
 
-				wp_send_json_success();
+				// Send response & clear on finish.
+				$status = MigrationLogger::get_log();
+				MigrationLogger::clear_log();
+				wp_send_json_success( $status );
 			}
+
 			wp_send_json_error();
 		}
-
-		/*
-		* Course Migration
-		*/
+		/**
+		 * Migration from LD courses to tutor courses
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param boolean $return_type Return type.
+		 *
+		 * @throws \Exception If course not available.
+		 * @throws \Throwable If any error occurs.
+		 *
+		 * @return void
+		 */
 		public function ld_migrate_course_to_tutor( $return_type = false ) {
 			global $wpdb;
 			$ld_courses = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_excerpt, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND (post_status = 'publish' OR post_status = 'draft');" );
 
-			$course_type = tutor()->course_post_type;
+			$total_courses = tutils()->count( $ld_courses );
+			$course_type   = tutor()->course_post_type;
 
-			if ( tutils()->count( $ld_courses ) ) {
+			if ( $total_courses ) {
+				MigrationLogger::update_migration_log( $total_courses );
+
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
-				$i        = 0;
 				foreach ( $ld_courses as $ld_course ) {
-					$course_i++;
+					++$course_i;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
-						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+						try {
+							$this->migrate_course( $ld_course->ID, $course_id );
 
-						$this->migrate_course( $ld_course->ID, $course_id );
+							do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
 
-						update_option( '_tutor_migrated_items_count', $course_i );
+							update_option( '_tutor_migrated_items_count', $course_i );
 
-						// Attached Product
-						$this->attached_product( $course_id, $ld_course->post_title );
+							// Attached Product.
+							$this->attached_product( $course_id, $ld_course->post_title );
 
-						// Attached Prerequisite
-						$this->attached_prerequisite( $course_id );
+							// Attached Prerequisite.
+							$this->attached_prerequisite( $course_id );
 
-						// Add Enrollments
-						$this->insert_enrollment( $course_id );
+							// Add Enrollments.
+							$this->insert_enrollment( $course_id );
 
-						// Attached thumbnail
-						$this->insert_thumbnail( $ld_course->ID, $course_id );
+							// Attached thumbnail.
+							$this->insert_thumbnail( $ld_course->ID, $course_id );
 
-						/**
-						 * Insert Student Progress
-						 *
-						 * @since 2.3.0
-						 */
-						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
+							/**
+							 * Insert Student Progress
+							 *
+							 * @since 2.3.0
+							 */
+							do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
+
+							MigrationLogger::update_course_migration_log( $course_id, true );
+						} catch ( \Throwable $th ) {
+							// Revert the status if failed to migrate.
+							$revert = array(
+								'ID'          => $course_id,
+								'post_status' => self::LD_COURSE_TYPE,
+							);
+
+							wp_update_post( $revert );
+
+							MigrationLogger::update_course_migration_log( $course_id, true );
+							throw $th;
+						}
 					}
 				}
 			}
-			wp_send_json_success();
+
+			throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
 		}
 
 		public function attached_prerequisite( $course_id ) {
@@ -153,7 +198,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 		/**
-		 * Insert thumbnail ID
+		 * Insert thumbnail ID.
 		 */
 		public function insert_thumbnail( $new_thumbnail_id, $thumbnail_id ) {
 			$thumbnail = get_post_meta( $thumbnail_id, '_thumbnail_id', true );
@@ -164,7 +209,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 
 		/**
-		 * Insert Enbrolement LD to Tutor
+		 * Insert Enrollment LD to Tutor.
 		 */
 		public function insert_enrollment( $course_id ) {
 			global $wpdb;
@@ -352,7 +397,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -372,7 +417,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
 					$order_item_id = (int) $wpdb->insert_id;
 
-					// Order Item Meta
+					// Order Item Meta.
 					$_ld_price     = get_post_meta( $order->ID, '_sfwd-courses', true );
 					$wc_item_metas = array(
 						'_product_id'        => $order->ID,
@@ -412,7 +457,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -543,8 +588,10 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$question['question_description'] = (string) $result['question'];
 					$question['question_mark']        = $result['points'];
 					switch ( $result['answer_type'] ) {
+						case 'single':
+							$question['question_type'] = 'multiple_choice';
+							break;
 
-						case 'single':	
 						case 'multiple':
 							$question['question_type'] = 'multiple_choice';
 							break;
@@ -599,7 +646,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 								preg_match_all( '/\{(.*?)\}/', $str, $matches );
 								$extracted = implode( '|', $matches[1] );
 
-								// Replace each {string} with {dash}
+								// Replace each {string} with {dash}.
 								$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
 
 								$tutor_answer_data['answer_title']         = $updated_str;
@@ -693,7 +740,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
-				$i++;
+				++$i;
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
