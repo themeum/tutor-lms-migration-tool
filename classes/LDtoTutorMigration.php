@@ -582,7 +582,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$question['question_mark']        = $result['points'];
 					switch ( $result['answer_type'] ) {
 						case 'single':
-							$question['question_type'] = 'single_choice';
+							$question['question_type'] = 'multiple_choice';
 							break;
 
 						case 'multiple':
@@ -657,12 +657,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 								}
 							}
 						}
-					}
-
-					if ( $is_table ) {
-						$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_question', array( 'id' => $result->id ) );
-					} else {
-						$wpdb->delete( $wpdb->prefix . 'wp_pro_quiz_question', array( 'id' => $result->id ) );
 					}
 				}
 
