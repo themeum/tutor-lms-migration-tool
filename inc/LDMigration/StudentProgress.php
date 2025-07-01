@@ -67,7 +67,6 @@ class StudentProgress implements StudentProgressInterface {
 					break;
 
 				case self::QUIZ:
-					// @todo Need to test properly for `question_id`.
 					$this->add_quiz_attempt_to_tutor( $progress );
 					break;
 
@@ -134,11 +133,11 @@ class StudentProgress implements StudentProgressInterface {
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT 
-							* 
-						FROM 
-							{$wpdb->prefix}learndash_user_activity_meta 
-						WHERE 
-							activity_id = %d",
+					* 
+				FROM 
+					{$wpdb->prefix}learndash_user_activity_meta 
+				WHERE 
+					activity_id = %d",
 				$activity_id
 			)
 		);

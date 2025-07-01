@@ -543,28 +543,25 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$question['question_description'] = (string) $result['question'];
 					$question['question_mark']        = $result['points'];
 					switch ( $result['answer_type'] ) {
-						case 'single':
-							$question['question_type'] = 'single_choice';
-							break;
 
+						case 'single':	
 						case 'multiple':
 							$question['question_type'] = 'multiple_choice';
 							break;
 
 						case 'sort_answer':
+						case 'matrix_sort_answer':
 							$question['question_type'] = 'ordering';
 							break;
 
 						case 'essay':
+						case 'assessment_answer':
+						case 'free_answer':
 							$question['question_type'] = 'open_ended';
 							break;
 
 						case 'cloze_answer':
 							$question['question_type'] = 'fill_in_the_blank';
-							break;
-
-						default:
-							// code...
 							break;
 					}
 
