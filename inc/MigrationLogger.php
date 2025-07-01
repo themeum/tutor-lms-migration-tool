@@ -35,7 +35,7 @@ class MigrationLogger {
 	 * @return void
 	 */
 	public static function update_course_migration_status( int $course_id, bool $is_success ) {
-		$migration_info = get_option( self::MIGRATION_STATUS_OPT_NAME );
+		$migration_info = maybe_unserialize( get_option( self::MIGRATION_STATUS_OPT_NAME ) );
 
 		if ( ! empty( $migration_info ) ) {
 			if ( $is_success ) {
@@ -77,7 +77,7 @@ class MigrationLogger {
 	 * @return object
 	 */
 	public static function get_status() {
-		$status = get_option( self::MIGRATION_STATUS_OPT_NAME );
+		$status = maybe_unserialize( get_option( self::MIGRATION_STATUS_OPT_NAME ) );
 		if ( ! $status ) {
 			return (object) array();
 		}

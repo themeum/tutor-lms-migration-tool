@@ -33,12 +33,13 @@ class ErrorHandler {
 	 * @return void
 	 */
 	public static function set_error( string $error_type, string $err_msg ) {
-		$error_data = get_option( self::MIGRATION_ERR_OPT_NAME );
+		$error_data = maybe_unserialize( get_option( self::MIGRATION_ERR_OPT_NAME ) );
+		$error_data = is_array( $error_data ) ? $error_data : array();
 
-		if ( ! is_array( $error_data[ $error_type ] ) ) {
+		if ( isset( $error_data[ $error_type ] ) ) {
 			$error_data[ $error_type ][] = $err_msg;
 		} else {
-			$error_data[ $error_type ] = $err_msg;
+			$error_data[ $error_type ] = array( $err_msg );
 		}
 
 		update_option( self::MIGRATION_ERR_OPT_NAME, maybe_serialize( $error_data ), false );
@@ -54,7 +55,7 @@ class ErrorHandler {
 	 * @return array
 	 */
 	public static function get_errors( bool $clear_errors = true ): array {
-		$errors = get_option( self::MIGRATION_ERR_OPT_NAME );
+		$errors = maybe_unserialize( get_option( self::MIGRATION_ERR_OPT_NAME ) );
 
 		if ( $clear_errors ) {
 			update_option( self::MIGRATION_ERR_OPT_NAME, '', false );
