@@ -106,6 +106,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						break;
 					case ContentTypes::ORDERS:
 						$this->ld_order_migrate();
+						wp_send_json_success();
 						break;
 					case ContentTypes::COURSE_REVIEWS:
 						$this->ld_reviews_migrate();
