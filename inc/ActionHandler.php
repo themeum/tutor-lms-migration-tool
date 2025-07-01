@@ -30,6 +30,7 @@ class ActionHandler {
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ) );
 		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlml_delete_learndash_quiz_questions', array( $this, 'delete_learndash_quiz_questions' ) );
 	}
 
 	/**
@@ -118,8 +119,43 @@ class ActionHandler {
 		try {
 			$student_progress_obj = StudentProgressFactory::create( $migration_type );
 			$student_progress_obj->migrate();
+
+			/**
+			 * Fires to delete all LearnDash quiz questions.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @hook tlml_delete_learndash_quiz_questions
+			 */
+			do_action( 'tlml_delete_learndash_quiz_questions' );
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to migrate student progress. ' . $th->getMessage() );
+		}
+	}
+
+	/**
+	 * Deletes all records from the LearnDash quiz questions table after student progress migration
+	 *
+	 * @since 2.3.0
+	 *
+	 * Catches and logs any exceptions that occur during the deletion process.
+	 *
+	 * @return void
+	 */
+	public function delete_learndash_quiz_questions() {
+
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'learndash_pro_quiz_question';
+		try {
+
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$table}" ) ); // phpcs:ignore
+
+			if ( $wpdb->last_error ) {
+				$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to delete quiz questions. ' . $wpdb->last_error );
+			}
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to delete quiz questions. ' . $th->getMessage() );
 		}
 	}
 }

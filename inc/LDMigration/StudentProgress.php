@@ -11,6 +11,8 @@
 namespace Themeum\TutorLMSMigrationTool\LDMigration;
 
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\ErrorHandler;
 use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
 
 
@@ -35,6 +37,14 @@ class StudentProgress implements StudentProgressInterface {
 	const TUTOR_QUESTION_TYPE_ORDERING        = 'ordering';
 	const TUTOR_QUESTION_TYPE_MATCHING        = 'matching';
 
+
+	/**
+	 * Register hooks
+	 */
+	public function __construct() {
+		add_action( 'tlmt_delete_learndash_quiz_statistic', array( $this, 'delete_learndash_quiz_statistic' ), 10, 1 );
+	}
+
 	/**
 	 * Migrates LearnDash course progress to Tutor LMS.
 	 *
@@ -47,32 +57,36 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	public function migrate() {
 
-		$ld_course_progress = $this->fetch_quiz_and_topic_activity();
+		try {
+			$ld_course_progress = $this->fetch_quiz_and_topic_activity();
 
-		foreach ( $ld_course_progress as $progress ) {
-			$user_id   = $progress->user_id ?? null;
-			$course_id = $progress->course_id ?? null;
-			$post_id   = $progress->post_id ?? null;
-			$type      = $progress->activity_type ?? null;
-			$completed = $progress->activity_completed ?? null;
+			foreach ( $ld_course_progress as $progress ) {
+				$user_id   = $progress->user_id ?? null;
+				$course_id = $progress->course_id ?? null;
+				$post_id   = $progress->post_id ?? null;
+				$type      = $progress->activity_type ?? null;
+				$completed = $progress->activity_completed ?? null;
 
-			if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-				continue;
+				if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+					continue;
+				}
+
+				switch ( $type ) {
+
+					case self::TOPIC:
+						update_user_meta( $user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
+						break;
+
+					case self::QUIZ:
+						$this->add_quiz_attempt_to_tutor( $progress );
+						break;
+
+					default:
+						break;
+				}
 			}
-
-			switch ( $type ) {
-
-				case self::TOPIC:
-					update_user_meta( $user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
-					break;
-
-				case self::QUIZ:
-					$this->add_quiz_attempt_to_tutor( $progress );
-					break;
-
-				default:
-					break;
-			}
+		} catch ( \Throwable $error ) {
+			throw $error;
 		}
 	}
 
@@ -109,7 +123,7 @@ class StudentProgress implements StudentProgressInterface {
 		// phpcs:enable
 
 		if ( $wpdb->last_error ) {
-			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
 		}
 
 		return $result;
@@ -144,7 +158,7 @@ class StudentProgress implements StudentProgressInterface {
 		// phpcs:enable
 
 		if ( $wpdb->last_error ) {
-			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
 		}
 
 		// Convert to activity meta key => activity meta value associative array.
@@ -189,7 +203,7 @@ class StudentProgress implements StudentProgressInterface {
 		$inserted = $wpdb->insert( "{$wpdb->prefix}tutor_quiz_attempts", $attempt_data );
 
 		if ( ! $inserted ) {
-			throw new \Exception( 'Database insert failed: ' . $wpdb->last_error ); //phpcs:ignore
+			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
 		}
 
 		// If Statistics option in Quiz settings is disable then statistic_ref_id will be 0.
@@ -201,9 +215,8 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 *  @since 2.3.0
 	 *
-	 * @param int    $quiz_attempt_id The ID of the Tutor LMS `tutor_quiz_attempts` table.
-	 * @param array  $user_activity_meta The user activity metadata.
-	 * @param object $progress_info   Object containing progress data.
+	 * @param int   $quiz_attempt_id The ID of the Tutor LMS `tutor_quiz_attempts` table.
+	 * @param array $user_activity_meta The user activity metadata.
 	 *
 	 * @throws \Exception If the bulk insert fails or database error occurs.
 	 *
@@ -236,11 +249,19 @@ class StudentProgress implements StudentProgressInterface {
 		if ( ! empty( $data ) ) {
 			$table_name = "{$wpdb->prefix}tutor_quiz_attempt_answers";
 			if ( ! QueryHelper::insert_multiple_rows( $table_name, $data ) ) {
-				throw new \Exception( 'Database insert failed: ' . $wpdb->last_error ); //phpcs:ignore
+				ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
 			}
 
-			$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_statistic_ref', array( 'statistic_ref_id' => $user_activity_meta['statistic_ref_id'] ) );
-			$wpdb->delete( $wpdb->prefix . 'learndash_pro_quiz_statistic', array( 'statistic_ref_id' => $user_activity_meta['statistic_ref_id'] ) );
+			/**
+			 * Fires an action to delete a specific LearnDash quiz statistic record.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @param int $statistic_ref_id The ID of the LearnDash quiz statistic reference to be deleted.
+			 *
+			 * @hook delete_learndash_quiz_statistic
+			 */
+			do_action( 'tlmt_delete_learndash_quiz_statistic', $user_activity_meta['statistic_ref_id'] );
 		}
 	}
 
@@ -303,7 +324,7 @@ class StudentProgress implements StudentProgressInterface {
 		);
 
 		if ( $wpdb->last_error ) {
-			throw new \Exception( 'Database error: ' . $wpdb->last_error ); //phpcs:ignore
+			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
 		}
 
 		if ( ! empty( $result ) ) {
@@ -356,10 +377,6 @@ class StudentProgress implements StudentProgressInterface {
 
 			case self::LD_ESSAY:
 				return $this->get_learndash_essay_quiz_answers( $ld_quiz_statistic );
-
-			default:
-				// code...
-				break;
 		}
 	}
 
@@ -555,5 +572,38 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		return get_post( $graded_id, ARRAY_A )['post_content'] ?? null;
+	}
+
+	/**
+	 * Deletes a LearnDash quiz statistic record and its associated entries.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $quiz_statistic_ref_id The LearnDash statistic reference ID to delete.
+	 *
+	 * @throws \Throwable If any database deletion operation fails.
+	 *
+	 * @return void
+	 */
+	public function delete_learndash_quiz_statistic( $quiz_statistic_ref_id ) {
+
+		global $wpdb;
+
+		try {
+			$tables = array(
+				$wpdb->prefix . 'learndash_pro_quiz_statistic_ref',
+				$wpdb->prefix . 'learndash_pro_quiz_statistic',
+			);
+
+			foreach ( $tables as $table ) {
+				$wpdb->delete( $table, array( 'statistic_ref_id' => $quiz_statistic_ref_id ) ); //phpcs:ignore
+
+				if ( $wpdb->last_error ) {
+					ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
+				}
+			}
+		} catch ( \Throwable $error ) {
+			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $error );
+		}
 	}
 }
