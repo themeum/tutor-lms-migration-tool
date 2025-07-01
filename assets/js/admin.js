@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     'use strict';
-
+    const {__} = wp.i18n;
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -179,6 +179,18 @@ jQuery(document).ready(function ($) {
                         action: 'insert_tutor_migration_data'
                     });
                     $('.lp-success-modal').addClass('active');
+                }
+
+                const res = data.data;
+                const {totalCourseCount = 0, failed = []} = res || {};
+                if (Number(totalCourseCount) > 0) {
+                    if (failed.length > 0) {
+                        tutor_toast(__('Partially Migrated', 'tutor-lms-migration-tool'), __('Some courses failed to migrate', 'tutor-lms-migration-tool'), 'error');
+                    } else {
+                    tutor_toast(__('Success', 'tutor-lms-migration-tool'), __('Migration completed successfully!', 'tutor-lms-migration-tool'), 'success');
+                    }
+                } else {
+                    tutor_toast(__('Failed', 'tutor-lms-migration-tool'), __('Migration Failed', 'tutor-lms-migration-tool'), 'error');
                 }
             },
             complete: function () {
