@@ -12,6 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\Interfaces\Product;
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\EDDProduct as LD_EDD_Product;
+use Themeum\TutorLMSMigrationTool\LDMigration\Product\TutorProduct as LD_Tutor_Product;
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\WCProduct as LD_WC_Product;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
@@ -40,6 +41,9 @@ abstract class ProductFactory {
 				}
 				if ( tutor_utils()->has_wc() && 'wc' === $monetization_type ) {
 					return new LD_WC_Product();
+				}
+				if ( 'tutor' === $monetization_type ) {
+					return new LD_Tutor_Product();
 				}
 				break;
 			default:
