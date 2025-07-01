@@ -34,7 +34,7 @@ class MigrationLogger {
 	 *
 	 * @return void
 	 */
-	public static function update_course_migration_status( int $course_id, bool $is_success ) {
+	public static function update_course_migration_log( int $course_id, bool $is_success ) {
 		$migration_info = maybe_unserialize( get_option( self::MIGRATION_STATUS_OPT_NAME ) );
 
 		if ( ! empty( $migration_info ) ) {
@@ -59,7 +59,7 @@ class MigrationLogger {
 	 *
 	 * @return void
 	 */
-	public static function update_migration_status( int $total_course_count ) {
+	public static function update_migration_log( int $total_course_count ) {
 		$migration_info = array(
 			'total_course_count' => $total_course_count,
 			'success'            => array(),
@@ -76,7 +76,7 @@ class MigrationLogger {
 	 *
 	 * @return object
 	 */
-	public static function get_status() {
+	public static function get_log() {
 		$status = maybe_unserialize( get_option( self::MIGRATION_STATUS_OPT_NAME ) );
 		if ( ! $status ) {
 			return (object) array();
@@ -93,7 +93,7 @@ class MigrationLogger {
 	 *
 	 * @return void
 	 */
-	public static function clear_status() {
+	public static function clear_log() {
 		delete_option( self::MIGRATION_STATUS_OPT_NAME );
 		ErrorHandler::clear_errors();
 	}

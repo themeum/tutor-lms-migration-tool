@@ -110,8 +110,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 
 				// Send response & clear on finish.
-				$status = MigrationLogger::get_status();
-				MigrationLogger::clear_status();
+				$status = MigrationLogger::get_log();
+				MigrationLogger::clear_log();
 				wp_send_json_success( $status );
 			}
 
@@ -137,7 +137,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$course_type   = tutor()->course_post_type;
 
 			if ( $total_courses ) {
-				MigrationLogger::update_migration_status( $total_courses );
+				MigrationLogger::update_migration_log( $total_courses );
 
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
 				foreach ( $ld_courses as $ld_course ) {
@@ -163,7 +163,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							// Attached thumbnail.
 							$this->insert_thumbnail( $ld_course->ID, $course_id );
 
-							MigrationLogger::update_course_migration_status( $course_id, true );
+							MigrationLogger::update_course_migration_log( $course_id, true );
 						} catch ( \Throwable $th ) {
 							// Revert the status if failed to migrate.
 							$revert = array(
@@ -173,7 +173,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 							wp_update_post( $revert );
 
-							MigrationLogger::update_course_migration_status( $course_id, true );
+							MigrationLogger::update_course_migration_log( $course_id, true );
 							throw $th;
 						}
 					}
