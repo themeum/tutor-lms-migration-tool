@@ -112,6 +112,15 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
+= 2.3.0 - 10 July, 2025 =
+
+New: Assignment migration from LearnDash to Tutor
+New: Course Review migration from LearnDash to Tutor
+New: Orders migration from LearnDash to Tutor
+New: Products migration from LearnDash to Tutor
+New: Student progress migration from LearnDash to Tutor 
+Fix: Course builder crush when try open LearnDash to Tutor migrated quiz
+
 = 2.2.2 - 29 August, 2024 =
 
 Fix: Security vulnerabilities
