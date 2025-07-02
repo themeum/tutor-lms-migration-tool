@@ -9,8 +9,8 @@
  */
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
-use Themeum\TutorLMSMigrationTool\MigrationLogger;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\MigrationLogger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -141,7 +141,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
 				foreach ( $ld_courses as $ld_course ) {
-					$course_i++;
+					++$course_i;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
 						try {
@@ -163,6 +163,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							// Attached thumbnail.
 							$this->insert_thumbnail( $ld_course->ID, $course_id );
 
+							/**
+							 * Insert Student Progress
+							 *
+							 * @since 2.3.0
+							 */
+							do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
+
 							MigrationLogger::update_course_migration_log( $course_id, true );
 						} catch ( \Throwable $th ) {
 							// Revert the status if failed to migrate.
@@ -181,7 +188,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 
 			throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
-
 		}
 
 		public function attached_prerequisite( $course_id ) {
@@ -192,7 +198,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 		/**
-		 * Insert thumbnail ID
+		 * Insert thumbnail ID.
 		 */
 		public function insert_thumbnail( $new_thumbnail_id, $thumbnail_id ) {
 			$thumbnail = get_post_meta( $thumbnail_id, '_thumbnail_id', true );
@@ -203,7 +209,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 
 		/**
-		 * Insert Enbrolement LD to Tutor
+		 * Insert Enrollment LD to Tutor.
 		 */
 		public function insert_enrollment( $course_id ) {
 			global $wpdb;
@@ -391,7 +397,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -411,7 +417,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
 					$order_item_id = (int) $wpdb->insert_id;
 
-					// Order Item Meta
+					// Order Item Meta.
 					$_ld_price     = get_post_meta( $order->ID, '_sfwd-courses', true );
 					$wc_item_metas = array(
 						'_product_id'        => $order->ID,
@@ -451,7 +457,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
 
 				foreach ( $ld_orders as $order ) {
-					$item_i++;
+					++$item_i;
 					update_option( '_tutor_migrated_items_count', $item_i );
 
 					$migrate_order_data = array(
@@ -555,7 +561,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( ! empty( $question_ids ) ) {
 				$question_ids = array_keys( $question_ids );
 				foreach ( $question_ids as $question_single ) {
-					$question_id = get_post_meta( $question_single, 'question_pro_id', true );
+					$question_id    = get_post_meta( $question_single, 'question_pro_id', true );
+					$ld_question_id = $question_id;
 
 					$result = array();
 					if ( $is_table ) {
@@ -590,19 +597,18 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							break;
 
 						case 'sort_answer':
+						case 'matrix_sort_answer':
 							$question['question_type'] = 'ordering';
 							break;
 
 						case 'essay':
+						case 'assessment_answer':
+						case 'free_answer':
 							$question['question_type'] = 'open_ended';
 							break;
 
 						case 'cloze_answer':
 							$question['question_type'] = 'fill_in_the_blank';
-							break;
-
-						default:
-							// code...
 							break;
 					}
 
@@ -615,7 +621,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 					$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $question );
 
-					// Will Return $questions
+					// Will Return $questions.
 					$question_id = $wpdb->insert_id;
 
 					if ( $question_id ) {
@@ -640,7 +646,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 								preg_match_all( '/\{(.*?)\}/', $str, $matches );
 								$extracted = implode( '|', $matches[1] );
 
-								// Replace each {string} with {dash}
+								// Replace each {string} with {dash}.
 								$updated_str = preg_replace( '/\{.*?\}/', '{dash}', $str );
 
 								$tutor_answer_data['answer_title']         = $updated_str;
@@ -650,11 +656,10 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
 							$answer_id = $wpdb->insert_id;
 							if ( $answer_id ) {
-								if ( ! empty( $migrate_map[ $question_id ] ) ) {
-									$migrate_map[ $question_id ][] = $answer_id;
-								} else {
-									$migrate_map[ $question_id ] = array( $answer_id );
-								}
+								$migrate_map[ $ld_question_id ][] = array(
+									'tutor_answer_id'   => $answer_id,
+									'tutor_question_id' => $question_id,
+								);
 							}
 						}
 					}
@@ -690,13 +695,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			foreach ( $total_data['sfwd-lessons'] as $lesson_key => $lesson_data ) {
 				$author_id = get_post_field( 'post_author', $course_id );
 
-				// Topic Section
+				// Topic Section.
 				$check = $i == 0 ? 0 : $i + 1;
 				if ( isset( $section_heading[ $section_count ]['order'] ) ) {
 					if ( $section_heading[ $section_count ]['order'] == $check ) {
 						// Insert Topics
 						$topic_id = $this->insert_post( $section_heading[ $section_count ]['post_title'], '', $author_id, 'topics', $i, $new_course_id );
-						$section_count++;
+						++$section_count;
 					}
 				}
 
@@ -714,7 +719,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						if ( $this->is_assignment( $lesson_inner_key ) && tlmt_has_tutor_pro() ) {
 							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
 						} else {
-							$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson
+							$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson.
 							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 							do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 						}
@@ -735,7 +740,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
-				$i++;
+				++$i;
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
@@ -746,7 +751,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					}
 				}
 			}
-
 		}
 
 		/**
