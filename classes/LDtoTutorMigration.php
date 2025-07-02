@@ -9,6 +9,7 @@
  */
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\ErrorHandler;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\MigrationLogger;
 
@@ -95,7 +96,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
 
 				switch ( $migrate_type ) {
-					case 'courses':
+					case ContentTypes::COURSE:
 						try {
 							$this->ld_migrate_course_to_tutor();
 						} catch ( \Throwable $th ) {
@@ -103,9 +104,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 						wp_send_json_success();
 						break;
-
-					case 'orders':
+					case ContentTypes::ORDERS:
 						$this->ld_order_migrate();
+						wp_send_json_success();
+						break;
+					case ContentTypes::COURSE_REVIEWS:
+						$this->ld_reviews_migrate();
 						break;
 				}
 
@@ -116,6 +120,44 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 
 			wp_send_json_error();
+		}
+
+		/**
+		* Migrate learndash reviews to tutor.
+		*
+		* @since 2.3.0
+		*
+		* @return void wp_json response.
+		*/
+		public function ld_reviews_migrate() {
+			$ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
+			$item_idx   = (int) get_option( '_tutor_migrated_items_count' );
+
+			$migration_errors = array();
+
+			try {
+				$reviews = tlmt_get_review_obj( MigrationTypes::LD_TO_TUTOR );
+			} catch ( \Throwable $th ) {
+				ErrorHandler::set_error( 'review', __( 'Error review migration order object', 'tutor-lms-migration-tool' ) );
+				return;
+			}
+
+			if ( count( $ld_reviews ) ) {
+				foreach ( $ld_reviews as $review ) {
+					$item_idx++;
+					update_option( '_tutor_migrated_items_count', $item_idx );
+					try {
+						$reviews->migrate( $review );
+					} catch ( \Throwable $th ) {
+						array_push( $migration_errors, $review->comment_ID );
+					}
+				}
+			}
+
+			if ( $migration_errors ) {
+				ErrorHandler::set_error( 'review', __( 'Could not migrate reviews :', 'tutor-lms-migration-tool' ) . implode( ',', $migration_errors ) );
+			}
+
 		}
 		/**
 		 * Migration from LD courses to tutor courses
@@ -151,8 +193,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 							update_option( '_tutor_migrated_items_count', $course_i );
 
-							// Attached Product.
-							$this->attached_product( $course_id, $ld_course->post_title );
+							// Attached Product
+							do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LD_TO_TUTOR );
 
 							// Attached Prerequisite.
 							$this->attached_prerequisite( $course_id );
@@ -277,110 +319,11 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 		/**
-		 * Create WC & EDD Product and linked with the course
-		 */
-		public function attached_product( $course_id, $course_title ) {
-
-			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
-			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
-
-			/**
-			 * Create WC Product and linked with the course
-			 */
-			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
-
-				update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
-				$monetize_by = tutils()->get_option( 'monetize_by' );
-
-				if ( tutils()->has_wc() && $monetize_by == 'wc' ) {
-
-					$_ld_price = get_post_meta( $course_id, '_sfwd-courses', true );
-
-					if ( $_ld_price['sfwd-courses_course_price'] ) {
-
-						update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-
-						$product_id = wp_insert_post(
-							array(
-								'post_title'   => $course_title . ' Product',
-								'post_content' => '',
-								'post_status'  => 'publish',
-								'post_type'    => 'product',
-							)
-						);
-
-						if ( $product_id ) {
-							$product_metas = array(
-								'_stock_status'      => 'instock',
-								'total_sales'        => '0',
-								'_regular_price'     => '',
-								'_sale_price'        => $_ld_price['sfwd-courses_course_price'],
-								'_price'             => $_ld_price['sfwd-courses_course_price'],
-								'_sold_individually' => 'no',
-								'_manage_stock'      => 'no',
-								'_backorders'        => 'no',
-								'_stock'             => '',
-								'_virtual'           => 'yes',
-								'_tutor_product'     => 'yes',
-							);
-
-							foreach ( $product_metas as $key => $value ) {
-								update_post_meta( $product_id, $key, $value );
-							}
-
-							// Attaching product to course
-							update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-
-							$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-
-							if ( $coursePostThumbnail ) {
-								set_post_thumbnail( $product_id, $coursePostThumbnail );
-							}
-						}
-					} else {
-						update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
-					}
-				}
-			}
-
-			/**
-			 * Create EDD Product and linked with the course
-			 */
-			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
-				$_ld_price = get_post_meta( $course_id, '_sfwd-courses', true );
-				if ( $_ld_price['sfwd-courses_course_price'] ) {
-					update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-					$product_id    = wp_insert_post(
-						array(
-							'post_title'   => $course_title . ' Product',
-							'post_content' => '',
-							'post_status'  => 'publish',
-							'post_type'    => 'download',
-						)
-					);
-					$product_metas = array(
-						'edd_price'                        => $_ld_price['sfwd-courses_course_price'],
-						'edd_variable_prices'              => array(),
-						'edd_download_files'               => array(),
-						'_edd_bundled_products'            => array( '0' ),
-						'_edd_bundled_products_conditions' => array( 'all' ),
-					);
-					foreach ( $product_metas as $key => $value ) {
-						update_post_meta( $product_id, $key, $value );
-					}
-					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-					if ( $coursePostThumbnail ) {
-						set_post_thumbnail( $product_id, $coursePostThumbnail );
-					}
-				} else {
-					update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
-				}
-			}
-		}
-
-		/*
-		* Learndash eCommerce orders migration to WC & EDD
+		* Learndash orders to tutor migration for native, WC and EDD.
+		*
+		* @since 2.3.0
+		*
+		* @return void wp_json response.
 		*/
 		public function ld_order_migrate() {
 			global $wpdb;
@@ -394,115 +337,43 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$ld_orders = $wpdb->get_results( "SELECT ID, post_author, post_date, post_content, post_title, post_status FROM {$wpdb->posts} WHERE post_type = 'sfwd-transactions' AND post_status = 'publish';" );
 			$item_i    = (int) get_option( '_tutor_migrated_items_count' );
 
-			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			$order_errors = array();
 
-				foreach ( $ld_orders as $order ) {
-					++$item_i;
-					update_option( '_tutor_migrated_items_count', $item_i );
+			try {
+				$order_obj = tlmt_get_order_obj( $tutor_monetize_by, MigrationTypes::LD_TO_TUTOR );
+			} catch ( \Throwable $th ) {
+				ErrorHandler::set_error( 'order', __( 'Error creating migration order object', 'tutor-lms-migration-tool' ) );
+				return;
+			}
 
-					$migrate_order_data = array(
-						'ID'          => $order->ID,
-						'post_status' => 'wc-completed',
-						'post_type'   => 'shop_order',
-					);
-					wp_update_post( $migrate_order_data );
+			foreach ( $ld_orders as $order ) {
+				$item_i++;
+				update_option( '_tutor_migrated_items_count', $item_i );
+				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
-					// Order Item
-					$course_id = get_post_meta( $order->ID, 'course_id', true );
-					$item_data = array(
-						'order_item_name' => get_the_title( $course_id ),
-						'order_item_type' => 'line_item',
-						'order_id'        => $course_id,
-					);
-					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
-					$order_item_id = (int) $wpdb->insert_id;
-
-					// Order Item Meta.
-					$_ld_price     = get_post_meta( $order->ID, '_sfwd-courses', true );
-					$wc_item_metas = array(
-						'_product_id'        => $order->ID,
-						'_variation_id'      => 0,
-						'_qty'               => 1,
-						'_tax_class'         => '',
-						'_line_subtotal'     => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'_line_subtotal_tax' => 0,
-						'_line_total'        => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'_line_tax'          => 0,
-						'_order_total'       => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'_line_tax_data'     => maybe_serialize(
-							array(
-								'total'    => array(),
-								'subtotal' => array(),
-							)
-						),
-					);
-
-					foreach ( $wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ) {
-						$wc_item_metas = array(
-							'order_item_id' => $order_item_id,
-							'meta_key'      => $wc_item_meta_key,
-							'meta_value'    => $wc_item_meta_value,
-						);
-						$wpdb->insert( $wpdb->prefix . 'woocommerce_order_itemmeta', $wc_item_metas );
+				if ( ! $course_id ) {
+					continue;
+				}
+				try {
+					$order_obj->migrate( $order, $course_id );
+					$order_obj->remove_orders();
+				} catch( \Throwable $th ) {
+					if ( isset( $order_errors[ $course_id ] ) ) {
+						array_push( $order_errors[ $course_id ], $order->ID );
+					} else {
+						$order_errors[ $course_id ] = array( $order->ID );
 					}
-
-					update_post_meta( $order->ID, '_customer_user', $order->post_author );
-					$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d", $order->post_author ) );
-					update_post_meta( $order->ID, '_billing_address_index', $user_email );
-					update_post_meta( $order->ID, '_billing_email', $user_email );
-
 				}
 			}
 
-			if ( tutils()->has_edd() && $tutor_monetize_by == 'edd' ) {
-
-				foreach ( $ld_orders as $order ) {
-					++$item_i;
-					update_option( '_tutor_migrated_items_count', $item_i );
-
-					$migrate_order_data = array(
-						'ID'          => $order->ID,
-						'post_status' => 'publish',
-						'post_type'   => 'edd_payment',
-					);
-					wp_update_post( $migrate_order_data );
-
-					$_ld_price  = get_post_meta( $order->ID, '_sfwd-courses', true );
-					$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $order->post_author ) );
-					$meta_data  = array(
-						'_edd_payment_meta'         => array(),
-						'_edd_payment_gateway'      => '',
-						'_edd_payment_user_id'      => $order->post_author,
-						'_edd_payment_user_email'   => $user_email,
-						'_edd_payment_user_ip'      => '',
-						'_edd_payment_purchase_key' => '',
-						'_edd_payment_mode'         => 'migration',
-						'_edd_payment_tax_rate'     => 0,
-						'_edd_payment_customer_id'  => $order->post_author,
-						'_edd_payment_total'        => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'_edd_payment_tax'          => 0,
-						'_edd_completed_date'       => $order->post_date,
-					);
-
-					foreach ( $meta_data as $key => $value ) {
-						update_post_meta( $order->ID, $key, $value );
-					}
-
-					$display_name   = $wpdb->get_var( $wpdb->prepare( "SELECT display_name from {$wpdb->users} WHERE ID = %d ", $order->post_author ) );
-					$edd_item_metas = array(
-						'user_id'        => $order->post_author,
-						'email'          => $user_email,
-						'name'           => $display_name,
-						'purchase_value' => $_ld_price['sfwd-courses_course_price'] ? $_ld_price['sfwd-courses_course_price'] : 0,
-						'purchase_count' => 1,
-						'notes'          => '',
-						'date_created'   => $order->post_date,
-					);
-
-					$wpdb->insert( $wpdb->prefix . 'edd_customers', $edd_item_metas );
-
+			if ( $order_errors ) {
+				$err_msg = __( 'Failed to migrate orders for ', 'tutor-lms-migration-tool' );
+				foreach( $order_errors as $course_id => $order_ids ) {
+					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ') . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ' ;
 				}
+				ErrorHandler::set_error( 'order', $err_msg );
 			}
+
 		}
 
 		/*
