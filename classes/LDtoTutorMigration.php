@@ -99,6 +99,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					case ContentTypes::COURSE:
 						try {
 							$this->ld_migrate_course_to_tutor();
+							tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 						} catch ( \Throwable $th ) {
 							error_log( $th->getMessage() );
 						}
@@ -123,12 +124,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 		/**
-		* Migrate learndash reviews to tutor.
-		*
-		* @since 2.3.0
-		*
-		* @return void wp_json response.
-		*/
+		 * Migrate learndash reviews to tutor.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @return void wp_json response.
+		 */
 		public function ld_reviews_migrate() {
 			$ld_reviews = get_comments( array( 'type' => ContentTypes::LD_REVIEW_TYPE ) );
 			$item_idx   = (int) get_option( '_tutor_migrated_items_count' );
@@ -144,7 +145,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( count( $ld_reviews ) ) {
 				foreach ( $ld_reviews as $review ) {
-					$item_idx++;
+					++$item_idx;
 					update_option( '_tutor_migrated_items_count', $item_idx );
 					try {
 						$reviews->migrate( $review );
@@ -157,7 +158,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( $migration_errors ) {
 				ErrorHandler::set_error( 'review', __( 'Could not migrate reviews :', 'tutor-lms-migration-tool' ) . implode( ',', $migration_errors ) );
 			}
-
 		}
 		/**
 		 * Migration from LD courses to tutor courses
@@ -319,12 +319,12 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		}
 
 		/**
-		* Learndash orders to tutor migration for native, WC and EDD.
-		*
-		* @since 2.3.0
-		*
-		* @return void wp_json response.
-		*/
+		 * Learndash orders to tutor migration for native, WC and EDD.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @return void wp_json response.
+		 */
 		public function ld_order_migrate() {
 			global $wpdb;
 
@@ -347,7 +347,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 
 			foreach ( $ld_orders as $order ) {
-				$item_i++;
+				++$item_i;
 				update_option( '_tutor_migrated_items_count', $item_i );
 				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
@@ -357,7 +357,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				try {
 					$order_obj->migrate( $order, $course_id );
 					$order_obj->remove_orders();
-				} catch( \Throwable $th ) {
+				} catch ( \Throwable $th ) {
 					if ( isset( $order_errors[ $course_id ] ) ) {
 						array_push( $order_errors[ $course_id ], $order->ID );
 					} else {
@@ -368,12 +368,11 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( $order_errors ) {
 				$err_msg = __( 'Failed to migrate orders for ', 'tutor-lms-migration-tool' );
-				foreach( $order_errors as $course_id => $order_ids ) {
-					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ') . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ' ;
+				foreach ( $order_errors as $course_id => $order_ids ) {
+					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ' ) . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ';
 				}
 				ErrorHandler::set_error( 'order', $err_msg );
 			}
-
 		}
 
 		/*
@@ -634,7 +633,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		 * @return boolean
 		 */
 		private function is_assignment( int $ld_lesson_id ) {
-			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lesson', true );
+			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lessons', true );
 			if ( $lesson_meta ) {
 				return isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) && 'on' === $lesson_meta['sfwd-lessons_lesson_assignment_upload'];
 			}
@@ -676,5 +675,4 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 		}
 	}
-
 }

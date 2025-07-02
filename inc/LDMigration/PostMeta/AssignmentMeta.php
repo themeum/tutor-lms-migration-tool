@@ -10,8 +10,9 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 
 /**
  * Handle assignment meta migration
@@ -27,6 +28,13 @@ class AssignmentMeta implements PostMeta {
 	 */
 	private $post_id;
 
+	private $post_type;
+
+	const POST_TYPES = array(
+		'sfwd-lessons' => ContentTypes::LD_LESSONS,
+		'sfwd-topic'   => ContentTypes::LD_TOPIC,
+	);
+
 	/**
 	 * Migrate assignment meta
 	 *
@@ -35,15 +43,17 @@ class AssignmentMeta implements PostMeta {
 	 * @since 2.3.0
 	 *
 	 * @param integer $post_id Post id.
+	 * @param string  $post_type Post Type.
 	 *
 	 * @throws \Throwable If Database error occur.
 	 *
 	 * @return void
 	 */
-	public function migrate( int $post_id ) {
+	public function migrate( int $post_id, string $post_type = 'sfwd-lessons' ) {
 		global $wpdb;
 
-		$this->post_id = $post_id;
+		$this->post_id   = $post_id;
+		$this->post_type = self::POST_TYPES[ $post_type ];
 
 		$migrate_able_meta = $this->get_migrate_able_meta();
 
@@ -72,7 +82,10 @@ class AssignmentMeta implements PostMeta {
 	 * @return array
 	 */
 	private function get_migrate_able_meta(): array {
-		$all_meta = get_post_meta( $this->post_id, '_sfwd-lessons', true );
+
+		$post_type = "_{$this->post_type}";
+
+		$all_meta = get_post_meta( $this->post_id, $post_type, true );
 		if ( ! empty( $all_meta ) ) {
 			$migrate_able_meta = $this->migrate_able_meta();
 
@@ -90,15 +103,16 @@ class AssignmentMeta implements PostMeta {
 	 * @return array
 	 */
 	private function migrate_able_meta() {
+
 		return array(
-			'sfwd-lessons_assignment_upload_limit_count',
-			'sfwd-lessons_assignment_upload_limit_size',
-			'sfwd-lessons_lesson_assignment_points_amount',
-			'sfwd-lessons_forced_lesson_time',
-			'sfwd-lessons_forced_lesson_time_enabled',
-			'sfwd-lessons_lesson_schedule',
-			'sfwd-lessons_visible_after',
-			'sfwd-lessons_visible_after_specific_date',
+			"{$this->post_type}_assignment_upload_limit_count",
+			"{$this->post_type}_assignment_upload_limit_size",
+			"{$this->post_type}_lesson_assignment_points_amount",
+			"{$this->post_type}_forced_lesson_time",
+			"{$this->post_type}_forced_lesson_time_enabled",
+			"{$this->post_type}_lesson_schedule",
+			"{$this->post_type}_visible_after",
+			"{$this->post_type}_visible_after_specific_date",
 		);
 	}
 

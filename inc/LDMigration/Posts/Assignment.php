@@ -10,8 +10,10 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\Posts;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\Post;
 use WP_Post;
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\Interfaces\Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -30,6 +32,8 @@ class Assignment implements Post {
 	 * @var string
 	 */
 	private $post_type;
+
+	const LD_ASSIGNMENT = 'sfwd-assignment';
 
 	/**
 	 * Set member variables
@@ -54,5 +58,21 @@ class Assignment implements Post {
 		);
 
 		wp_update_post( $update, false, false );
+	}
+
+	public function migrate_assignment_files() {
+		try {
+			$uploaded_assignments = get_posts(
+				array(
+					'post_type' => self::LD_ASSIGNMENT,
+				)
+			);
+
+			foreach ( $uploaded_assignments as $assignment ) {
+				tlmt_get_meta_obj( ContentTypes::ASSIGNMENT_META, MigrationTypes::LD_TO_TUTOR )->migrate( $assignment->lesson_id, $assignment->lesson_type );
+			}
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
 	}
 }
