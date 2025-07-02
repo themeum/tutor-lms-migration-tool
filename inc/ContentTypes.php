@@ -41,4 +41,6 @@ abstract class ContentTypes {
 
 	const TUTOR_REVIEW_TYPE     = 'tutor_course_rating';
 	const TUTOR_RATING_META_KEY = 'tutor_rating';
+
+	const STUDENT_PROGRESS = 'student_progress';
 }
