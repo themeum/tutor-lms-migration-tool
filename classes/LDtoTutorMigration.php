@@ -157,7 +157,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			if ( $migration_errors ) {
 				ErrorHandler::set_error( 'review', __( 'Could not migrate reviews :', 'tutor-lms-migration-tool' ) . implode( ',', $migration_errors ) );
 			}
-
 		}
 		/**
 		 * Migration from LD courses to tutor courses
@@ -352,12 +351,14 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
 				if ( ! $course_id ) {
+					$order_obj->remove_orders( $order->ID );
 					continue;
 				}
+
 				try {
 					$order_obj->migrate( $order, $course_id );
-					$order_obj->remove_orders();
-				} catch( \Throwable $th ) {
+					$order_obj->remove_orders( $order->ID );
+				} catch ( \Throwable $th ) {
 					if ( isset( $order_errors[ $course_id ] ) ) {
 						array_push( $order_errors[ $course_id ], $order->ID );
 					} else {
@@ -368,12 +369,11 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( $order_errors ) {
 				$err_msg = __( 'Failed to migrate orders for ', 'tutor-lms-migration-tool' );
-				foreach( $order_errors as $course_id => $order_ids ) {
-					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ') . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ' ;
+				foreach ( $order_errors as $course_id => $order_ids ) {
+					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ' ) . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ';
 				}
 				ErrorHandler::set_error( 'order', $err_msg );
 			}
-
 		}
 
 		/*
