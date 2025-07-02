@@ -131,15 +131,20 @@ class WCOrder implements Order {
 	 *
 	 * @since 2.3.0
 	 *
+	 * @param int $order_id the order id of the order to remove.
+	 *
 	 * @return void
 	 */
-	public function remove_orders() {
+	public function remove_orders( $order_id ) {
 		global $wpdb;
 		$wpdb->query(
-			"DELETE wp_posts, wp_postmeta
-            FROM wp_posts
-            INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
-            WHERE post_type = 'sfwd-transactions'"
+			$wpdb->prepare(
+				"DELETE wp_posts, wp_postmeta
+				FROM wp_posts
+				INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
+				WHERE ID = '%d' ",
+				$order_id
+			)
 		);
 	}
 }
