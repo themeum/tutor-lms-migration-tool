@@ -99,7 +99,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					case ContentTypes::COURSE:
 						try {
 							$this->ld_migrate_course_to_tutor();
-							//tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
+							tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 						} catch ( \Throwable $th ) {
 							error_log( $th->getMessage() );
 						}
@@ -579,8 +579,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 
 				if ( $topic_id ) {
-					if ( $this->is_assignment( $lesson_key ) && tlmt_has_tutor_pro() ) {
-						$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id );
+					if ( $this->is_assignment( $lesson_key, ContentTypes::LD_LESSONS ) && tlmt_has_tutor_pro() ) {
+						$lesson_id = $this->migrate_assignment( $lesson_key, $topic_id, ContentTypes::LD_LESSONS );
 					} else {
 						$lesson_id = $this->update_post( $lesson_key, $lesson_post_type, $i, $topic_id );
 						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
@@ -589,8 +589,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 					foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
 
-						if ( $this->is_assignment( $lesson_inner_key ) && tlmt_has_tutor_pro() ) {
-							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id );
+						if ( $this->is_assignment( $lesson_inner_key, ContentTypes::LD_TOPIC ) && tlmt_has_tutor_pro() ) {
+							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id, ContentTypes::LD_TOPIC );
 						} else {
 							$lesson_id = $this->update_post( $lesson_inner_key, $lesson_post_type, $i, $topic_id ); // Insert Lesson.
 							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
@@ -632,13 +632,14 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		 * @since 2.3.0
 		 *
 		 * @param integer $ld_lesson_id LD Lesson id.
+		 * @param string  $ld_content_type LD Content type i.e (lessons/topic).
 		 *
 		 * @return boolean
 		 */
-		private function is_assignment( int $ld_lesson_id ) {
-			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lessons', true );
+		private function is_assignment( int $ld_lesson_id, string $ld_content_type ) {
+			$lesson_meta = get_post_meta( $ld_lesson_id, "_{$ld_content_type}", true );
 			if ( $lesson_meta ) {
-				return isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) && 'on' === $lesson_meta['sfwd-lessons_lesson_assignment_upload'];
+				return isset( $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ] ) && 'on' === $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ];
 			}
 
 			return false;
@@ -653,17 +654,18 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 		 *
 		 * @param integer $ld_lesson_id LD lesson id.
 		 * @param integer $tutor_topic_id Tutor topic id.
+		 * @param string  $ld_content_type LD Content type i.e (lessons/topic).
 		 *
 		 * @return int 0 if failed to migrate
 		 */
-		public function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id ) {
+		public function migrate_assignment( int $ld_lesson_id, int $tutor_topic_id, string $ld_content_type ) {
 			$lesson = get_post( $ld_lesson_id );
 			if ( ! is_a( $lesson, 'WP_Post' ) ) {
 				return 0;
 			}
 
-			$lesson_meta = get_post_meta( $ld_lesson_id, '_sfwd-lessons', true );
-			if ( ! isset( $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) || 'on' !== $lesson_meta['sfwd-lessons_lesson_assignment_upload'] ) {
+			$lesson_meta = get_post_meta( $ld_lesson_id, "_{$ld_content_type}", true );
+			if ( ! isset( $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ] ) || 'on' !== $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ] ) {
 				return 0;
 			}
 
