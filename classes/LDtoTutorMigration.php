@@ -99,7 +99,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					case ContentTypes::COURSE:
 						try {
 							$this->ld_migrate_course_to_tutor();
-							tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 						} catch ( \Throwable $th ) {
 							error_log( $th->getMessage() );
 						}
@@ -145,7 +144,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 			if ( count( $ld_reviews ) ) {
 				foreach ( $ld_reviews as $review ) {
-					$item_idx++;
+					++$item_idx;
 					update_option( '_tutor_migrated_items_count', $item_idx );
 					try {
 						$reviews->migrate( $review );
@@ -183,7 +182,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 				$course_i = (int) get_option( '_tutor_migrated_items_count' );
 				foreach ( $ld_courses as $ld_course ) {
-					$course_i++;
+					++$course_i;
 					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
 					if ( $course_id ) {
 						try {
@@ -227,6 +226,9 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
+
+				// Migrate Assignment Files.
+				tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 			}
 
 			throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
@@ -347,7 +349,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 
 			foreach ( $ld_orders as $order ) {
-				$item_i++;
+				++$item_i;
 				update_option( '_tutor_migrated_items_count', $item_i );
 				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
@@ -574,7 +576,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					if ( $section_heading[ $section_count ]['order'] == $check ) {
 						// Insert Topics
 						$topic_id = $this->insert_post( $section_heading[ $section_count ]['post_title'], '', $author_id, 'topics', $i, $new_course_id );
-						$section_count++;
+						++$section_count;
 					}
 				}
 
@@ -613,7 +615,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						}
 					}
 				}
-				$i++;
+				++$i;
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
