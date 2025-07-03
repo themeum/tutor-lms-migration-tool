@@ -126,16 +126,17 @@ class AssignmentMeta implements PostMeta {
 	 * @return array Multi-dimension array with meta key and value.
 	 */
 	private function ld_to_tutor_meta_map( array $meta ): array {
-		$course = get_post_parent( get_post_parent( $this->post_id ) );
+		
+		$course = get_post_meta( $this->post_id, 'course_id', true );
 
 		$assignment_settings = array(
-			'upload_files_limit'     => isset( $meta['sfwd-lessons_assignment_upload_limit_count'] ) ? (int) $meta['sfwd-lessons_assignment_upload_limit_count'] : 1,
-			'upload_file_size_limit' => isset( $meta['sfwd-lessons_assignment_upload_limit_size'] ) ? (int) $meta['sfwd-lessons_assignment_upload_limit_size'] : 2,
-			'total_mark'             => isset( $meta['sfwd-lessons_lesson_assignment_points_amount'] ) ? (int) $meta['sfwd-lessons_lesson_assignment_points_amount'] : 10,
-			'pass_mark'              => isset( $meta['sfwd-lessons_lesson_assignment_points_amount'] ) ? ceil( $meta['sfwd-lessons_lesson_assignment_points_amount'] / 2 ) : 5,
+			'upload_files_limit'     => isset( $meta["{$this->post_type}_assignment_upload_limit_count"] ) ? (int) $meta["{$this->post_type}_assignment_upload_limit_count"] : 1,
+			'upload_file_size_limit' => isset( $meta["{$this->post_type}_assignment_upload_limit_size"] ) ? (int) $meta["{$this->post_type}_assignment_upload_limit_size"] : 2,
+			'total_mark'             => isset( $meta["{$this->post_type}_lesson_assignment_points_amount"] ) ? (int) $meta["{$this->post_type}_lesson_assignment_points_amount"] : 10,
+			'pass_mark'              => isset( $meta["{$this->post_type}_lesson_assignment_points_amount"] ) ? ceil( $meta["{$this->post_type}_lesson_assignment_points_amount"] / 2 ) : 5,
 			'time_duration'          => array(
 				'time'  => 'days',
-				'value' => isset( $meta['sfwd-lessons_forced_lesson_time'] ) ? (int) $meta['sfwd-lessons_forced_lesson_time'] : 1,
+				'value' => isset( $meta["{$this->post_type}_forced_lesson_time"] ) ? (int) $meta["{$this->post_type}_forced_lesson_time"] : 1,
 			),
 			'deadline_from_start'    => 1,
 		);
@@ -143,20 +144,20 @@ class AssignmentMeta implements PostMeta {
 		$assignment_meta = array(
 			'_tutor_assignment_total_mark'     => $assignment_settings['total_mark'],
 			'_tutor_assignment_pass_mark'      => $assignment_settings['pass_mark'],
-			'_tutor_course_id_for_assignments' => $course ? $course->ID : 0,
+			'_tutor_course_id_for_assignments' => $course ?? 0,
 			'_content_drip_settings'           => '',
 			'assignment_option'                => maybe_serialize( $assignment_settings ),
 		);
 
 		$drip_settings = array();
-		if ( ! empty( $meta['sfwd-lessons_lesson_schedule'] ) ) {
-			if ( 'visible_after_specific_date' === $meta['sfwd-lessons_lesson_schedule'] && $meta['sfwd-lessons_visible_after_specific_date'] > 0 ) {
+		if ( ! empty( $meta["{$this->post_type}_lesson_schedule"] ) ) {
+			if ( 'visible_after_specific_date' === $meta["{$this->post_type}_lesson_schedule"] && $meta["{$this->post_type}_visible_after_specific_date"] > 0 ) {
 				$drip_settings['_content_drip_settings'] = array(
-					'unlock_date' => gmdate( 'Y-m-d', $meta['sfwd-lessons_visible_after_specific_date'] ),
+					'unlock_date' => gmdate( 'Y-m-d', $meta["{$this->post_type}_visible_after_specific_date"] ),
 				);
-			} elseif ( 'visible_after' === $meta['sfwd-lessons_lesson_schedule'] && $meta['sfwd-lessons_visible_after'] > 0 ) {
+			} elseif ( 'visible_after' === $meta["{$this->post_type}_lesson_schedule"] && $meta["{$this->post_type}_visible_after"] > 0 ) {
 				$drip_settings['_content_drip_settings'] = array(
-					'after_xdays_of_enroll' => (int) $meta['sfwd-lessons_visible_after'],
+					'after_xdays_of_enroll' => (int) $meta["{$this->post_type}_visible_after"],
 				);
 			}
 

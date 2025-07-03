@@ -51,6 +51,7 @@ class Assignment implements Post {
 	 * @return void
 	 */
 	public function migrate( WP_Post $post, int $parent_post_id ) {
+
 		$update = array(
 			'ID'          => $post->ID,
 			'post_type'   => $this->post_type,
@@ -58,21 +59,23 @@ class Assignment implements Post {
 		);
 
 		wp_update_post( $update, false, false );
+
+		tlmt_get_meta_obj( ContentTypes::ASSIGNMENT_META, MigrationTypes::LD_TO_TUTOR )->migrate( $post->ID, $post->post_type );
 	}
 
-	public function migrate_assignment_files() {
-		try {
-			$uploaded_assignments = get_posts(
-				array(
-					'post_type' => self::LD_ASSIGNMENT,
-				)
-			);
+	// public function migrate_assignment_files() {
+	// 	try {
+	// 		$uploaded_assignments = get_posts(
+	// 			array(
+	// 				'post_type' => self::LD_ASSIGNMENT,
+	// 			)
+	// 		);
 
-			foreach ( $uploaded_assignments as $assignment ) {
-				tlmt_get_meta_obj( ContentTypes::ASSIGNMENT_META, MigrationTypes::LD_TO_TUTOR )->migrate( $assignment->lesson_id, $assignment->lesson_type );
-			}
-		} catch ( \Throwable $th ) {
-			throw $th;
-		}
-	}
+	// 		foreach ( $uploaded_assignments as $assignment ) {
+				
+	// 		}
+	// 	} catch ( \Throwable $th ) {
+	// 		throw $th;
+	// 	}
+	// }
 }

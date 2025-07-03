@@ -99,7 +99,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					case ContentTypes::COURSE:
 						try {
 							$this->ld_migrate_course_to_tutor();
-							tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
+							//tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 						} catch ( \Throwable $th ) {
 							error_log( $th->getMessage() );
 						}
@@ -542,6 +542,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 		public function migrate_course( $course_id, $new_course_id ) {
 			global $wpdb;
+
 			$section_heading = get_post_meta( $course_id, 'course_sections', true );
 			$section_heading = $section_heading ? json_decode( $section_heading, true ) : array(
 				array(
