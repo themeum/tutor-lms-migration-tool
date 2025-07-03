@@ -33,7 +33,9 @@ interface Order {
 	 *
 	 * @since 2.3.0
 	 *
+	 * @param int $order_id the order id of the order to remove.
+	 *
 	 * @return void
 	 */
-	public function remove_orders();
+	public function remove_orders( $order_id );
 }

@@ -352,11 +352,13 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
 				if ( ! $course_id ) {
+					$order_obj->remove_orders( $order->ID );
 					continue;
 				}
+
 				try {
 					$order_obj->migrate( $order, $course_id );
-					$order_obj->remove_orders();
+					$order_obj->remove_orders( $order->ID );
 				} catch ( \Throwable $th ) {
 					if ( isset( $order_errors[ $course_id ] ) ) {
 						array_push( $order_errors[ $course_id ], $order->ID );
