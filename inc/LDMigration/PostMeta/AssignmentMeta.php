@@ -149,7 +149,7 @@ class AssignmentMeta implements PostMeta {
 		);
 
 		$assignment_meta = array(
-			'_tutor_assignment_total_mark'     => $assignment_settings['total_mark'],
+			'_tutor_assignment_total_mark'     => $assignment_settings['total_mark'] ?? 10,
 			'_tutor_assignment_pass_mark'      => $assignment_settings['pass_mark'],
 			'_tutor_course_id_for_assignments' => $course ?? 0,
 			'_content_drip_settings'           => '',
