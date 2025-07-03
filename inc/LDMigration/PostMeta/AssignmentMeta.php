@@ -28,6 +28,13 @@ class AssignmentMeta implements PostMeta {
 	 */
 	private $post_id;
 
+	/**
+	 * Current post type.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @var string
+	 */
 	private $post_type;
 
 	const POST_TYPES = array(
