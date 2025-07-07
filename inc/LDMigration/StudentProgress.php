@@ -58,7 +58,7 @@ class StudentProgress implements StudentProgressInterface {
 	public function migrate() {
 
 		try {
-			$ld_course_progress = $this->fetch_quiz_and_topic_activity();
+			$ld_course_progress = $this->user_activity();
 
 			foreach ( $ld_course_progress as $progress ) {
 				$user_id   = $progress->user_id ?? null;
@@ -73,6 +73,7 @@ class StudentProgress implements StudentProgressInterface {
 
 				switch ( $type ) {
 
+					case self::LESSON:
 					case self::TOPIC:
 						update_user_meta( $user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
 						break;
@@ -91,7 +92,7 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
-	 * Fetches user activity records for LearnDash topics and quizzes.
+	 * Fetches user activity records for LearnDash topics, lessons and quizzes.
 	 *
 	 * @since 2.3.0
 	 *
@@ -99,7 +100,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @return array List of activity result objects.
 	 */
-	private function fetch_quiz_and_topic_activity() {
+	private function user_activity() {
 
 		global $wpdb;
 
@@ -112,8 +113,12 @@ class StudentProgress implements StudentProgressInterface {
 				WHERE 
 					( activity_type = %s AND activity_status = %d )
 					OR
+					( activity_type = %s AND activity_status = %d )
+					OR
 					( activity_type = %s AND activity_status IN (%d, %d))",
 				self::TOPIC,
+				1,
+				self::LESSON,
 				1,
 				self::QUIZ,
 				1,

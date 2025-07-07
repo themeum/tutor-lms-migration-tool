@@ -43,4 +43,8 @@ abstract class ContentTypes {
 	const TUTOR_RATING_META_KEY = 'tutor_rating';
 
 	const STUDENT_PROGRESS = 'student_progress';
+	const ASSIGNMENT_FILES = 'assignment_files';
+
+	const LD_TOPIC   = 'sfwd-topic';
+	const LD_LESSONS = 'sfwd-lessons';
 }
