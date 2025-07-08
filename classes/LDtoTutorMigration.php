@@ -114,9 +114,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 
 				// Send response & clear on finish.
-				$status = MigrationLogger::get_log();
-				MigrationLogger::clear_log();
-				wp_send_json_success( $status );
+				$response = MigrationLogger::get_log();
+				wp_send_json_success( $response );
 			}
 
 			wp_send_json_error();
