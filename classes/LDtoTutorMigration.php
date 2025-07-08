@@ -177,61 +177,62 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$total_courses = tutils()->count( $ld_courses );
 			$course_type   = tutor()->course_post_type;
 
-			if ( $total_courses ) {
-				MigrationLogger::update_migration_log( $total_courses );
-
-				$course_i = (int) get_option( '_tutor_migrated_items_count' );
-				foreach ( $ld_courses as $ld_course ) {
-					++$course_i;
-					$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
-					if ( $course_id ) {
-						try {
-							$this->migrate_course( $ld_course->ID, $course_id );
-
-							do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
-
-							update_option( '_tutor_migrated_items_count', $course_i );
-
-							// Attached Product
-							do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LD_TO_TUTOR );
-
-							// Attached Prerequisite.
-							$this->attached_prerequisite( $course_id );
-
-							// Add Enrollments.
-							$this->insert_enrollment( $course_id );
-
-							// Attached thumbnail.
-							$this->insert_thumbnail( $ld_course->ID, $course_id );
-
-							/**
-							 * Insert Student Progress
-							 *
-							 * @since 2.3.0
-							 */
-							do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
-
-							MigrationLogger::update_course_migration_log( $course_id, true );
-						} catch ( \Throwable $th ) {
-							// Revert the status if failed to migrate.
-							$revert = array(
-								'ID'          => $course_id,
-								'post_status' => self::LD_COURSE_TYPE,
-							);
-
-							wp_update_post( $revert );
-
-							MigrationLogger::update_course_migration_log( $course_id, true );
-							throw $th;
-						}
-					}
-				}
-
-				// Migrate Assignment Files.
-				tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
+			if ( empty( $total_courses ) ) {
+				throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
 			}
 
-			throw new Exception( __( 'No course available for migration', 'tutor-lms-migration-tool' ) );
+			MigrationLogger::update_migration_log( $total_courses );
+
+			$course_i = (int) get_option( '_tutor_migrated_items_count' );
+
+			foreach ( $ld_courses as $ld_course ) {
+				++$course_i;
+				$course_id = $this->update_post( $ld_course->ID, $course_type, 0, '' );
+				if ( $course_id ) {
+					try {
+						$this->migrate_course( $ld_course->ID, $course_id );
+
+						do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LD_TO_TUTOR );
+
+						update_option( '_tutor_migrated_items_count', $course_i );
+
+						// Attached Product
+						do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LD_TO_TUTOR );
+
+						// Attached Prerequisite.
+						$this->attached_prerequisite( $course_id );
+
+						// Add Enrollments.
+						$this->insert_enrollment( $course_id );
+
+						// Attached thumbnail.
+						$this->insert_thumbnail( $ld_course->ID, $course_id );
+
+						/**
+						 * Insert Student Progress
+						 *
+						 * @since 2.3.0
+						 */
+						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
+
+						MigrationLogger::update_course_migration_log( $course_id, true );
+					} catch ( \Throwable $th ) {
+						// Revert the status if failed to migrate.
+						$revert = array(
+							'ID'          => $course_id,
+							'post_status' => self::LD_COURSE_TYPE,
+						);
+
+						wp_update_post( $revert );
+
+						MigrationLogger::update_course_migration_log( $course_id, true );
+						throw $th;
+					}
+				}
+			}
+
+			// Migrate Assignment Files.
+			tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 		}
 
 		public function attached_prerequisite( $course_id ) {

@@ -10,8 +10,8 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 
 /**
  * Handle quiz meta migration
@@ -56,7 +56,7 @@ class QuizMeta implements PostMeta {
 				}
 
 				try {
-					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, true, false );
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta );
 				} catch ( \Throwable $th ) {
 					throw $th;
 				}
