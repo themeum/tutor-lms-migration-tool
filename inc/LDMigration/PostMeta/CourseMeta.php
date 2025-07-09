@@ -149,7 +149,7 @@ class CourseMeta implements PostMeta {
 		$ld_keys = array_keys( $meta );
 		foreach ( $ld_tutor_meta_map as $key => $value ) {
 			if ( in_array( $value, $ld_keys ) ) {
-				$tutor_meta_map[ $key ] = $meta[ $value ];
+				$tutor_meta_map[ $key ] = sanitize_textarea_field( $meta[ $value ] );
 			}
 		}
 
