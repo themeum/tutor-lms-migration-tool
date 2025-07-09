@@ -86,36 +86,37 @@ class Assignment implements Post {
 				$lesson_id = $meta['lesson_id'][0] ?? 0;
 				$user_id   = intval( $meta['user_id'][0] ?? 0 );
 
-				if ( ! isset( $comments[ $user_id ][ $lesson_id ] ) ) {
-					$comments[ $user_id ][ $lesson_id ] = array(
-						'assignment_id'    => $assignment->ID,
-						'comment_post_ID'  => intval( $lesson_id ),
-						'comment_date'     => $assignment->post_date,
-						'comment_date_gmt' => $assignment->post_date_gmt,
-						'comment_author'   => $meta['disp_name'][0] ?? '',
-						'comment_content'  => $meta['post_content'][0] ?? '',
-						'comment_parent'   => intval( $meta['course_id'][0] ?? 0 ),
-						'user_id'          => intval( $meta['user_id'][0] ?? 0 ),
-					);
-				}
+				if ( $lesson_id && $user_id ) {
+					
+					if ( ! isset( $comments[ $user_id ][ $lesson_id ] ) ) {
+						$comments[ $user_id ][ $lesson_id ] = array(
+							'assignment_id'    => $assignment->ID,
+							'comment_post_ID'  => intval( $lesson_id ),
+							'comment_date'     => $assignment->post_date,
+							'comment_date_gmt' => $assignment->post_date_gmt,
+							'comment_author'   => $meta['disp_name'][0] ?? '',
+							'comment_content'  => $meta['post_content'][0] ?? '',
+							'comment_parent'   => intval( $meta['course_id'][0] ?? 0 ),
+							'user_id'          => intval( $meta['user_id'][0] ?? 0 ),
+						);
+					}
 
-				if ( $lesson_id ) {
 					$comments[ $user_id ][ $lesson_id ]['attachment_files'][] = array(
 						'name'          => $meta['file_name'][0] ?? '',
 						'url'           => $meta['file_link'][0] ?? '',
 						'type'          => wp_check_filetype( $meta['file_name'][0] ?? '' )['type'] ?? '',
 						'uploaded_path' => $meta['file_path'][0] ? $this->get_uploaded_file_path( $meta['file_path'][0] ) : '',
 					);
-				}
 
-				// LearnDash allows individual point values per assignment file, while Tutor offers a single, unified point value for all submitted assignments file.
-				$comments[ $user_id ][ $lesson_id ]['assignment_mark'] = max(
-					$meta['points'][0] ?? 10,
-					$comments[ $user_id ][ $lesson_id ]['assignment_mark']
-				);
+					// LearnDash allows individual point values per assignment file, while Tutor offers a single, unified point value for all submitted assignments file.
+					$comments[ $user_id ][ $lesson_id ]['assignment_mark'] = max(
+						$meta['points'][0] ?? 10,
+						$comments[ $user_id ][ $lesson_id ]['assignment_mark']
+					);
 
-				if ( (int) ( $meta['approval_status'][0] ?? 0 ) === 1 ) {
-					$comments[ $user_id ][ $lesson_id ]['evaluate_time'] = $assignment->post_modified_gmt;
+					if ( (int) ( $meta['approval_status'][0] ?? 0 ) === 1 ) {
+						$comments[ $user_id ][ $lesson_id ]['evaluate_time'] = $assignment->post_modified_gmt;
+					}
 				}
 			}
 
