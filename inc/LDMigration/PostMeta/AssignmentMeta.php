@@ -73,7 +73,7 @@ class AssignmentMeta implements PostMeta {
 				}
 
 				try {
-					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta );
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, false, false );
 				} catch ( \Throwable $th ) {
 					throw $th;
 				}

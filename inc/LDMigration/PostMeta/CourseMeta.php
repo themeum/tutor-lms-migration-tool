@@ -52,7 +52,7 @@ class CourseMeta implements PostMeta {
 			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
 			if ( is_array( $meta ) && count( $meta ) ) {
 				try {
-					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta );
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, false, false );
 				} catch ( \Throwable $th ) {
 					throw $th;
 				}
@@ -149,7 +149,7 @@ class CourseMeta implements PostMeta {
 		$ld_keys = array_keys( $meta );
 		foreach ( $ld_tutor_meta_map as $key => $value ) {
 			if ( in_array( $value, $ld_keys ) ) {
-				$tutor_meta_map[ $key ] = $meta[ $value ];
+				$tutor_meta_map[ $key ] = sanitize_textarea_field( $meta[ $value ] );
 			}
 		}
 
