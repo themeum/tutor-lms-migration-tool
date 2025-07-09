@@ -78,30 +78,31 @@ class Assignment implements Post {
 		try {
 
 			$assignments = get_posts( array( 'post_type' => self::LD_ASSIGNMENT ) );
-			$comments    = array();
+			$data        = array();
 
 			foreach ( $assignments as $assignment ) {
 
 				$meta      = get_post_meta( $assignment->ID );
 				$lesson_id = $meta['lesson_id'][0] ?? 0;
 				$user_id   = intval( $meta['user_id'][0] ?? 0 );
+				$course_id = intval( $meta['course_id'][0] ?? 0 );
 
-				if ( $lesson_id && $user_id ) {
+				if ( $lesson_id && $user_id && $course_id ) {
 
-					if ( ! isset( $comments[ $user_id ][ $lesson_id ] ) ) {
-						$comments[ $user_id ][ $lesson_id ] = array(
+					if ( ! isset( $data[ $user_id ][ $course_id ][ $lesson_id ] ) ) {
+						$data[ $user_id ][ $course_id ][ $lesson_id ] = array(
 							'assignment_id'    => $assignment->ID,
 							'comment_post_ID'  => intval( $lesson_id ),
 							'comment_date'     => $assignment->post_date,
 							'comment_date_gmt' => $assignment->post_date_gmt,
 							'comment_author'   => $meta['disp_name'][0] ?? '',
 							'comment_content'  => $meta['post_content'][0] ?? '',
-							'comment_parent'   => intval( $meta['course_id'][0] ?? 0 ),
+							'comment_parent'   => $course_id,
 							'user_id'          => intval( $meta['user_id'][0] ?? 0 ),
 						);
 					}
 
-					$comments[ $user_id ][ $lesson_id ]['attachment_files'][] = array(
+					$data[ $user_id ][ $course_id ][ $lesson_id ]['attachment_files'][] = array(
 						'name'          => $meta['file_name'][0] ?? '',
 						'url'           => $meta['file_link'][0] ?? '',
 						'type'          => wp_check_filetype( $meta['file_name'][0] ?? '' )['type'] ?? '',
@@ -109,19 +110,19 @@ class Assignment implements Post {
 					);
 
 					// LearnDash allows individual point values per assignment file, while Tutor offers a single, unified point value for all submitted assignments file.
-					$comments[ $user_id ][ $lesson_id ]['assignment_mark'] = max(
-						$meta['points'][0] ?? 10,
-						$comments[ $user_id ][ $lesson_id ]['assignment_mark']
+					$data[ $user_id ][ $course_id ][ $lesson_id ]['assignment_mark'] = max(
+						intval( $meta['points'][0] ) ?? 10,
+						$data[ $user_id ][ $course_id ][ $lesson_id ]['assignment_mark']
 					);
 
 					if ( (int) ( $meta['approval_status'][0] ?? 0 ) === 1 ) {
-						$comments[ $user_id ][ $lesson_id ]['evaluate_time'] = $assignment->post_modified_gmt;
+						$data[ $user_id ][ $course_id ][ $lesson_id ]['evaluate_time'] = $assignment->post_modified_gmt;
 					}
 				}
 			}
 
-			if ( ! empty( $comments ) ) {
-				$this->assign_file_to_tutor( $comments );
+			if ( ! empty( $data ) ) {
+				$this->assign_file_to_tutor( $data );
 			}
 		} catch ( \Throwable $th ) {
 			throw $th;
@@ -135,49 +136,47 @@ class Assignment implements Post {
 	 *
 	 * If insertion fails for any comment, the error is logged using the ErrorHandler.
 	 *
-	 * @param array $comments A multi-dimensional array of comment data.
+	 * @param array $data A multi-dimensional array of data to insert as wp_comment.
 	 *
 	 * @return void
 	 */
-	private function assign_file_to_tutor( $comments ) {
+	private function assign_file_to_tutor( $data ) {
 
-		array_map(
-			function ( $comment ) {
-
-				$comment = reset( $comment );
-
-				$comment_id = wp_insert_comment(
-					array(
-						'comment_post_ID'  => $comment['comment_post_ID'],
-						'comment_date'     => $comment['comment_date'],
-						'comment_date_gmt' => $comment['comment_date_gmt'],
-						'comment_author'   => $comment['comment_author'],
-						'comment_content'  => $comment['comment_content'],
-						'comment_approved' => 'submitted',
-						'comment_agent'    => 'TutorLMSPlugin',
-						'comment_type'     => self::TUTOR_ASSIGNMENT,
-						'comment_parent'   => $comment['comment_parent'],
-						'user_id'          => $comment['user_id'],
-					)
-				);
-
-				if ( ! $comment_id ) {
-					ErrorHandler::set_error(
-						ContentTypes::ASSIGNMENT_FILES,
-						"Failed to insert comment for assignment ID: {$comment['assignment_id']}"
+		foreach ( $data as $user_info ) {
+			foreach ( $user_info as $course_info ) {
+				foreach ( $course_info as $ld_content ) {
+					$comment_id = wp_insert_comment(
+						array(
+							'comment_post_ID'  => $ld_content['comment_post_ID'],
+							'comment_date'     => $ld_content['comment_date'],
+							'comment_date_gmt' => $ld_content['comment_date_gmt'],
+							'comment_author'   => $ld_content['comment_author'],
+							'comment_content'  => $ld_content['comment_content'],
+							'comment_approved' => 'submitted',
+							'comment_agent'    => 'TutorLMSPlugin',
+							'comment_type'     => self::TUTOR_ASSIGNMENT,
+							'comment_parent'   => $ld_content['comment_parent'],
+							'user_id'          => $ld_content['user_id'],
+						)
 					);
-					return false;
-				}
 
-				add_comment_meta( $comment_id, 'assignment_mark', $comment['assignment_mark'] );
-				add_comment_meta( $comment_id, 'uploaded_attachments', wp_json_encode( $comment['attachment_files'] ) );
+					if ( ! $comment_id ) {
+						ErrorHandler::set_error(
+							ContentTypes::ASSIGNMENT_FILES,
+							"Failed to insert comment for assignment ID: {$ld_content['assignment_id']}"
+						);
+						continue;
+					}
 
-				if ( $comment['evaluate_time'] ) {
-					add_comment_meta( $comment_id, 'evaluate_time', $comment['evaluate_time'] );
+					add_comment_meta( $comment_id, 'assignment_mark', $ld_content['assignment_mark'] );
+					add_comment_meta( $comment_id, 'uploaded_attachments', wp_json_encode( $ld_content['attachment_files'] ) );
+
+					if ( $ld_content['evaluate_time'] ) {
+						add_comment_meta( $comment_id, 'evaluate_time', $ld_content['evaluate_time'] );
+					}
 				}
-			},
-			$comments
-		);
+			}
+		}
 	}
 
 	/**
