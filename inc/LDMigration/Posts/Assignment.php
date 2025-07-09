@@ -87,7 +87,7 @@ class Assignment implements Post {
 				$user_id   = intval( $meta['user_id'][0] ?? 0 );
 
 				if ( $lesson_id && $user_id ) {
-					
+
 					if ( ! isset( $comments[ $user_id ][ $lesson_id ] ) ) {
 						$comments[ $user_id ][ $lesson_id ] = array(
 							'assignment_id'    => $assignment->ID,
