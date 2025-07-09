@@ -10,8 +10,8 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 
 /**
  * Handle course meta migration
@@ -52,7 +52,7 @@ class CourseMeta implements PostMeta {
 			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
 			if ( is_array( $meta ) && count( $meta ) ) {
 				try {
-					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, true, false );
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta );
 				} catch ( \Throwable $th ) {
 					throw $th;
 				}
