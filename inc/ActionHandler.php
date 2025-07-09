@@ -30,7 +30,7 @@ class ActionHandler {
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
 		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ) );
-		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_assignment_meta' ) );
 		add_action( 'tlml_delete_learndash_quiz_questions', array( $this, 'delete_learndash_quiz_questions' ) );
 	}
 
@@ -66,6 +66,25 @@ class ActionHandler {
 	}
 
 	/**
+	 * Migrate assignment meta
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $post_id Post id.
+	 *
+	 * @return void
+	 */
+	public function migrate_assignment_meta( $post_id ) {
+		$post     = get_post( $post_id );
+		$meta_obj = tlmt_get_meta_obj( ContentTypes::ASSIGNMENT_META, MigrationTypes::LD_TO_TUTOR );
+		try {
+			$meta_obj->migrate( $post_id );
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error( ContentTypes::ASSIGNMENT_META, "Failed to migrate meta data for this post: $post->post_title post_type: $post->post_type" );
+		}
+	}
+
+	/**
 	 * Get meta content type by post type
 	 *
 	 * @since 2.3.0
@@ -76,20 +95,15 @@ class ActionHandler {
 	 */
 	public function get_meta_content_type( string $post_type ) {
 		$content_type = null;
-		switch ( $post_type ) {
-			case tutor()->course_post_type:
-				$content_type = ContentTypes::COURSE_META;
-				break;
-			case tutor()->lesson_post_type:
-				$content_type = ContentTypes::LESSON_META;
-				break;
-			case tutor()->quiz_post_type:
-				$content_type = ContentTypes::QUIZ_META;
-				break;
 
-			default:
-				// code...
-				break;
+		if ( $post_type ) {
+			if ( tutor()->course_post_type === $post_type || 'sfwd-courses' === $post_type ) {
+				$content_type = ContentTypes::COURSE_META;
+			} elseif ( tutor()->lesson_post_type === $post_type || 'sfwd-lessons' === $post_type ) {
+				$content_type = ContentTypes::LESSON_META;
+			} elseif ( tutor()->quiz_post_type === $post_type || 'sfwd-quiz' === $post_type ) {
+				$content_type = ContentTypes::QUIZ_META;
+			}
 		}
 
 		return $content_type;
