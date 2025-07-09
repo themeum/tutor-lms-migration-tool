@@ -61,9 +61,6 @@ jQuery(document).ready(function ($) {
 
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
-
-        // console.log(this);
-        // console.log($that.attr('action'));
      
 
         let final_types = 'lp';
@@ -182,8 +179,8 @@ jQuery(document).ready(function ($) {
                 }
 
                 const res = data.data;
-                const {totalCourseCount = 0, failed = []} = res || {};
-                if (Number(totalCourseCount) > 0) {
+                const { total_course_count = 0, failed = []} = res || {};
+                if (Number(total_course_count) > 0) {
                     if (failed.length > 0) {
                         tutor_toast(__('Partially Migrated', 'tutor-lms-migration-tool'), __('Some courses failed to migrate', 'tutor-lms-migration-tool'), 'error');
                     } else {
