@@ -175,20 +175,22 @@ jQuery(document).ready(function ($) {
                         migration_vendor : migration_vendor,
                         action: 'insert_tutor_migration_data'
                     });
-                    $('.lp-success-modal').addClass('active');
                 }
 
                 const res = data.data;
                 const { total_course_count = 0, failed = []} = res || {};
+                
                 if (Number(total_course_count) > 0) {
                     if (failed.length > 0) {
-                        tutor_toast(__('Partially Migrated', 'tutor-lms-migration-tool'), __('Some courses failed to migrate', 'tutor-lms-migration-tool'), 'error');
+                        $('.lp-success-modal').addClass('active');
                     } else {
-                    tutor_toast(__('Success', 'tutor-lms-migration-tool'), __('Migration completed successfully!', 'tutor-lms-migration-tool'), 'success');
+                        $('.lp-success-modal').addClass('active');
                     }
                 } else {
                     tutor_toast(__('Failed', 'tutor-lms-migration-tool'), __('Migration Failed', 'tutor-lms-migration-tool'), 'error');
                 }
+
+                
             },
             complete: function () {
                 clearTimeout(countReviewsProgress);
