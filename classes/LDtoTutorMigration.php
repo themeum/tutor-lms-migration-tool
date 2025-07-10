@@ -230,6 +230,14 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 			}
 
+			/**
+			 * Fires to delete all LearnDash quiz questions.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @hook tlml_delete_learndash_quiz_questions
+			 */
+			do_action( 'tlml_delete_learndash_quiz_questions' );
 			// Migrate Assignment Files.
 			tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 		}

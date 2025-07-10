@@ -161,15 +161,6 @@ class ActionHandler {
 		try {
 			$student_progress_obj = StudentProgressFactory::create( $migration_type );
 			$student_progress_obj->migrate();
-
-			/**
-			 * Fires to delete all LearnDash quiz questions.
-			 *
-			 * @since 2.3.0
-			 *
-			 * @hook tlml_delete_learndash_quiz_questions
-			 */
-			do_action( 'tlml_delete_learndash_quiz_questions' );
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to migrate student progress. ' . $th->getMessage() );
 		}
