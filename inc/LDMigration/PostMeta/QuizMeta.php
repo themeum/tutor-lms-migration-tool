@@ -125,7 +125,6 @@ class QuizMeta implements PostMeta {
 			'hide_question_number_overview' => ! empty( $meta['sfwd-quiz_hideQuestionPositionOverview'] ) ? 1 : 0,
 			'questions_order'               => ! empty( $meta['sfwd-quiz_custom_sorting'] ) ? 'sorting' : 'rand',
 			'question_layout_view'          => ! empty( $meta['sfwd-quiz_quizModus_multiple_questionsPerPage'] ) ? 'question_below_each_other' : 'question_pagination',
-			'feedback_mode'                 => isset( $meta['sfwd-quiz_quizModus_single_feedback'] ) ? $meta['sfwd-quiz_quizModus_single_feedback'] : 'default',
 			'time_limit'                    => ! empty( $meta['sfwd-quiz_quiz_time_limit_enabled'] ) && ! empty( $meta['sfwd-quiz_timeLimit'] ) ? array(
 				'time_type'  => 'minutes',
 				'time_value' => (int) $meta['sfwd-quiz_timeLimit'],
@@ -134,6 +133,15 @@ class QuizMeta implements PostMeta {
 				'time_value' => 0,
 			),
 		);
+
+		$feedback_mode = array(
+			'feedback_mode' => 'default',
+		);
+
+		if ( isset( $meta['sfwd-quiz_retry_restrictions'] ) && 'on' === $meta['sfwd-quiz_retry_restrictions'] ) {
+			$feedback_mode['feedback_mode']    = 'retry';
+			$feedback_mode['attempts_allowed'] = (int) isset( $meta['sfwd-quiz_repeats'] ) ? $meta['sfwd-quiz_repeats'] : 10;
+		}
 
 		if ( tlmt_has_tutor_pro() ) {
 			$drip_settings = array();
