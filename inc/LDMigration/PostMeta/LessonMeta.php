@@ -73,7 +73,7 @@ class LessonMeta implements PostMeta {
 
 		if ( isset( $meta['sfwd-lessons_lesson_video_enabled'] ) && 'on' === $meta['sfwd-lessons_lesson_video_enabled'] ) {
 			if ( ! empty( $meta['sfwd-lessons_lesson_video_url'] ) ) {
-				$tutor_meta['_video'] = maybe_serialize( $this->get_video_source_by_url( $meta['sfwd-lessons_lesson_video_url'] ) );
+				$tutor_meta['_video'] = maybe_serialize( tlmt_get_video_source_by_url( $meta['sfwd-lessons_lesson_video_url'] ) );
 			}
 		}
 
@@ -133,69 +133,6 @@ class LessonMeta implements PostMeta {
 		);
 
 		return array_intersect_key( $ld_meta, array_flip( $migrate_able_meta ) );
-	}
-
-	/**
-	 * Get video source by url
-	 *
-	 * @since 2.3.0
-	 *
-	 * @param string $url Video url, sortcode or embed code.
-	 *
-	 * @return array
-	 */
-	public function get_video_source_by_url( string $url ): array {
-		$source              = 'external_url';
-		$source_youtube      = '';
-		$source_vimeo        = '';
-		$source_shortcode    = '';
-		$source_embedded     = '';
-		$source_external_url = '';
-		$source_html5        = '';
-
-		if ( preg_match( '/youtube\.com\/watch\?v=([^\&\s]+)/', $url, $matches ) || preg_match( '/youtu\.be\/([^\&\s]+)/', $url, $matches ) ) {
-			$source         = 'youtube';
-			$source_youtube = $url;
-		} elseif ( preg_match( '/vimeo\.com\/(\d+)/', $url, $matches ) ) {
-			$source       = 'vimeo';
-			$source_vimeo = $url;
-		} elseif ( preg_match( '/^\[.*\]$/s', trim( $url ) ) ) {
-			// Shortcode starts and ends with square brackets.
-			$source           = 'shortcode';
-			$source_shortcode = $url;
-		} elseif ( preg_match( '/<iframe.+src="(.+?)"/s', $url, $matches ) ) {
-			// Embedded iframe.
-			$source          = 'embedded';
-			$source_embedded = $url;
-		} elseif ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
-			// Generic external URL (e.g., mp4).
-			$source              = 'external_url';
-			$source_external_url = $url;
-		} else {
-			// If none matched, maybe it's HTML5 file (local path).
-			$source       = 'html5';
-			$source_html5 = $url;
-		}
-
-		$video_info = array(
-			'source'              => $source,
-			'source_video_id'     => '',
-			'poster'              => '',
-			'poster_url'          => '',
-			'source_html5'        => $source_html5,
-			'source_external_url' => $source_external_url,
-			'source_shortcode'    => $source_shortcode,
-			'source_youtube'      => $source_youtube,
-			'source_vimeo'        => $source_vimeo,
-			'source_embedded'     => $source_embedded,
-			'runtime'             => array(
-				'hours'   => 0,
-				'minutes' => 0,
-				'seconds' => 0,
-			),
-		);
-
-		return $video_info;
 	}
 
 }

@@ -153,6 +153,16 @@ class CourseMeta implements PostMeta {
 			}
 		}
 
+		// Add separate meta.
+		$video_preview   = get_post_meta( $this->post_id, '_learndash_course_grid_enable_video_preview', true );
+		$video_source    = get_post_meta( $this->post_id, '_learndash_course_grid_video_embed_code', true );
+		$course_duration = get_post_meta( $this->post_id, '_learndash_course_grid_duration', true );
+		if ( $video_preview && $video_source ) {
+			$tutor_meta_map['_video'] = maybe_serialize( tlmt_get_video_source_by_url( $video_source ) );
+		}
+
+		$tutor_meta_map['_course_duration'] = maybe_serialize( tlmt_get_time_duration_in_hour_min( $course_duration ) );
+
 		// Price type.
 		$price_type = $tutor_meta_map['_tutor_course_price_type'];
 		if ( 'open' === $price_type ) {
