@@ -114,15 +114,15 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 = 2.3.0 - 10 July, 2025 =
 
-New: Assignment migration from LearnDash to Tutor
-New: Student progress (lesson, assignment, quiz attempts) migration from LearnDash to Tutor 
-New: Review Migration From LearnDash Courses for LearnDash Course Review addon.
-New: LearnDash Native Order to Tutor Native Order Migration.
-New: LearnDash Buy Now Course to Tutor Paid Course Migration.
-New: Migration to Tutor Native or Tutor WooCommerce orders will now be reflected in Reports page.
-Update: LearnDash Native Order to Tutor WooCommerce and Easy Digital Downloads Orders Migration.
-Update: LearnDash Buy Now Course to Tutor WooCommerce and Easy Digital Downloads Product Migration.
-Fix: Course builder crush when try open LearnDash to Tutor migrated quiz
+New: Added support for migrating assignments from LearnDash to Tutor LMS.
+New: Student progress (lessons, assignments, and quiz attempts) can now be migrated from LearnDash to Tutor LMS.
+New: Course reviews from the LearnDash Course Review addon can now be migrated to Tutor LMS.
+New: Migrate LearnDash Native Orders to Tutor LMS native orders.
+New: Migrate LearnDash “Buy Now” courses to Tutor LMS paid courses.
+New: Orders migrated to Tutor Native or Tutor WooCommerce are now reflected in the Reports page.
+Update: Migrate LearnDash Native Orders to Tutor WooCommerce and Easy Digital Downloads.
+Update: Migrate LearnDash “Buy Now” courses to Tutor WooCommerce and Easy Digital Downloads products.
+Fix: Fixed an issue where the course builder would crash when opening a quiz migrated from LearnDash to Tutor LMS.
 
 = 2.2.2 - 29 August, 2024 =
 
