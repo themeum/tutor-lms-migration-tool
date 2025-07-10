@@ -129,25 +129,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</form>
 					</div>
 					<div class="tutor-backup-area tutor-px-48 tutor-py-36 tutor-border-top">
-						<div class="tutor-row tutor-align-center">
-							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-								<sapn class="backup-now-subtile tutor-fs-7"><?php esc_html_e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
-								<form id="tutor_migration_export_form" method="post">
-									<?php tutor_nonce_field(); ?>
-									<input type="hidden" name="tutor_action" value="tutor_ld_export_xml">
-									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
-									<button <?php echo ! $items_count ? 'disabled' : ''; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium">
-										<?php esc_html_e( 'Backup Now', 'tutor-lms-migration-tool' ); ?>
-									</button>
-								</form>
-							</div>
-							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
-								<span id="total_items_migrate_counts" class="tutor-d-none" data-count="<?php echo esc_attr( $items_count ); ?>"> </span>
-								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary tutor-btn-lg" <?php echo ! $items_count ? 'disabled' : ''; ?> >
-									<?php esc_html_e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
-								</button>
-							</div>
-						</div>
+						<?php require __DIR__ . '/components/migrate-now.php'; ?>
 					</div>
 				</div>
 				<div id="tutor-manual-migrate-tab" class="tutor-tab-item">
