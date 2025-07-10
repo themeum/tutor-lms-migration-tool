@@ -494,12 +494,16 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 							break;
 					}
 
-					$question['question_settings'] = maybe_serialize(
-						array(
-							'question_type' => $result['answer_type'],
-							'question_mark' => $result['points'],
-						)
+					$question_settings = array(
+						'question_type' => $result['answer_type'],
+						'question_mark' => $result['points']
 					);
+
+					if ( 'multiple_choice' === $question['question_type'] ) {
+						$question_settings['has_multiple_correct_answer'] = 1; 
+					}
+
+					$question['question_settings'] = maybe_serialize( $question_settings );
 
 					$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $question );
 
