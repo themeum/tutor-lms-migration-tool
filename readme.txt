@@ -5,7 +5,7 @@ Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 2.2.2
+Stable tag: 2.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -112,7 +112,7 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 
 == Changelog ==
 
-= 2.3.0 - 10 July, 2025 =
+= 2.3.0 - 14 July, 2025 =
 
 New: Added support for migrating assignments from LearnDash to Tutor LMS.
 New: Student progress (lessons, assignments, and quiz attempts) can now be migrated from LearnDash to Tutor LMS.
