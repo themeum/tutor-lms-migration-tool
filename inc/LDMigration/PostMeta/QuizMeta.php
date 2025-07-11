@@ -50,6 +50,7 @@ class QuizMeta implements PostMeta {
 		if ( ! empty( $migrate_able_meta ) ) {
 			// Prepare meta.
 			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
+			return $meta;
 			if ( is_array( $meta ) && count( $meta ) ) {
 				if ( ! tlmt_is_multi_dim_arr( $meta ) ) {
 					$meta = array( $meta );
@@ -103,6 +104,9 @@ class QuizMeta implements PostMeta {
 			'sfwd-quiz_quizModus_single_feedback',
 			'sfwd-quiz_quiz_time_limit_enabled',
 			'sfwd-quiz_timeLimit',
+			'sfwd-quiz_lesson_schedule',
+			'sfwd-quiz_visible_after_specific_date',
+			'sfwd-quiz_visible_after',
 		);
 	}
 
@@ -151,7 +155,7 @@ class QuizMeta implements PostMeta {
 						'unlock_date' => gmdate( 'Y-m-d', $meta['sfwd-quiz_visible_after_specific_date'] ),
 					);
 				} elseif ( 'visible_after' === $meta['sfwd-quiz_lesson_schedule'] && $meta['sfwd-quiz_visible_after'] > 0 ) {
-					$tutor_meta['_content_drip_settings'] = array(
+					$drip_settings['_content_drip_settings'] = array(
 						'after_xdays_of_enroll' => (int) $meta['sfwd-quiz_visible_after'],
 					);
 				}
