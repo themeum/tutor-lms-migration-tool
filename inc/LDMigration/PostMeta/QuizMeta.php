@@ -127,7 +127,7 @@ class QuizMeta implements PostMeta {
 			'question_layout_view'          => ! empty( $meta['sfwd-quiz_quizModus_multiple_questionsPerPage'] ) ? 'question_below_each_other' : 'question_pagination',
 			'time_limit'                    => ! empty( $meta['sfwd-quiz_quiz_time_limit_enabled'] ) && ! empty( $meta['sfwd-quiz_timeLimit'] ) ? array(
 				'time_type'  => 'minutes',
-				'time_value' => (int) $meta['sfwd-quiz_timeLimit'],
+				'time_value' => tlmt_get_minute_by_timestamp( $meta['sfwd-quiz_timeLimit'] ),
 			) : array(
 				'time_type'  => 'minutes',
 				'time_value' => 0,

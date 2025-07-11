@@ -351,3 +351,22 @@ if ( ! function_exists( 'tlmt_get_time_duration_in_hour_min' ) ) {
 		return $res;
 	}
 }
+
+if ( ! function_exists( 'tlmt_get_minute_by_timestamp' ) ) {
+	/**
+	 * Get readable formatted time using a timestamp
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int|string $time Timestamp.
+	 *
+	 * @return int
+	 */
+	function tlmt_get_minute_by_timestamp( $time ) {
+		if ( ! $time ) {
+			return 0;
+		}
+
+		return floor( $time / 60 );
+	}
+}
