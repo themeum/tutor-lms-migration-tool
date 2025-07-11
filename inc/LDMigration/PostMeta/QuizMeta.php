@@ -150,17 +150,17 @@ class QuizMeta implements PostMeta {
 			$drip_settings = array();
 			if ( ! empty( $meta['sfwd-quiz_lesson_schedule'] ) ) {
 				if ( 'visible_after_specific_date' === $meta['sfwd-quiz_lesson_schedule'] && $meta['sfwd-quiz_visible_after_specific_date'] > 0 ) {
-					$drip_settings['_content_drip_settings'] = array(
+					$drip_settings = array(
 						'unlock_date' => gmdate( 'Y-m-d', $meta['sfwd-quiz_visible_after_specific_date'] ),
 					);
 				} elseif ( 'visible_after' === $meta['sfwd-quiz_lesson_schedule'] && $meta['sfwd-quiz_visible_after'] > 0 ) {
-					$drip_settings['_content_drip_settings'] = array(
+					$drip_settings = array(
 						'after_xdays_of_enroll' => (int) $meta['sfwd-quiz_visible_after'],
 					);
 				}
 
 				// Serialize the data.
-				$tutor_quiz_settings['content_drip_settings'] = maybe_serialize( $drip_settings );
+				$drip_settings = maybe_serialize( $drip_settings );
 			}
 		}
 

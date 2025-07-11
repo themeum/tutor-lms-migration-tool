@@ -552,7 +552,6 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 				}
 
 				update_post_meta( $old_quiz_id, 'tutor_migrated_question_answer_map', $migrate_map );
-				do_action( 'tlmt_quiz_migrated', $old_quiz_id, MigrationTypes::LD_TO_TUTOR );
 			}
 		}
 
@@ -635,6 +634,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 					$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 					if ( $quiz_id ) {
 						$this->migrate_quiz( $quiz_id );
+						do_action( 'tlmt_quiz_migrated', $quiz_id, MigrationTypes::LD_TO_TUTOR );
 					}
 				}
 			}

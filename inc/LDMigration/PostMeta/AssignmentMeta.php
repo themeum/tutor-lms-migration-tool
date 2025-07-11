@@ -159,11 +159,11 @@ class AssignmentMeta implements PostMeta {
 		$drip_settings = array();
 		if ( ! empty( $meta[ "{$this->post_type}_lesson_schedule" ] ) ) {
 			if ( 'visible_after_specific_date' === $meta[ "{$this->post_type}_lesson_schedule" ] && $meta[ "{$this->post_type}_visible_after_specific_date" ] > 0 ) {
-				$drip_settings['_content_drip_settings'] = array(
+				$drip_settings = array(
 					'unlock_date' => gmdate( 'Y-m-d', $meta[ "{$this->post_type}_visible_after_specific_date" ] ),
 				);
 			} elseif ( 'visible_after' === $meta[ "{$this->post_type}_lesson_schedule" ] && $meta[ "{$this->post_type}_visible_after" ] > 0 ) {
-				$drip_settings['_content_drip_settings'] = array(
+				$drip_settings = array(
 					'after_xdays_of_enroll' => (int) $meta[ "{$this->post_type}_visible_after" ],
 				);
 			}
