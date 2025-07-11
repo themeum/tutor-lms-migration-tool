@@ -13,7 +13,7 @@
 	<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
 		<div class="backup-now-subtile tutor-fs-7 tutor-color-warning">
 			<i class="tutor-icon-warning"></i>	
-			<sapn><?php esc_html_e( 'We recommend to take a database backup before proceeding.', 'tutor-lms-migration-tool' ); ?></sapn>
+			<sapn><?php esc_html_e( 'We recommend that you take a database backup before proceeding.', 'tutor-lms-migration-tool' ); ?></sapn>
 		</div>
 		<form id="tutor_migration_export_form" method="post">
 			<?php tutor_nonce_field(); ?>

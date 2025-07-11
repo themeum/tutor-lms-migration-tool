@@ -153,6 +153,7 @@ jQuery(document).ready(function ($) {
             countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete);
         }
     }
+
     function migrate_reviews($formData) {
         $.ajax({
             url: ajaxurl,
@@ -187,10 +188,8 @@ jQuery(document).ready(function ($) {
                         $('.lp-success-modal').addClass('active');
                     }
                 } else {
-                    tutor_toast(__('Failed', 'tutor-lms-migration-tool'), __('Migration Failed', 'tutor-lms-migration-tool'), 'error');
+                     $('.lp-error-modal').addClass('active');
                 }
-
-                
             },
             complete: function () {
                 clearTimeout(countReviewsProgress);
@@ -213,7 +212,6 @@ jQuery(document).ready(function ($) {
     var migrateModalClose = $('.modal-close.migration-modal-close');
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
     var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
-
     var tutorMigrationUploadArea = $('.tutor-migration-upload-area');
 
     function activeModal(activeItem) {

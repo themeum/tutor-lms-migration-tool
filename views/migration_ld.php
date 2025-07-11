@@ -288,7 +288,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php esc_html_e( 'Migration from LearnDash to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?> 
 			</div>
 			<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				<?php esc_html_e( 'Go to dashboard', 'tutor-lms-migration-tool' ); ?>
+				<?php esc_html_e( 'Go to courses', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>
