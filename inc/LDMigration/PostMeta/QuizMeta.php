@@ -50,7 +50,6 @@ class QuizMeta implements PostMeta {
 		if ( ! empty( $migrate_able_meta ) ) {
 			// Prepare meta.
 			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
-			return $meta;
 			if ( is_array( $meta ) && count( $meta ) ) {
 				if ( ! tlmt_is_multi_dim_arr( $meta ) ) {
 					$meta = array( $meta );
