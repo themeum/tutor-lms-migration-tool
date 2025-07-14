@@ -11,6 +11,7 @@
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * Text Domain: tutor-lms-migration-tool
+ * Requires Plugins: tutor
  *
  * @package TutorLMSMigrationTool
  */
@@ -22,7 +23,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Themeum\TutorLMSMigrationTool\Init;
-use TutorLMSMigrationTool\TLMT\Dependency;
 
 /**
  * Defining Constant
@@ -85,17 +85,6 @@ TutorLMSMigrationTool::instance();
 
 // Init.
 new Init();
-
-add_action(
-	'plugins_loaded',
-	function() {
-		$dependency = new Dependency();
-		if ( ! $dependency->is_tutor_core_has_req_verion() ) {
-			add_action( 'admin_notices', array( $dependency, 'show_admin_notice' ) );
-			return;
-		}
-	}
-);
 
 if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 
