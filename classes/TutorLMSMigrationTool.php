@@ -48,20 +48,36 @@ final class TutorLMSMigrationTool {
 	 * Register hook and dependencies.
 	 */
 	public function __construct() {
+		add_action( 'plugins_loaded', array( $this, 'init' ), 9 );
+	}
+
+	/**
+	 * Initialize all the scripts
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return void
+	 */
+	public function init() {
+		$has_req_version = version_compare( TUTOR_VERSION, TLMT_TUTOR_CORE_REQ_VERSION, '>=' );
+
 		include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 		$this->load_assets();
 		add_filter( 'plugin_action_links_' . plugin_basename( TLMT_FILE ), array( $this, 'plugin_action_links' ) );
 
-		if ( $this->check_installed() ) {
-			$this->used_classes();
-			$this->classes_initialize();
+		if ( $has_req_version ) {
+			if ( $this->check_installed() ) {
+				$this->used_classes();
+				$this->classes_initialize();
+			} else {
+				add_action( 'wp_ajax_install_tutor_plugin', array( $this, 'install_tutor_plugin' ) );
+				add_action( 'admin_action_activate_tutor_free', array( $this, 'activate_tutor_free' ) );
+			}
 		} else {
-			add_action( 'wp_ajax_install_tutor_plugin', array( $this, 'install_tutor_plugin' ) );
-			add_action( 'admin_action_activate_tutor_free', array( $this, 'activate_tutor_free' ) );
+			add_action( 'admin_notices', array( $this, 'check_if_ld_lp_is_activated' ) );
+			add_action( 'admin_notices', array( $this, 'free_plugin_installed_but_inactive_notice' ) );
 		}
-		add_action( 'admin_notices', array( $this, 'check_if_ld_lp_is_activated' ) );
-		add_action( 'admin_notices', array( $this, 'free_plugin_installed_but_inactive_notice' ) );
 	}
 
 	/**
@@ -88,7 +104,7 @@ final class TutorLMSMigrationTool {
 	 * @return bool
 	 */
 	public function check_installed() {
-		return;
+		return true;
 	}
 
 	/**
