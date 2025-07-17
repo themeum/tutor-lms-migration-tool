@@ -5,7 +5,7 @@ Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -125,6 +125,10 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.3.1 - 17 July, 2025 =
+
+Fix: Fixed an issue where the vendor autoload file was missing.
 
 = 2.3.0 - 15 July, 2025 =
 
