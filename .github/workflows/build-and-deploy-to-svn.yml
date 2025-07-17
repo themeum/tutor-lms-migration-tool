@@ -10,8 +10,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Composer
-        run: sudo apt-get update && sudo apt-get install -y composer
+      - name: Install PHP and Composer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-cli unzip curl php-mbstring php-xml
+          curl -sS https://getcomposer.org/installer | php
+          sudo mv composer.phar /usr/local/bin/composer
+
+      - name: Install Composer Dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
 
       - name: WordPress Plugin Deploy
         id: deploy
