@@ -1,0 +1,21 @@
+{
+    "name": "themeum/tutor-lms-migration-tool",
+    "autoload": {
+        "classmap": [
+            "classes/"
+        ],
+        "psr-4": {
+            "Themeum\\TutorLMSMigrationTool\\": "inc/"
+        },
+        "files": [
+            "inc/Functions.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "themeum",
+            "email": "support@themeum.com"
+        }
+    ],
+    "require": {}
+}

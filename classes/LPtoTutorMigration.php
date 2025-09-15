@@ -187,12 +187,17 @@ if ( ! class_exists('LPtoTutorMigration')){
 						if ($lesson['post_type'] === 'tutor_quiz'){
 							$quiz_id = tutils()->array_get('ID', $lesson);
 
-							$questions = $wpdb->get_results("SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
-						FROM {$wpdb->prefix}learnpress_quiz_questions
-						LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
-						LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
-						LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
-						WHERE quiz_id = {$quiz_id}  ");
+							$questions = $wpdb->get_results(
+								$wpdb->prepare(
+									"SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
+									FROM {$wpdb->prefix}learnpress_quiz_questions
+									LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
+									LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
+									LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
+									WHERE quiz_id = %d ",
+									$quiz_id 
+								)
+							);
 
 							if (tutils()->count($questions)){
 								foreach ($questions as $question) {
@@ -223,7 +228,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 										$wpdb->insert($wpdb->prefix.'tutor_quiz_questions', $new_question_data);
 										$question_id = $wpdb->insert_id;
 
-										$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
+										$answer_items = $wpdb->get_results( $wpdb->prepare( "SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = %d ", $question->question_id) );
 
 										if (tutils()->count($answer_items)){
 											foreach ($answer_items as $answer_item){
@@ -372,13 +377,17 @@ if ( ! class_exists('LPtoTutorMigration')){
 			 * Course Complete Status Migration
 			 */
 			
-			$lp_course_complete_datas = $wpdb->get_results( "SELECT lp_user_items.*,
-				lp_order.ID as order_id,
-				lp_order.post_date as order_time
+			$lp_course_complete_datas = $wpdb->get_results( 
+				$wpdb->prepare(
+					"SELECT lp_user_items.*,
+					lp_order.ID as order_id,
+					lp_order.post_date as order_time
 
-				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-				WHERE item_id = {$course_id} AND item_type = 'lp_course' AND graduation ='passed'"
+					FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+					LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+					WHERE item_id = %d AND item_type = 'lp_course' AND graduation ='passed'",
+					$course_id
+				)
 			);
 
 			foreach ($lp_course_complete_datas as $lp_course_complete_data){
@@ -420,13 +429,16 @@ if ( ! class_exists('LPtoTutorMigration')){
 			 * Enrollment Migration to this course
 			 */
 			$lp_enrollments = $wpdb->get_results( 
-				"SELECT lp_user_items.*,
-				lp_order.ID as order_id,
-				lp_order.post_date as order_time
+				$wpdb->prepare(
+					"SELECT lp_user_items.*,
+					lp_order.ID as order_id,
+					lp_order.post_date as order_time
 
-				FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-				LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-				WHERE item_id = {$course_id} AND ref_type = 'lp_order'" 
+					FROM {$wpdb->prefix}learnpress_user_items lp_user_items
+					LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
+					WHERE item_id = %d AND ref_type = 'lp_order'",
+					$course_id
+				)
 			);
 
 			foreach ($lp_enrollments as $lp_enrollment){
@@ -493,7 +505,12 @@ if ( ! class_exists('LPtoTutorMigration')){
 					$wpdb->insert($wpdb->prefix.'woocommerce_order_items', $item_data);
 					$order_item_id = (int) $wpdb->insert_id;
 
-					$lp_item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->prefix}learnpress_order_itemmeta WHERE learnpress_order_item_id = {$item->id} ");
+					$lp_item_metas = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT meta_key, meta_value FROM {$wpdb->prefix}learnpress_order_itemmeta WHERE learnpress_order_item_id = %d ",
+							$item->id
+						)
+					);
 
 					$lp_formatted_metas = array();
 					foreach ($lp_item_metas as $item_meta) {
@@ -532,7 +549,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 				update_post_meta($order_id, '_customer_ip_address', get_post_meta($order_id, '_user_ip_address', true));
 				update_post_meta($order_id, '_customer_user_agent', get_post_meta($order_id, '_user_agent', true));
 
-				$user_email = $wpdb->get_var("SELECT user_email from {$wpdb->users} WHERE ID = {$lp_order->post_author} ");
+				$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $lp_order->post_author ) );
 				update_post_meta($order_id, '_billing_address_index', $user_email );
 				update_post_meta($order_id, '_billing_email', $user_email );
 			}
@@ -576,7 +593,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function get_lp_order_items($order_id){
 			global $wpdb;
 
-			$query = $wpdb->prepare( "
+			$results = $wpdb->get_results( $wpdb->prepare( "
 			SELECT order_item_id as id, order_item_name as name
 				, oim.meta_value as `course_id`
 				# , oim2.meta_value as `quantity`
@@ -585,9 +602,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 				INNER JOIN {$wpdb->learnpress_order_itemmeta} oim ON oi.order_item_id = oim.learnpress_order_item_id AND oim.meta_key='_course_id'
 				# INNER JOIN {$wpdb->learnpress_order_itemmeta} oim2 ON oi.order_item_id = oim2.learnpress_order_item_id AND oim2.meta_key='_quantity'
 				# INNER JOIN {$wpdb->learnpress_order_itemmeta} oim3 ON oi.order_item_id = oim3.learnpress_order_item_id AND oim3.meta_key='_total'
-			WHERE order_id = %d ", $order_id );
+			WHERE order_id = %d ", $order_id ) );
 
-			return $wpdb->get_results( $query );
+			return $results;
 		}
 
 
@@ -830,7 +847,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 					}
 
 
-					$course_metas = $wpdb->get_results("SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}");
+					$course_metas = $wpdb->get_results( $wpdb->prepare( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = %d ", $course_id ) );
 
 					$xml .= $this->start_element('course_meta');
 					foreach ($course_metas as $course_meta){
@@ -895,7 +912,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 									$xml .= $this->start_element('item_meta');
 
-									$item_metas = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = {$lesson->id} ");
+									$item_metas = $wpdb->get_results( $wpdb->prepare( "SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d ", $lesson->id ) );
 
 									if (is_array($item_metas) && count($item_metas)){
 										foreach ($item_metas as $item_meta){
@@ -908,12 +925,17 @@ if ( ! class_exists('LPtoTutorMigration')){
 									if ($lesson_post_type === 'tutor_quiz'){
 										$quiz_id = $lesson->id;
 
-										$questions = $wpdb->get_results("SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
-										FROM {$wpdb->prefix}learnpress_quiz_questions
-										LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
-										LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
-										LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
-										WHERE quiz_id = {$quiz_id}  ");
+										$questions = $wpdb->get_results(
+											$wpdb->prepare(
+												"SELECT question_id, question_order, questions.ID, questions.post_content, questions.post_title, question_type_meta.meta_value as question_type, question_mark_meta.meta_value as question_mark
+												FROM {$wpdb->prefix}learnpress_quiz_questions
+												LEFT JOIN {$wpdb->posts} questions on question_id = questions.ID
+												LEFT JOIN {$wpdb->postmeta} question_type_meta on question_id = question_type_meta.post_id AND question_type_meta.meta_key = '_lp_type'
+												LEFT JOIN {$wpdb->postmeta} question_mark_meta on question_id = question_mark_meta.post_id AND question_mark_meta.meta_key = '_lp_mark'
+												WHERE quiz_id = %d  ",
+												$quiz_id
+											)
+										);
 
 										if (tutils()->count($questions)){
 
@@ -946,7 +968,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 														$xml .= "<{$question_key}>$question_value</{$question_key}>\n";
 													}
 
-													$answer_items = $wpdb->get_results("SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = {$question->question_id} ");
+													$answer_items = $wpdb->get_results( $wpdb->prepare( "SELECT * from {$wpdb->prefix}learnpress_question_answers where question_id = %d ", $question->question_id ) );
 
 													if (tutils()->count($answer_items)){
 														foreach ($answer_items as $answer_item){
@@ -1046,7 +1068,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 		public function get_lp_section_items( $section_id  ) {
 			global $wpdb;
 
-			$query = $wpdb->prepare( "
+			$results = $wpdb->get_results( $wpdb->prepare( "
 			SELECT item_id id, item_type, it.post_author, it.post_date, it.post_content, it.post_title, it.post_excerpt
 
 			FROM {$wpdb->learnpress_section_items} si
@@ -1058,9 +1080,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 			WHERE s.section_id = %d
 			AND it.post_status = %s
 			ORDER BY si.item_order, si.section_item_id ASC
-		", $section_id, /*'publish',*/ 'publish' );
+		", $section_id, /*'publish',*/ 'publish' ) );
 
-			return $wpdb->get_results( $query );
+			return $results;
 		}
 	}
 }

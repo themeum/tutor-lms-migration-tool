@@ -64,7 +64,7 @@ if (! class_exists('LDtoTutorExport')) {
                         foreach ($course_arr as $course_col => $course_col_value) {
                             $xml .= "<{$course_col}>{$course_col_value}</{$course_col}>\n";
                         }
-                        $course_metas = $wpdb->get_results("SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = {$course_id}");
+                        $course_metas = $wpdb->get_results( $wpdb->prepare( "SELECT meta_key, meta_value from {$wpdb->postmeta} where post_id = %d", $course_id ) );
 
                         $xml .= $this->start_element('course_meta');
                         foreach ($course_metas as $course_meta){
@@ -244,7 +244,9 @@ if (! class_exists('LDtoTutorExport')) {
                 foreach ($question_ids as $question_single) {
                     $question_id = get_post_meta($question_single, 'question_pro_id', true);
 
-                    $result = $wpdb->get_row("SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = {$question_id}", ARRAY_A);
+                    $result = $wpdb->get_row(
+                        $wpdb->prepare( "SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = %d", $question_id )
+                        , ARRAY_A);
 
                     $question = array();
                     switch ($result['answer_type']) {

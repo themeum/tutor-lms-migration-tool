@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     'use strict';
-
+    const {__} = wp.i18n;
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -61,9 +61,6 @@ jQuery(document).ready(function ($) {
 
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
-
-        // console.log(this);
-        // console.log($that.attr('action'));
      
 
         let final_types = 'lp';
@@ -156,6 +153,7 @@ jQuery(document).ready(function ($) {
             countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete);
         }
     }
+
     function migrate_reviews($formData) {
         $.ajax({
             url: ajaxurl,
@@ -178,7 +176,19 @@ jQuery(document).ready(function ($) {
                         migration_vendor : migration_vendor,
                         action: 'insert_tutor_migration_data'
                     });
-                    $('.lp-success-modal').addClass('active');
+                }
+
+                const res = data.data;
+                const { total_course_count = 0, failed = []} = res || {};
+                
+                if (Number(total_course_count) > 0) {
+                    if (failed.length > 0) {
+                        $('.lp-success-modal').addClass('active');
+                    } else {
+                        $('.lp-success-modal').addClass('active');
+                    }
+                } else {
+                     $('.lp-error-modal').addClass('active');
                 }
             },
             complete: function () {
@@ -202,7 +212,6 @@ jQuery(document).ready(function ($) {
     var migrateModalClose = $('.modal-close.migration-modal-close');
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
     var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
-
     var tutorMigrationUploadArea = $('.tutor-migration-upload-area');
 
     function activeModal(activeItem) {

@@ -1,0 +1,189 @@
+<?php
+/**
+ * Assignment meta migrator class
+ *
+ * @package TutorLMSMigrationTool
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.3.0
+ */
+
+namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
+
+use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
+
+/**
+ * Handle assignment meta migration
+ */
+class AssignmentMeta implements PostMeta {
+
+	/**
+	 * Current post id
+	 *
+	 * @since 2.3.0
+	 *
+	 * @var int
+	 */
+	private $post_id;
+
+	/**
+	 * Current post type.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @var string
+	 */
+	private $post_type;
+
+	const POST_TYPES = array(
+		'sfwd-lessons' => ContentTypes::LD_LESSONS,
+		'sfwd-topic'   => ContentTypes::LD_TOPIC,
+	);
+
+	/**
+	 * Migrate assignment meta
+	 *
+	 * Migrate meta that are associated with the give post id.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param integer $post_id Post id.
+	 * @param string  $post_type Post Type.
+	 *
+	 * @throws \Throwable If Database error occur.
+	 *
+	 * @return void
+	 */
+	public function migrate( int $post_id, string $post_type = 'sfwd-lessons' ) {
+		global $wpdb;
+
+		$this->post_id   = $post_id;
+		$this->post_type = self::POST_TYPES[ $post_type ];
+
+		$migrate_able_meta = $this->get_migrate_able_meta();
+
+		if ( ! empty( $migrate_able_meta ) ) {
+			// Prepare meta.
+			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
+			if ( is_array( $meta ) && count( $meta ) ) {
+				if ( ! tlmt_is_multi_dim_arr( $meta ) ) {
+					$meta = array( $meta );
+				}
+
+				try {
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, false, false );
+				} catch ( \Throwable $th ) {
+					throw $th;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get all the migrate-able meta from the given post id
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return array
+	 */
+	private function get_migrate_able_meta(): array {
+
+		$post_type = "_{$this->post_type}";
+
+		$all_meta = get_post_meta( $this->post_id, $post_type, true );
+		if ( ! empty( $all_meta ) ) {
+			$migrate_able_meta = $this->migrate_able_meta();
+
+			return array_intersect_key( $all_meta, array_flip( $migrate_able_meta ) );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Get all the meta that is migrate-able
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return array
+	 */
+	private function migrate_able_meta() {
+
+		return array(
+			"{$this->post_type}_assignment_upload_limit_count",
+			"{$this->post_type}_assignment_upload_limit_size",
+			"{$this->post_type}_lesson_assignment_points_amount",
+			"{$this->post_type}_forced_lesson_time",
+			"{$this->post_type}_forced_lesson_time_enabled",
+			"{$this->post_type}_lesson_schedule",
+			"{$this->post_type}_visible_after",
+			"{$this->post_type}_visible_after_specific_date",
+		);
+	}
+
+	/**
+	 * Map all ld meta to tutor meta for migration
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array $meta Mapped meta, ready to migrate.
+	 *
+	 * @return array Multi-dimension array with meta key and value.
+	 */
+	private function ld_to_tutor_meta_map( array $meta ): array {
+
+		$course = get_post_meta( $this->post_id, 'course_id', true );
+
+		$assignment_settings = array(
+			'upload_files_limit'     => isset( $meta[ "{$this->post_type}_assignment_upload_limit_count" ] ) ? (int) $meta[ "{$this->post_type}_assignment_upload_limit_count" ] : 1,
+			'upload_file_size_limit' => isset( $meta[ "{$this->post_type}_assignment_upload_limit_size" ] ) ? (int) $meta[ "{$this->post_type}_assignment_upload_limit_size" ] : 2,
+			'total_mark'             => isset( $meta[ "{$this->post_type}_lesson_assignment_points_amount" ] ) ? (int) $meta[ "{$this->post_type}_lesson_assignment_points_amount" ] : 10,
+			'pass_mark'              => isset( $meta[ "{$this->post_type}_lesson_assignment_points_amount" ] ) ? ceil( (int) $meta[ "{$this->post_type}_lesson_assignment_points_amount" ] / 2 ) : 5,
+			'time_duration'          => array(
+				'time'  => 'days',
+				'value' => isset( $meta[ "{$this->post_type}_forced_lesson_time" ] ) ? (int) $meta[ "{$this->post_type}_forced_lesson_time" ] : 1,
+			),
+			'deadline_from_start'    => 1,
+		);
+
+		$assignment_meta = array(
+			'_tutor_assignment_total_mark'     => $assignment_settings['total_mark'] ?? 10,
+			'_tutor_assignment_pass_mark'      => $assignment_settings['pass_mark'],
+			'_tutor_course_id_for_assignments' => $course ?? 0,
+			'_content_drip_settings'           => '',
+			'assignment_option'                => maybe_serialize( $assignment_settings ),
+		);
+
+		$drip_settings = array();
+		if ( ! empty( $meta[ "{$this->post_type}_lesson_schedule" ] ) ) {
+			if ( 'visible_after_specific_date' === $meta[ "{$this->post_type}_lesson_schedule" ] && $meta[ "{$this->post_type}_visible_after_specific_date" ] > 0 ) {
+				$drip_settings = array(
+					'unlock_date' => gmdate( 'Y-m-d', $meta[ "{$this->post_type}_visible_after_specific_date" ] ),
+				);
+			} elseif ( 'visible_after' === $meta[ "{$this->post_type}_lesson_schedule" ] && $meta[ "{$this->post_type}_visible_after" ] > 0 ) {
+				$drip_settings = array(
+					'after_xdays_of_enroll' => (int) $meta[ "{$this->post_type}_visible_after" ],
+				);
+			}
+
+			// Serialize the data.
+			$assignment_meta['_content_drip_settings'] = maybe_serialize( $drip_settings );
+		}
+
+		// Prepare to post meta to make it insert-able.
+		$prepared_meta = array();
+
+		foreach ( $assignment_meta as $key => $value ) {
+			$meta            = array(
+				'post_id'    => $this->post_id,
+				'meta_key'   => $key,
+				'meta_value' => $value,
+			);
+			$prepared_meta[] = $meta;
+		}
+
+		return $prepared_meta;
+	}
+}
