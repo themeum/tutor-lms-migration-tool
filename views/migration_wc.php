@@ -1,5 +1,17 @@
-<?php if ( ! defined( 'ABSPATH' ) ) {
-	exit; } ?>
+<?php
+/**
+ * WC migration view
+ *
+ * @package TutorLMSMigrationTool\Views
+
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.4.0
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+?>
 <div class="tutor-migration-page">
 
 	<div id="tutor-migration-wrapper">
@@ -21,12 +33,12 @@
 			<div class="tutor-migration-tab">
 				<ul class="tutor-nav">
 					<li class="tutor-nav-item">
-						<a class="tutor-nav-link is-active" href="#" data-tutor-nav-target="tutor-auto-migrate-tab">
-							<?php esc_html_e( 'Auto Migrate', 'tutor-lms-migration-tool' ); ?>
+						<a class="tutor-nav-link is-active" href="#" data-tutor-nav-target="tutor-wc-auto-migrate-tab">
+							<?php esc_html_e( 'Automated Migration', 'tutor-lms-migration-tool' ); ?>
 						</a>
 					</li>
 					<li class="tutor-nav-item">
-						<a class="tutor-nav-link" href="#" data-tutor-nav-target="tutor-custom-migrate-tab">
+						<a class="tutor-nav-link" href="#" data-tutor-nav-target="tutor-wc-custom-migrate-tab">
 							<?php esc_html_e( 'Custom Migration', 'tutor-lms-migration-tool' ); ?>
 						</a>
 					</li>
@@ -35,9 +47,9 @@
 
 			<!-- Auto Migrate -->
 			<div class="tutor-migration-tab-item">
-				<div id="tutor-auto-migrate-tab" class="tutor-tab-item is-active">
-					<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
-						<form>
+				<form id="wc-sales-data-migration-form">
+					<div id="tutor-wc-auto-migrate-tab" class="tutor-tab-item is-active">
+						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
 								<!-- Courses -->
 								<div id="sectionCourse">
@@ -49,10 +61,10 @@
 											</div>
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													<?php esc_html_e( 'Courses', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Orders', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php esc_html_e( 'Transfer courses, lessons, quizzes, assignments, etc to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'History and fulfillment data.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress:0%;"></div>
 											</div>
@@ -69,10 +81,10 @@
 											</div>
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													<?php esc_html_e( 'Sales Data', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Customers', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php esc_html_e( 'Migrate revenue and sales data to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Includes profiles, contact info, and billing details.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress:0%;"></div>
 											</div>
@@ -89,10 +101,29 @@
 											</div>
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													<?php esc_html_e( 'Reviews', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Coupons', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php esc_html_e( 'All of the course reviews will be carried over to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Promotional codes, offers, and usage history.', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress:0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
+								<!-- Subscriptions -->
+								<div id="sectionSubscriptions" class="tutor-py-16">
+									<label>
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Subscriptions', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php esc_html_e( 'Payment plans, subscription data, and reports.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress:0%;"></div>
 											</div>
@@ -100,63 +131,49 @@
 									</label>
 								</div>
 							</div>
-						</form>
-					</div>
-					<div class="tutor-auto-migrate-tab-footer tutor-px-48 tutor-py-36 tutor-border-top">
-						<div class="tutor-row tutor-align-center">
-							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-								<span class="backup-now-subtile tutor-fs-7">
-									<?php esc_html_e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?>
-								</span>
-								<button type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black">
-									<?php esc_html_e( 'Backup Now', 'tutor-lms-migration-tool' ); ?>
-								</button>
-							</div>
-							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
-								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary tutor-btn-lg">
-									<?php esc_html_e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
-								</button>
-							</div>
 						</div>
 					</div>
-				</div>
 
-				<!-- Custom Migration -->
-				<div id="tutor-custom-migrate-tab" class="tutor-tab-item">
-					<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
-						<form>
+					<!-- Custom Migration -->
+					<div id="tutor-wc-custom-migrate-tab" class="tutor-tab-item">
+						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
 								<!-- Checkbox Option -->
 								<div class="tutor-py-16">
 									<label>
-										<input type="checkbox" name="courses">
-										<?php esc_html_e( 'Courses', 'tutor-lms-migration-tool' ); ?>
+										<input type="checkbox" name="contents[]" value="orders">
+										<?php esc_html_e( 'Orders', 'tutor-lms-migration-tool' ); ?>
 									</label>
 								</div>
 								<div class="tutor-py-16">
 									<label>
-										<input type="checkbox" name="sales_data">
-										<?php esc_html_e( 'Sales Data', 'tutor-lms-migration-tool' ); ?>
+										<input type="checkbox" name="contents[]" value="customers">
+										<?php esc_html_e( 'Customers', 'tutor-lms-migration-tool' ); ?>
 									</label>
 								</div>
 								<div class="tutor-py-16">
 									<label>
-										<input type="checkbox" name="reviews">
-										<?php esc_html_e( 'Reviews', 'tutor-lms-migration-tool' ); ?>
+										<input type="checkbox" name="contents[]" value="coupons">
+										<?php esc_html_e( 'Coupons', 'tutor-lms-migration-tool' ); ?>
+									</label>
+								</div>
+								<div class="tutor-py-16">
+									<label>
+										<input type="checkbox" name="contents[]" value="subscriptions">
+										<?php esc_html_e( 'Subscriptions', 'tutor-lms-migration-tool' ); ?>
 									</label>
 								</div>
 							</div>
-						</form>
+						</div>
+
 					</div>
 					<div class="tutor-px-48 tutor-py-36 tutor-border-top">
 						<div class="tutor-row tutor-align-center">
 							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-								<span class="backup-now-subtile tutor-fs-7">
-									<?php esc_html_e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?>
-								</span>
-								<button type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black">
-									<?php esc_html_e( 'Backup Now', 'tutor-lms-migration-tool' ); ?>
-								</button>
+								<div class="tutor-d-flex tutor-gap-1 tutor-align-center">
+								<i class="tutor-icon-warning tutor-color-warning"></i>
+								<span class="backup-now-subtile tutor-fs-7">Please take a complete backup for safety.</span>
+								</div>
 							</div>
 							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
 								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary tutor-btn-lg">
@@ -165,7 +182,7 @@
 							</div>
 						</div>
 					</div>
-				</div>
+				</form>
 			</div>
 		</div>
 	</div>
