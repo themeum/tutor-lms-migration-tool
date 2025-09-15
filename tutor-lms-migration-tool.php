@@ -84,7 +84,12 @@ register_uninstall_hook( __FILE__, 'tutor_migration_tool_deleted' );
 TutorLMSMigrationTool::instance();
 
 // Init.
-new Init();
+add_action(
+	'plugins_loaded',
+	function() {
+		new Init();
+	}
+);
 
 if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 
