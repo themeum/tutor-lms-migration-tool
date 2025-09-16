@@ -19,9 +19,12 @@ interface MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @param mixed $data Data that we want to migrate. Data type vary
+	 * based on the source & extraction logics.
+	 *
 	 * @return mixed
 	 */
-	public function extract();
+	public function extract( $data );
 
 	/**
 	 * Transform extracted data

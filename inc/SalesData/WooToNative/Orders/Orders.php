@@ -24,24 +24,15 @@ defined( 'ABSPATH' ) || exit;
 class Order implements MigrationTemplate {
 
 	/**
-	 * Resolve props
-	 *
-	 * @since 2.4.0
-	 *
-	 * @param int|WC_Order $order Order id object.
-	 */
-	public function __construct( $order ) {
-		$this->order = $order;
-	}
-
-	/**
 	 * Extract order data
 	 *
 	 * @since 2.4.0
 	 *
+	 * @param int|object $order Order id or object.
+	 *
 	 * @return WC_Order
 	 */
-	public function extract() {
+	public function extract( $order ) {
 		return $this->order;
 	}
 

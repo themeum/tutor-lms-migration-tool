@@ -47,4 +47,10 @@ abstract class ContentTypes {
 
 	const LD_TOPIC   = 'sfwd-topic';
 	const LD_LESSONS = 'sfwd-lessons';
+
+	// Sales data content types.
+	const SALES_ORDER         = 'orders';
+	const SALES_COUPONS       = 'coupons';
+	const SALES_SUBSCRIPTIONS = 'subscriptions';
+	const SALES_CUSTOMERS     = 'customers';
 }
