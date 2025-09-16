@@ -172,7 +172,7 @@ defined( 'ABSPATH' ) || exit;
 							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
 								<div class="tutor-d-flex tutor-gap-1 tutor-align-center">
 								<i class="tutor-icon-warning tutor-color-warning"></i>
-								<span class="backup-now-subtile tutor-fs-7">Please take a complete backup for safety.</span>
+								<span class="backup-now-subtile tutor-fs-7"><?php esc_html_e( 'It\'s highly recommended to back up your data before migration.', 'tutor-lms-migration-tool' ); ?></span>
 								</div>
 							</div>
 							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
