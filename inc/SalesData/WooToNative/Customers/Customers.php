@@ -1,6 +1,6 @@
 <?php
 /**
- * Concrete class to handle order data migration
+ * Concrete class to handle customer data migration
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -16,28 +16,28 @@ use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Order data migration class
+ * Customer data migration class
  *
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Orders implements MigrationTemplate {
+class Customers implements MigrationTemplate {
 
 	/**
-	 * Extract order data
+	 * Extract customer data
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param int|object $order Order id or object.
+	 * @param int|object $customer Customer id or object.
 	 *
-	 * @return WC_Order
+	 * @return mixed
 	 */
-	public function extract( $order ) {
-		return $this->order;
+	public function extract( $customer ) {
+		return $this->customer;
 	}
 
 	/**
-	 * Transform the order data to native order
+	 * Transform the customer data to native customer
 	 *
 	 * @since 2.4.0
 	 *
@@ -48,7 +48,7 @@ class Orders implements MigrationTemplate {
 	}
 
 	/**
-	 * Migrate the order, store in database
+	 * Migrate the customer, store in database
 	 *
 	 * @since 2.4.0
 	 *

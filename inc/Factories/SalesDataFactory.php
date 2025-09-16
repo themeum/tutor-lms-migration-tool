@@ -14,7 +14,7 @@ use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders\Order;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders\Orders;
 
 /**
  * OrderFactory class which gives order migration object based on monetization type.
@@ -37,7 +37,7 @@ abstract class SalesDataFactory {
 		switch ( $migration_type ) {
 			case MigrationTypes::WC_TO_NATIVE:
 				if ( ContentTypes::SALES_ORDER === $content_type ) {
-					return new Order();
+					return new Orders();
 				}
 				break;
 			default:

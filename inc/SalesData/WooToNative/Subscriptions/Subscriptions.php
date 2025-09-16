@@ -1,6 +1,6 @@
 <?php
 /**
- * Concrete class to handle order data migration
+ * Concrete class to handle subscription data migration
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -16,28 +16,28 @@ use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Order data migration class
+ * Subscription data migration class
  *
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Orders implements MigrationTemplate {
+class Subscriptions implements MigrationTemplate {
 
 	/**
-	 * Extract order data
+	 * Extract subscription data
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param int|object $order Order id or object.
+	 * @param int|object $subscription Subscription id or object.
 	 *
-	 * @return WC_Order
+	 * @return mixed
 	 */
-	public function extract( $order ) {
-		return $this->order;
+	public function extract( $subscription ) {
+		return $this->subscription;
 	}
 
 	/**
-	 * Transform the order data to native order
+	 * Transform the subscription data to native subscription
 	 *
 	 * @since 2.4.0
 	 *
@@ -48,7 +48,7 @@ class Orders implements MigrationTemplate {
 	}
 
 	/**
-	 * Migrate the order, store in database
+	 * Migrate the subscription, store in database
 	 *
 	 * @since 2.4.0
 	 *
