@@ -3,7 +3,6 @@
  * WC migration view
  *
  * @package TutorLMSMigrationTool\Views
-
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
  * @since 2.4.0
