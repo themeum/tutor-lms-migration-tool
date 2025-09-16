@@ -13,8 +13,10 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Coupons\Coupons;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Customers\Customers;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders\Orders;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders\Subscriptions;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
 use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 
 /**
@@ -42,9 +44,9 @@ abstract class SalesDataFactory {
 				} elseif ( SalesDataTypes::SUBSCRIPTIONS === $data_type ) {
 					return new Subscriptions();
 				} elseif ( SalesDataTypes::CUSTOMERS === $data_type ) {
-					return new Subscriptions();
+					return new Customers();
 				} elseif ( SalesDataTypes::COUPONS === $data_type ) {
-					return new Subscriptions();
+					return new Coupons();
 				}
 				break;
 			default:

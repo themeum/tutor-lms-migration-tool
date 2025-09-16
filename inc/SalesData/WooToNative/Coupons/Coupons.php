@@ -8,7 +8,7 @@
  * @since 2.4.0
  */
 
-namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
+namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Coupons;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
