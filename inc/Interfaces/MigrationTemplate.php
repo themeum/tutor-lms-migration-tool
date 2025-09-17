@@ -19,8 +19,8 @@ interface MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param mixed $data Data that we want to migrate. Data type vary
-	 * based on the source & extraction logics.
+	 * @param object $data Data that we want to migrate. Data property may
+	 * vary based on the source & extraction logics.
 	 *
 	 * @return mixed
 	 */
