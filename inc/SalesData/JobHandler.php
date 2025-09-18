@@ -8,7 +8,7 @@
  * @since 2.4.0
  */
 
-namespace TutorLMSMigrationTool\SalesData;
+namespace Themeum\TutorLMSMigrationTool\SalesData;
 
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
