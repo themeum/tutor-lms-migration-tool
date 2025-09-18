@@ -43,18 +43,18 @@ interface MigrationTemplate {
 	 * @param object $data Data that we want to migrate. Data property may
 	 * vary based on the source & extraction logics.
 	 *
-	 * @return mixed
+	 * @return MigrationTemplate
 	 */
-	public function extract( $data );
+	public function extract( $data ): MigrationTemplate;
 
 	/**
 	 * Transform extracted data
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return array
+	 * @return MigrationTemplate
 	 */
-	public function transform(): array;
+	public function transform(): MigrationTemplate;
 
 	/**
 	 * Migrate transformed data

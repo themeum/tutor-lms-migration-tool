@@ -24,16 +24,41 @@ defined( 'ABSPATH' ) || exit;
 class Orders implements MigrationTemplate {
 
 	/**
+	 * Get items from source
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param int $limit  Number of items to fetch from source.
+	 * @param int $offset Number of items to skip from source.
+	 *
+	 * @return array
+	 */
+	public function get_items( int $limit = 5, int $offset = 0 ): array {
+		return array();
+	}
+
+	/**
+	 * Total items count from source
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return int
+	 */
+	public function get_total_items_count(): int {
+		return 0;
+	}
+
+	/**
 	 * Extract order data
 	 *
 	 * @since 2.4.0
 	 *
 	 * @param int|object $order Order id or object.
 	 *
-	 * @return WC_Order
+	 * @return MigrationTemplate
 	 */
-	public function extract( $order ) {
-		return $this->order;
+	public function extract( $order ): MigrationTemplate {
+		return $this;
 	}
 
 	/**
@@ -41,10 +66,10 @@ class Orders implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return array
+	 * @return MigrationTemplate
 	 */
-	public function transform(): array {
-		return array();
+	public function transform(): MigrationTemplate {
+		return $this;
 	}
 
 	/**
