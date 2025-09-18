@@ -34,27 +34,6 @@ class JobHandler {
 	const JOB_OPT_NAME = 'tutor_migration_';
 
 	/**
-	 * Get active job from the job data
-	 *
-	 * @since 2.4.0
-	 *
-	 * @param array $job_data Job data array.
-	 *
-	 * @return string|bool Active job key or false if no active job found
-	 */
-	public function get_active_job( array $job_data ) {
-		$requirements = $job_data['job_requirements'];
-		foreach ( $requirements as $key => $requirement ) {
-			if ( $requirement['is_done'] ) {
-				continue;
-			}
-			return $key;
-		}
-
-		return false;
-	}
-
-	/**
 	 * Process the active job
 	 *
 	 * @since 2.4.0
@@ -119,66 +98,24 @@ class JobHandler {
 	}
 
 	/**
-	 * Fetch WooCommerce orders excluding trashed ones.
+	 * Get active job from the job data
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param int $limit  Number of orders to fetch per page.
-	 * @param int $offset Number of orders to skip.
+	 * @param array $job_data Job data array.
 	 *
-	 * @return array Array of orders.
+	 * @return string|bool Active job key or false if no active job found
 	 */
-	public function get_orders( $limit = 10, $offset = 0 ) {
-		$orders = wc_get_orders(
-			array(
-				'limit'   => $limit,
-				'offset'  => $offset,
-				'status'  => $this->get_order_statuses(),
-				'orderby' => 'date',
-				'order'   => 'DESC',
-				'return'  => 'objects',
-			)
-		);
-
-		return $orders;
-	}
-
-	/**
-	 * Get total number of orders
-	 *
-	 * @since 2.4.0
-	 *
-	 * @return int
-	 */
-	public function get_total_orders_count() {
-		$total_query = new WC_Order_Query(
-			array(
-				'status' => $this->get_order_statuses(),
-				'return' => 'ids',
-				'limit'  => -1,
-			)
-		);
-
-		return count( $total_query->get_orders() );
-	}
-
-	/**
-	 * Get order statuses
-	 *
-	 * @since 2.4.0
-	 *
-	 * @return array
-	 */
-	private function get_order_statuses() {
-		$statuses = array_keys( wc_get_order_statuses() );
-		$statuses = array_filter(
-			$statuses,
-			function ( $status ) {
-				return 'wc-trash' !== $status;
+	public function get_active_job( array $job_data ) {
+		$requirements = $job_data['job_requirements'];
+		foreach ( $requirements as $key => $requirement ) {
+			if ( $requirement['is_done'] ) {
+				continue;
 			}
-		);
+			return $key;
+		}
 
-		return $statuses;
+		return false;
 	}
 
 	/**

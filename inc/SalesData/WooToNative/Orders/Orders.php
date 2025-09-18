@@ -12,6 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
+use WC_Order_Query;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -34,7 +35,7 @@ class Orders implements MigrationTemplate {
 	 * @return array
 	 */
 	public function get_items( int $limit = 5, int $offset = 0 ): array {
-		return array();
+		return $this->get_orders( $limit, $offset );
 	}
 
 	/**
@@ -45,7 +46,70 @@ class Orders implements MigrationTemplate {
 	 * @return int
 	 */
 	public function get_total_items_count(): int {
-		return 0;
+		return $this->get_total_orders_count();
+	}
+
+	/**
+	 * Fetch WooCommerce orders excluding trashed ones.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param int $limit  Number of orders to fetch per page.
+	 * @param int $offset Number of orders to skip.
+	 *
+	 * @return array Array of orders.
+	 */
+	public function get_orders( $limit = 10, $offset = 0 ) {
+		$orders = wc_get_orders(
+			array(
+				'limit'   => $limit,
+				'offset'  => $offset,
+				'status'  => $this->get_order_statuses(),
+				'orderby' => 'date',
+				'order'   => 'DESC',
+				'return'  => 'objects',
+			)
+		);
+
+		return $orders;
+	}
+
+	/**
+	 * Get total number of orders
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return int
+	 */
+	public function get_total_orders_count() {
+		$total_query = new WC_Order_Query(
+			array(
+				'status' => $this->get_order_statuses(),
+				'return' => 'ids',
+				'limit'  => -1,
+			)
+		);
+
+		return count( $total_query->get_orders() );
+	}
+
+	/**
+	 * Get order statuses
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	private function get_order_statuses() {
+		$statuses = array_keys( wc_get_order_statuses() );
+		$statuses = array_filter(
+			$statuses,
+			function ( $status ) {
+				return 'wc-trash' !== $status;
+			}
+		);
+
+		return $statuses;
 	}
 
 	/**
