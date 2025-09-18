@@ -61,7 +61,6 @@ jQuery(document).ready(function ($) {
 
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
-     
 
         let final_types = 'lp';
         if ($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
@@ -188,7 +187,7 @@ jQuery(document).ready(function ($) {
                         $('.lp-success-modal').addClass('active');
                     }
                 } else {
-                     $('.lp-error-modal').addClass('active');
+                    $('.lp-error-modal').addClass('active');
                 }
             },
             complete: function () {
@@ -220,6 +219,48 @@ jQuery(document).ready(function ($) {
     function removeModal(removeItem) {
         removeItem.removeClass('active');
     }
+
+    // WooCommerce migaryion start
+    const $migrateBtn = $('.migrate-now-btn');
+    const $checkboxes = $('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+
+    function getActiveTab() {
+        return $('.tutor-nav-link.is-active').data('tutorNavTarget');
+    }
+
+    function toggleMigrateBtn() {
+        if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+            const anyChecked = $checkboxes.is(':checked');
+            console.log(anyChecked);
+            $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+        } else {
+            $migrateBtn.prop('disabled', false); // always enabled on auto tab
+        }
+    }
+
+    // Handle tab switching
+    $('.tutor-nav-link').on('click', function (e) {
+        e.preventDefault();
+
+        // Switch active class
+        $('.tutor-nav-link').removeClass('is-active');
+        $(this).addClass('is-active');
+
+        // Switch tab content visibility
+        $('.tutor-tab-item').removeClass('is-active');
+        $('#' + $(this).data('tutorNavTarget')).addClass('is-active');
+
+        toggleMigrateBtn();
+    });
+
+    // Handle checkbox changes
+    $checkboxes.on('change', toggleMigrateBtn);
+
+    // Initial state
+    toggleMigrateBtn();
+
+    // WooCommerce M=migration end
+
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
@@ -288,12 +329,12 @@ jQuery(document).ready(function ($) {
 
     var getFilesAndUpdateDOM = (files, inputEl) => {
         if (files) {
-        	inputEl.files = files;
-        	dropZone.addClass('file-attached');
-        	dropZone.find('.file-info').html(`File attached - ${files.name}`);
+            inputEl.files = files;
+            dropZone.addClass('file-attached');
+            dropZone.find('.file-info').html(`File attached - ${files.name}`);
         } else {
-        	dropZone.removeClass('file-attached');
-        	dropZone.find('.file-info').html('');
+            dropZone.removeClass('file-attached');
+            dropZone.find('.file-info').html('');
         }
     };
 

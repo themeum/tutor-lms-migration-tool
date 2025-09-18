@@ -10,6 +10,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+$items_count = 10;
+
 ?>
 <div class="tutor-migration-page">
 
@@ -203,7 +205,10 @@ defined( 'ABSPATH' ) || exit;
 								</div>
 							</div>
 							<div class="migrate-now-btn-wrapper tutor-col-md-3 tutor-d-flex tutor-justify-end">
-								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary">
+								<span id="total_items_migrate_counts" class="tutor-d-none" data-count="<?php echo esc_attr( $items_count ); ?>"> </span>
+
+								<!-- get active tab using php -->
+								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary" <?php echo esc_attr( $items_count <= 0 ? 'disabled' : '' ); ?>>
 									<?php esc_html_e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
 								</button>
 							</div>
