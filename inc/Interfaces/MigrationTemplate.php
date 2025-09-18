@@ -15,6 +15,27 @@ defined( 'ABSPATH' ) || exit;
 interface MigrationTemplate {
 
 	/**
+	 * Get items from source
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param int $limit  Number of items to fetch from source.
+	 * @param int $offset Number of items to skip from source.
+	 *
+	 * @return array
+	 */
+	public function get_items( int $limit = 5, int $offset = 0 ): array;
+
+	/**
+	 * Total items count from source
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return int
+	 */
+	public function get_total_items_count(): int;
+
+	/**
 	 * Extract data from source
 	 *
 	 * @since 2.4.0
