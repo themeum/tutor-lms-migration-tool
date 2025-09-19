@@ -57,7 +57,7 @@ $items_count = 10;
 						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
 								<!-- Courses -->
-								<div id="sectionCourse">
+								<div id="sectionOrders" class="tutor-pb-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox ">
@@ -77,7 +77,7 @@ $items_count = 10;
 								</div>
 
 								<!-- Sales Data -->
-								<div id="sectionOrders" class="tutor-py-16">
+								<div id="sectionCustomers" class="tutor-pb-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
@@ -96,7 +96,7 @@ $items_count = 10;
 								</div>
 
 								<!-- Reviews -->
-								<div id="sectionReviews" class="tutor-py-16">
+								<div id="sectionCoupons" class="tutor-pb-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
@@ -114,7 +114,7 @@ $items_count = 10;
 									</label>
 								</div>
 								<!-- Subscriptions -->
-								<div id="sectionSubscriptions" class="tutor-py-16">
+								<div id="sectionSubscriptions">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
@@ -143,11 +143,11 @@ $items_count = 10;
 								<div class="tutor-pb-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-orders" type="checkbox" name="contents[]" value="orders" class="tutor-form-check-input lp-migration-singlebox-checkbox">
-										<div>
+										<div class="tutor-mt-2">
 											<label for="woo-orders" class="tutor-form-check-label">
 												<?php esc_html_e( 'Orders', 'tutor-lms-migration-tool' ); ?>
 											</label>
-											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-4">
+											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
 												<?php esc_html_e( 'Order history, fulfillment data.' ); ?>
 											</div>
 										</div>
@@ -156,11 +156,11 @@ $items_count = 10;
 								<div class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-customers" type="checkbox" name="contents[]" value="customers" class="tutor-form-check-input lp-migration-singlebox-checkbox">
-										<div>
+										<div class="tutor-mt-2">
 											<label for="woo-customers" class="tutor-form-check-label">
 												<?php esc_html_e( 'Customers', 'tutor-lms-migration-tool' ); ?>
 											</label>
-											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-4">
+											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
 												<?php esc_html_e( 'User profiles, contact information, and shipping details.', 'tutor-lms-migration-tool' ); ?>
 											</div>
 										</div>
@@ -169,11 +169,11 @@ $items_count = 10;
 								<div class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-coupons" type="checkbox" name="contents[]" value="coupons" class="tutor-form-check-input lp-migration-singlebox-checkbox">
-										<div>
-											<label for="woo-coupons" class="tutor-form-check-label tutor-fs-6">
+										<div class="tutor-mt-2">
+											<label for="woo-coupons" class="tutor-form-check-label">
 												<?php esc_html_e( 'Coupons', 'tutor-lms-migration-tool' ); ?>
 											</label>
-											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-4">
+											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
 												<?php esc_html_e( 'Promotional codes, offers, and their usage history.', 'tutor-lms-migration-tool' ); ?>
 											</div>
 										</div>
@@ -182,11 +182,11 @@ $items_count = 10;
 								<div class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-subscriptions" type="checkbox" name="contents[]" value="subscriptions" class="tutor-form-check-input lp-migration-singlebox-checkbox">
-										<div>
-											<label for="woo-subscriptions" class="tutor-form-check-label tutor-fs-6">
+										<div class="tutor-mt-2">
+											<label for="woo-subscriptions" class="tutor-form-check-label">
 												<?php esc_html_e( 'Subscriptions', 'tutor-lms-migration-tool' ); ?>
 											</label>
-											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-4">
+											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
 												<?php esc_html_e( 'Payment plans, subscription data, and reports.', 'tutor-lms-migration-tool' ); ?>
 											</div>
 										</div>
