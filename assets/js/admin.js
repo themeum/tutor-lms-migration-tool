@@ -220,45 +220,6 @@ jQuery(document).ready(function ($) {
         removeItem.removeClass('active');
     }
 
-    /*
-    * Woocommerce migration start
-    */
-    const $migrationPage = $('.tutor-migration-page');
-    const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
-    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
-
-    function getActiveTab() {
-        return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
-    }
-
-    function toggleMigrateBtn() {
-        // this will be called on page load, so we need to wait for the checkboxes to be checked
-        setTimeout(function () {
-            if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
-                const anyChecked = $checkboxes.is(':checked');
-                $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
-            } else {
-                $migrateBtn.prop('disabled', false); // always enabled on auto tab
-            }
-        }, 0);
-    }
-
-    // Handle tab switching (only inside migration page)
-    $migrationPage.find('.tutor-nav-link').on('click', function (e) {
-        e.preventDefault();
-        toggleMigrateBtn();
-    });
-
-    // Handle checkbox changes
-    $checkboxes.on('change', toggleMigrateBtn);
-
-    // Initial state
-    toggleMigrateBtn();
-
-    /*
-    * Woocommerce migration end
-    */
-
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
@@ -270,6 +231,7 @@ jQuery(document).ready(function ($) {
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
+        $('#wc-sales-data-migration-form').submit();
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -393,6 +355,74 @@ jQuery(document).ready(function ($) {
             },
         });
     });
+
+    /** 
+    * Woocommerce migration start
+    */
+    const $migrationPage = $('.tutor-migration-page');
+    const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
+    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+
+    function getActiveTab() {
+        return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
+    }
+
+    function toggleMigrateBtn() {
+        // this will be called on page load, so we need to wait for the checkboxes to be checked
+        setTimeout(function () {
+            if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+                const anyChecked = $checkboxes.is(':checked');
+                $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+            } else {
+                $migrateBtn.prop('disabled', false); // always enabled on auto tab
+            }
+        }, 0);
+    }
+
+    // Handle tab switching (only inside migration page)
+    $migrationPage.find('.tutor-nav-link').on('click', function (e) {
+        e.preventDefault();
+        toggleMigrateBtn();
+    });
+
+    // Handle checkbox changes
+    $checkboxes.on('change', toggleMigrateBtn);
+
+    // Initial state
+    toggleMigrateBtn();
+
+    $(document).on('submit', '#wc-sales-data-migration-form', function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'wc_sales_data_migration');
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function (XMLHttpRequest) {
+                migrateBtn.attr('disabled', 'disabled');
+                $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
+            },
+            success: function (data) {
+                $('.lp-success-modal').addClass('active');
+            },
+            error: function () {
+                $('.lp-error-modal').addClass('active');
+            },
+            complete: function () {
+                // @TODO: need to add a check for the migrate status
+                $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
+                migrateBtn.removeAttr('disabled');
+            }
+        });
+    });
+
+    /**
+    * Woocommerce migration end
+    */
 
 }); /* ./ jQuery */
 
