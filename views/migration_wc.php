@@ -52,7 +52,7 @@ $items_count = 10;
 
 			<!-- Auto Migrate -->
 			<div class="tutor-migration-tab-item">
-				<form id="wc-sales-data-migration-form">
+				<form id="wc-sales-data-migration-form" action="wc_migrate_all_data_to_tutor" method="post">
 					<div id="tutor-wc-auto-migrate-tab" class="tutor-tab-item is-active">
 						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
@@ -225,18 +225,23 @@ $items_count = 10;
 	<div class="lp-migration-modal">
 		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
 			<div class="lp-migration-modal-icon">
-				<img src="assets/img/yes_no.svg" alt="export">
+				<img src="<?php echo esc_url( TLMT_URL . 'assets/img/yes_no.svg' ); ?>" alt="export">
 			</div>
 			<div class="migration-modal-btn-group flex-center tutor-flex-column">
 				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
-					Are you sure you want to migrate from <br> LearnDash to Tutor LMS?
+					<?php
+						// translators: %s: Line break tag (<br>).
+						printf( esc_html__( 'Are you sure you want to migrate from %s LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ), '<br>' );
+					?>
 				</div>
 				<div class="tutor-d-flex">
 					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
-						<span>No, Maybe Later!</span>
+						<span>
+							<?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?>
+						</span>
 					</a>
 					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg">
-						Yes, Let’s Start
+						<?php esc_html_e( "Yes, Let's Start", 'tutor-lms-migration-tool' ); ?>
 					</a>
 				</div>
 			</div>
@@ -263,13 +268,13 @@ $items_count = 10;
 				<span class="modal-close-line success-close-line-two"></span>
 			</div>
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
-				Migration Successful!
+				<?php esc_html_e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
-				Migration from LearnDash to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.
+				<?php esc_html_e( 'Migration from WoCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				Go to courses
+				<?php esc_html_e( 'Go to courses', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>
@@ -279,19 +284,19 @@ $items_count = 10;
 <div class="lp-error-modal-wrap">
 	<div class="lp-error-modal">
 		<div class="lp-modal-alert tutor-p-40">
-			<img class="tutor-mt-12" style="width: 80px; height: 80px;" src="assets/img/error-modal-icon.jpg" alt="error-midal-alert-icon">
+			<img class="tutor-mt-12" style="width: 80px; height: 80px;" src="<?php echo esc_url( TLMT_URL . 'assets/img/error-modal-icon.jpg' ); ?>" alt="error-midal-alert-icon">
 			<div class="modal-close success-modal-close">
 				<span class="modal-close-line success-close-line-one"></span>
 				<span class="modal-close-line success-close-line-two"></span>
 			</div>
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
-				Migration Failed!
+				<?php esc_html_e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
-				Oops... The migration from LearnDash to Tutor LMS was unsuccessful. Please review everything and try again.
+				<?php esc_html_e( 'Oops... The migration from WoCommerce to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<a href="#" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				Try Again
+				<?php esc_html_e( 'Try Again', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>
