@@ -363,42 +363,52 @@ jQuery(document).ready(function ($) {
     * @link https://themeum.com
     * @since 2.3.2
     */
-    const migrationPage = $('.tutor-migration-page');
-    const migrateBtn = migrationPage.find('.migrate-now-btn ');
-    const checkboxes = migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+    const $migrationPage = $('.tutor-migration-page');
+    const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
+    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
 
     function getActiveTab() {
-        return migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
+        return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
     }
 
     function toggleMigrateBtn() {
         // this will be called on page load, so we need to wait for the checkboxes to be checked
         setTimeout(function () {
             if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
-                const anyChecked = checkboxes.is(':checked');
-                migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+                const anyChecked = $checkboxes.is(':checked');
+                $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
             } else {
-                migrateBtn.prop('disabled', false); // always enabled on auto tab
+                $migrateBtn.prop('disabled', false); // always enabled on auto tab
             }
         }, 0);
     }
 
     // Handle tab switching (only inside migration page)
-    migrationPage.find('.tutor-nav-link').on('click', function (e) {
+    $migrationPage.find('.tutor-nav-link').on('click', function (e) {
         e.preventDefault();
         toggleMigrateBtn();
     });
 
     // Handle checkbox changes
-    checkboxes.on('change', toggleMigrateBtn);
+    $checkboxes.on('change', toggleMigrateBtn);
 
     // Initial state
     toggleMigrateBtn();
 
+    let originalCheckboxes = [];
+
     $(document).on('submit', '#wc-sales-data-migration-form', function (event) {
         event.preventDefault();
         const formData = new FormData(this);
-        formData.append('action', 'wc_sales_data_migration');
+        formData.append('action', 'tlmt_migrate_sales_data');
+        formData.append('job_id', 0);
+
+        console.log(getActiveTab())
+
+        if (getActiveTab() !== 'tutor-wc-custom-migrate-tab') {
+            formData.delete('job_requirements[]');
+            formData.append('job_requirements[]', 'all');
+        }
 
         $.ajax({
             url: ajaxurl,
@@ -407,22 +417,96 @@ jQuery(document).ready(function ($) {
             processData: false,
             contentType: false,
             beforeSend: function (XMLHttpRequest) {
-                migrateBtn.attr('disabled', 'disabled');
-                $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
+                $migrateBtn.attr('disabled', 'disabled');
+
+                if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+                    // Store original checkboxes before replacing
+                    const $checkboxes = $('#tutor-wc-custom-migrate-tab').find('input[type="checkbox"]');
+                    originalCheckboxes = []; // Clear previous data
+
+                    $checkboxes.each(function () {
+                        const $checkbox = $(this);
+                        originalCheckboxes.push({
+                            id: $checkbox.attr('id'),
+                            name: $checkbox.attr('name'),
+                            value: $checkbox.attr('value'),
+                            class: $checkbox.attr('class'),
+                            checked: $checkbox.is(':checked')
+                        });
+                    });
+
+                    // Replace with spinners
+                    $checkboxes.each(function () {
+                        const inputId = $(this).attr('id');
+                        $(this).replaceWith(`<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`);
+                    });
+
+                    return;
+                }
+                toggleAllSpinner('spin');
+
             },
             success: function (data) {
                 $('.lp-success-modal').addClass('active');
+                toggleAllSpinner('done');
             },
             error: function () {
                 $('.lp-error-modal').addClass('active');
+                toggleAllSpinner('stop');
+                revertCheckboxes();
             },
             complete: function () {
-                // @TODO: need to add a check for the migrate status
-                $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
-                migrateBtn.removeAttr('disabled');
+                $migrateBtn.removeAttr('disabled');
             }
         });
     });
+
+    /**
+     * 
+     * @param {string} mode - spin, stop, done
+     */
+    function toggleAllSpinner(mode) {
+        $('#tutor-wc-auto-migrate-tab').find('span.j-spinner').each(function () {
+            const $spinner = $(this);
+            if (mode === 'spin') {
+                $spinner.addClass('tmtl_spin');
+            } else if (mode === 'stop') {
+                $spinner.removeClass('tmtl_spin');
+            } else if (mode === 'done') {
+                $spinner.removeClass('tmtl_spin');
+                $spinner.addClass('tmtl_done');
+            }
+        });
+    }
+
+    function revertCheckboxes() {
+        const checkboxConfigs = [
+            { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
+            { id: 'woo-customers', name: 'job_requirements[]', value: 'customers' },
+            { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
+            { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
+        ];
+
+        // Remove all spinners
+        $('#tutor-wc-custom-migrate-tab').find('span.j-spinner').remove();
+
+        // Recreate each checkbox in its proper location
+        checkboxConfigs.forEach(function (config) {
+            const checkboxHtml = `<input 
+            id="${config.id}" 
+            type="checkbox" 
+            name="${config.name}" 
+            value="${config.value}" 
+            class="tutor-form-check-input lp-migration-singlebox-checkbox"
+        >`;
+
+            // Find the form-check container and prepend the checkbox
+            $(`label[for="${config.id}"]`).closest('.tutor-form-check').prepend(checkboxHtml);
+        });
+
+        // Re-enable the migrate button toggle functionality
+        toggleMigrateBtn();
+    }
 
     /**
     * Woocommerce migration end
