@@ -79,7 +79,7 @@ class MigrationHandler {
 		}
 
 		$job_data   = $this->job_handler->get_migration_job( $requirements['job_requirements'], $job_id );
-		$active_job = $this->job_handler->get_active_job( $job_data );
+		$active_job = $this->job_handler->get_active_job_type( $job_data );
 		if ( $active_job ) {
 			try {
 				$job_data = $this->job_handler->process_job( $active_job, $job_data );

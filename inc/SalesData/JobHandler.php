@@ -157,7 +157,7 @@ class JobHandler {
 	 *
 	 * @return string|bool Active job key or false if no active job found
 	 */
-	public function get_active_job( array $job_data ) {
+	public function get_active_job_type( array $job_data ) {
 		$requirements = $job_data['requirements'];
 		foreach ( $requirements as $key => $requirement ) {
 			if ( $requirement['is_done'] ) {
