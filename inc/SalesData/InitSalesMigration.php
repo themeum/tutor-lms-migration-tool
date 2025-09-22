@@ -71,7 +71,7 @@ class InitSalesMigration {
 			'desc'      => __( 'WooCommerce Migration', 'tutor-lms-migration-tool' ),
 			'template'  => 'migration_wc',
 			'view_path' => TLMT_PATH . 'views/',
-			'icon'      => 'tutor-icon-brand-learnpress',
+			'icon'      => 'tutor-icon-brand-woocommerce',
 			'blocks'    => array(
 				'block' => array(),
 			),

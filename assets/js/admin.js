@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     'use strict';
-    const {__} = wp.i18n;
+    const { __ } = wp.i18n;
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -61,14 +61,13 @@ jQuery(document).ready(function ($) {
 
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
-     
 
         let final_types = 'lp';
         if ($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
             final_types = 'ld';
             migration_vendor = 'ld';
         }
-        if($that.attr('action') == 'lif_migrate_all_data_to_tutor') {
+        if ($that.attr('action') == 'lif_migrate_all_data_to_tutor') {
             final_types = 'lif';
             migration_vendor = 'lif';
         }
@@ -171,16 +170,16 @@ jQuery(document).ready(function ($) {
                     clearTimeout(countReviewsProgress);
                     clearTimeout(checkProgress);
                     clearTimeout(countProgress);
-                    $.post(ajaxurl, { 
-                        migration_type : 'Imported',
-                        migration_vendor : migration_vendor,
+                    $.post(ajaxurl, {
+                        migration_type: 'Imported',
+                        migration_vendor: migration_vendor,
                         action: 'insert_tutor_migration_data'
                     });
                 }
 
                 const res = data.data;
-                const { total_course_count = 0, failed = []} = res || {};
-                
+                const { total_course_count = 0, failed = [] } = res || {};
+
                 if (Number(total_course_count) > 0) {
                     if (failed.length > 0) {
                         $('.lp-success-modal').addClass('active');
@@ -188,7 +187,7 @@ jQuery(document).ready(function ($) {
                         $('.lp-success-modal').addClass('active');
                     }
                 } else {
-                     $('.lp-error-modal').addClass('active');
+                    $('.lp-error-modal').addClass('active');
                 }
             },
             complete: function () {
@@ -220,6 +219,7 @@ jQuery(document).ready(function ($) {
     function removeModal(removeItem) {
         removeItem.removeClass('active');
     }
+
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
@@ -227,10 +227,11 @@ jQuery(document).ready(function ($) {
             migrationModal.addClass('active');
         }
     });
-    
+
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
+        $('#wc-sales-data-migration-form').submit();
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -271,14 +272,14 @@ jQuery(document).ready(function ($) {
     var tutorManualMigrateForm = $('#tutor-manual-migrate-form');
     var manualMigrateNowBtn = $('#manual-migrate-now-btn');
 
-    $(document).on('click', '#tutor-migration-browse-file-link a', function(event) {
+    $(document).on('click', '#tutor-migration-browse-file-link a', function (event) {
         event.preventDefault();
         $('#tutor-migration-browse-file').click();
     });
     var dropZone = $('.tutor-migration-drag-drop-zone');
-    $(document).on('change', '#tutor-migration-browse-file', function(event){
+    $(document).on('change', '#tutor-migration-browse-file', function (event) {
         var inputEl = $('#tutor-migration-browse-file');
-        if(this.files[0]) {
+        if (this.files[0]) {
             manualMigrateNowBtn.removeAttr('disabled');
             getFilesAndUpdateDOM(this.files[0], inputEl);
         } else {
@@ -288,39 +289,39 @@ jQuery(document).ready(function ($) {
 
     var getFilesAndUpdateDOM = (files, inputEl) => {
         if (files) {
-        	inputEl.files = files;
-        	dropZone.addClass('file-attached');
-        	dropZone.find('.file-info').html(`File attached - ${files.name}`);
+            inputEl.files = files;
+            dropZone.addClass('file-attached');
+            dropZone.find('.file-info').html(`File attached - ${files.name}`);
         } else {
-        	dropZone.removeClass('file-attached');
-        	dropZone.find('.file-info').html('');
+            dropZone.removeClass('file-attached');
+            dropZone.find('.file-info').html('');
         }
     };
 
-    $(document).on('click', '.backup-now-btn', function(event) {
+    $(document).on('click', '.backup-now-btn', function (event) {
         event.preventDefault();
         let button = $(this);
         let form = button.closest('form#tutor_migration_export_form');
-    
-        $.post(ajaxurl, { 
-            migration_type : 'Exported',
-            migration_vendor : form.children("#tutor_migration_vendor").val(),
+
+        $.post(ajaxurl, {
+            migration_type: 'Exported',
+            migration_vendor: form.children("#tutor_migration_vendor").val(),
             action: 'insert_tutor_migration_data'
         });
         form.submit();
     })
 
-    $(document).on('click', '#manual-migrate-now-btn', function(event) {
+    $(document).on('click', '#manual-migrate-now-btn', function (event) {
         let button = $(this);
         var fileType = $('input[name="tutor_import_file"]')[0].files[0].type;
-        if(fileType != 'text/xml') {
+        if (fileType != 'text/xml') {
             alert('Not supported file. Upload xml file here!');
             return;
         }
         var action_name = $('#tutor-manual-migrate-form input[name="tutor_action"]').val();
         let tutor_nonce = $("#tutor-manual-migrate-form input[name='_tutor_nonce']").val();
-        let http_referer= $("#tutor-manual-migrate-form input[name='_wp_http_referer']").val();
-        
+        let http_referer = $("#tutor-manual-migrate-form input[name='_wp_http_referer']").val();
+
         var formData = new FormData();
         formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
         formData.append("action", action_name);
@@ -339,9 +340,9 @@ jQuery(document).ready(function ($) {
                 console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
-                    $.post(ajaxurl, { 
-                        migration_type : 'Imported',
-                        migration_vendor : $('#tutor_migration_vendor').val(),
+                    $.post(ajaxurl, {
+                        migration_type: 'Imported',
+                        migration_vendor: $('#tutor_migration_vendor').val(),
                         action: 'insert_tutor_migration_data'
                     });
                     manualMigrateNowBtn.attr('disabled', 'disabled');
@@ -355,6 +356,78 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    /** 
+    * Woocommerce migration
+    * 
+    * @author Themeum <support@themeum.com>
+    * @link https://themeum.com
+    * @since 2.3.2
+    */
+    const migrationPage = $('.tutor-migration-page');
+    const migrateBtn = migrationPage.find('.migrate-now-btn ');
+    const checkboxes = migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+
+    function getActiveTab() {
+        return migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
+    }
+
+    function toggleMigrateBtn() {
+        // this will be called on page load, so we need to wait for the checkboxes to be checked
+        setTimeout(function () {
+            if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+                const anyChecked = checkboxes.is(':checked');
+                migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+            } else {
+                migrateBtn.prop('disabled', false); // always enabled on auto tab
+            }
+        }, 0);
+    }
+
+    // Handle tab switching (only inside migration page)
+    migrationPage.find('.tutor-nav-link').on('click', function (e) {
+        e.preventDefault();
+        toggleMigrateBtn();
+    });
+
+    // Handle checkbox changes
+    checkboxes.on('change', toggleMigrateBtn);
+
+    // Initial state
+    toggleMigrateBtn();
+
+    $(document).on('submit', '#wc-sales-data-migration-form', function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'wc_sales_data_migration');
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function (XMLHttpRequest) {
+                migrateBtn.attr('disabled', 'disabled');
+                $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
+            },
+            success: function (data) {
+                $('.lp-success-modal').addClass('active');
+            },
+            error: function () {
+                $('.lp-error-modal').addClass('active');
+            },
+            complete: function () {
+                // @TODO: need to add a check for the migrate status
+                $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
+                migrateBtn.removeAttr('disabled');
+            }
+        });
+    });
+
+    /**
+    * Woocommerce migration end
+    */
+
 }); /* ./ jQuery */
 
 
@@ -362,42 +435,42 @@ jQuery(document).ready(function ($) {
 const dropZoneInputs = document.querySelectorAll('.tutor-migration-drag-drop-zone input[type=file]');
 
 dropZoneInputs.forEach((inputEl) => {
-	const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
-	['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
-		if (dragEvent === 'dragover') {
-			dropZone.addEventListener(dragEvent, (e) => {
-				e.preventDefault();
-				dropZone.classList.add('dragover');
-			});
-		} else {
-			dropZone.addEventListener(dragEvent, (e) => {
-				dropZone.classList.remove('dragover');
-			});
-		}
-	});
+    const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
+    ['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
+        if (dragEvent === 'dragover') {
+            dropZone.addEventListener(dragEvent, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        } else {
+            dropZone.addEventListener(dragEvent, (e) => {
+                dropZone.classList.remove('dragover');
+            });
+        }
+    });
 
-	dropZone.addEventListener('drop', (e) => {
-		e.preventDefault();
-		const files = e.dataTransfer.files;
-		getFilesAndUpdateDOM(files, inputEl, dropZone);
-		dropZone.classList.remove('dragover');
-	});
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        getFilesAndUpdateDOM(files, inputEl, dropZone);
+        dropZone.classList.remove('dragover');
+    });
 
-	// inputEl.addEventListener('change', (e) => {
+    // inputEl.addEventListener('change', (e) => {
     //     const files = e.target.files;
-	// 	getFilesAndUpdateDOM(files, inputEl, dropZone);
-	// });
-	
+    // 	getFilesAndUpdateDOM(files, inputEl, dropZone);
+    // });
+
 });
 
 const getFilesAndUpdateDOM = (files, inputEl, dropZone) => {
-	if (files.length) {
-		inputEl.files = files;
-		dropZone.classList.add('file-attached');
-		dropZone.querySelector('.file-info').innerHTML = `File attached - ${files[0].name}`;
+    if (files.length) {
+        inputEl.files = files;
+        dropZone.classList.add('file-attached');
+        dropZone.querySelector('.file-info').innerHTML = `File attached - ${files[0].name}`;
         document.querySelector('#manual-migrate-now-btn').removeAttribute('disabled');
-	} else {
-		dropZone.classList.remove('file-attached');
-		dropZone.querySelector('.file-info').innerHTML = '';
-	}
+    } else {
+        dropZone.classList.remove('file-attached');
+        dropZone.querySelector('.file-info').innerHTML = '';
+    }
 };
