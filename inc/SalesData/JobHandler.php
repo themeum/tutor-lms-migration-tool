@@ -38,27 +38,59 @@ class JobHandler {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param string $active_job Currently active job type.
+	 * @throws \Throwable If failed to create sales data object.
+	 *
+	 * @param string $active_job Currently active job type like: orders, coupons, etc.
 	 * @param array  $job_data Job data array.
 	 *
-	 * @return wp_rest response
+	 * @return void
 	 */
 	public function process_job( string $active_job, array $job_data ) {
 		try {
-			$job_object = tlmt_get_sales_data_object( $active_job, MigrationTypes::WC_TO_NATIVE );
 
 			$requirements    = $job_data['requirements'];
 			$active_job      = $requirements[ $active_job ];
 			$total_items     = $active_job['total'];
 			$processed_items = $active_job['processed'];
-			$limit           = 5;
+			$limit           = 10;
 
-			// TODO migrate each ite.
-			$this->get_orders( $limit, $processed_items );
+			$data_obj = tlmt_get_sales_data_object( $active_job, MigrationTypes::WC_TO_NATIVE );
+			$items    = $data_obj->get_items( $limit, $processed_items );
 
+			// Migrate each item.
+			foreach ( $items as $item ) {
+				try {
+					$data_obj->extract( $item )->transform()->migrate();
+					$processed_items++;
+				} catch ( \Throwable $th ) {
+					$job_data['error_log'][] = $th->getMessage();
+				}
+			}
+
+			// Mark as done if all items are processed.
+			$job_data['job_requirements'][ $active_job ]['processed'] = $processed_items;
+			if ( $processed_items >= $total_items ) {
+				$job_data['job_requirements'][ $active_job ]['is_done'] = true;
+			}
+
+			$this->update_job_data( $job_data );
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
+	}
+
+	/**
+	 * Update job data
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $job_data Job data array.
+	 *
+	 * @return void
+	 */
+	public function update_job_data( array $job_data ) {
+		$job_id = $job_data['job_id'];
+		update_option( self::JOB_OPT_NAME . $job_id, wp_json_encode( $job_data ) );
 	}
 
 	/**
@@ -67,12 +99,14 @@ class JobHandler {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param mixed $job_id Unique job id.
+	 * @throws \Throwable If failed to create sales data object.
+	 *
 	 * @param array $requirements Migration requirements.
+	 * @param mixed $job_id Unique job id.
 	 *
 	 * @return array
 	 */
-	public function get_migration_job( $job_id, array $requirements ): array {
+	public function get_migration_job( array $requirements, $job_id = 0 ): array {
 		if ( $job_id ) {
 			$job_data = get_option( self::JOB_OPT_NAME . $job_id, null );
 			return json_decode( $job_data );
@@ -89,7 +123,13 @@ class JobHandler {
 
 		// Prepare the migration items.
 		foreach ( $job_requirements as $key => $requirement ) {
-			$job_requirements[ $key ]['total'] = call_user_func( array( $this, "get_total_{$key}_count" ) );
+			try {
+				$data_obj = tlmt_get_sales_data_object( $key, MigrationTypes::WC_TO_NATIVE );
+			} catch ( \Throwable $th ) {
+				throw $th;
+			}
+
+			$job_requirements[ $key ]['total'] = call_user_func( array( $data_obj, 'get_total_items_count' ) );
 		}
 
 		$job_schema['job_requirements'] = $job_requirements;
@@ -160,7 +200,7 @@ class JobHandler {
 			'started_at'       => current_time( 'mysql', false ),
 			'progress'         => 0,
 			'status'           => '',
-			'message'          => 'Migrating sales data...',
+			'message'          => '',
 			'job_requirements' => array(
 				'orders'        => array(
 					'total'     => 0,

@@ -12,7 +12,6 @@ namespace Themeum\TutorLMSMigrationTool\SalesData;
 
 use TUTOR\Input;
 use Tutor\Traits\JsonResponse;
-use TutorLMSMigrationTool\SalesData\JobHandler;
 
 defined( 'ABSPATH' ) || exit;
 
