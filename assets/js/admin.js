@@ -395,6 +395,8 @@ jQuery(document).ready(function ($) {
     // Initial state
     toggleMigrateBtn();
 
+    let originalCheckboxes = [];
+
     $(document).on('submit', '#wc-sales-data-migration-form', function (event) {
         event.preventDefault();
         const formData = new FormData(this);
@@ -404,8 +406,8 @@ jQuery(document).ready(function ($) {
         console.log(getActiveTab())
 
         if (getActiveTab() !== 'tutor-wc-custom-migrate-tab') {
-            formData.delete('requirements[]');
-            formData.append('requirements[]', 'all');
+            formData.delete('job_requirements[]');
+            formData.append('job_requirements[]', 'all');
         }
 
         $.ajax({
@@ -416,21 +418,71 @@ jQuery(document).ready(function ($) {
             contentType: false,
             beforeSend: function (XMLHttpRequest) {
                 $migrateBtn.attr('disabled', 'disabled');
-                $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
+
+                // Store original checkboxes before replacing
+                const $checkboxes = $('#tutor-wc-custom-migrate-tab').find('input[type="checkbox"]');
+                originalCheckboxes = []; // Clear previous data
+
+                $checkboxes.each(function () {
+                    const $checkbox = $(this);
+                    originalCheckboxes.push({
+                        id: $checkbox.attr('id'),
+                        name: $checkbox.attr('name'),
+                        value: $checkbox.attr('value'),
+                        class: $checkbox.attr('class'),
+                        checked: $checkbox.is(':checked')
+                    });
+                });
+
+                // Replace with spinners
+                $checkboxes.each(function () {
+                    const inputId = $(this).attr('id');
+                    $(this).replaceWith(`<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`);
+                });
             },
             success: function (data) {
                 $('.lp-success-modal').addClass('active');
             },
             error: function () {
                 $('.lp-error-modal').addClass('active');
+                revertCheckboxesSimple(); // Revert all checkboxes on error
             },
             complete: function () {
-                // @TODO: need to add a check for the migrate status
                 $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
                 $migrateBtn.removeAttr('disabled');
             }
         });
     });
+
+    // Alternative simpler approach - recreate checkboxes with known structure
+    function revertCheckboxesSimple() {
+        const checkboxConfigs = [
+            { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
+            { id: 'woo-customers', name: 'job_requirements[]', value: 'customers' },
+            { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
+            { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
+        ];
+
+        // Remove all spinners
+        $('#tutor-wc-custom-migrate-tab').find('span.j-spinner').remove();
+
+        // Recreate each checkbox in its proper location
+        checkboxConfigs.forEach(function (config) {
+            const checkboxHtml = `<input 
+            id="${config.id}" 
+            type="checkbox" 
+            name="${config.name}" 
+            value="${config.value}" 
+            class="tutor-form-check-input lp-migration-singlebox-checkbox"
+        >`;
+
+            // Find the form-check container and prepend the checkbox
+            $(`label[for="${config.id}"]`).closest('.tutor-form-check').prepend(checkboxHtml);
+        });
+
+        // Re-enable the migrate button toggle functionality
+        toggleMigrateBtn();
+    }
 
     /**
     * Woocommerce migration end
