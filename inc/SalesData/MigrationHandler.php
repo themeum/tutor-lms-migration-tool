@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
+use Tutor\Helpers\HttpHelper;
 use TUTOR\Input;
 use Tutor\Traits\JsonResponse;
 
@@ -67,20 +68,25 @@ class MigrationHandler {
 		tutor_utils()->check_current_user_capability();
 
 		$job_id       = Input::post( 'job_id' );
-		$requirements = sanitize_text_field( wp_unslash( $_POST['job_requirements'] ?? '' ) );
-		if ( ! $job_id || ! $requirements ) {
+		$requirements = Input::post( 'job_requirements' );
+		if ( ! $requirements ) {
 			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-pro' ) );
 		}
 
-		$requirements = json_decode( stripslashes( $requirements ), true );
-		if ( json_last_error_msg() ) {
+		$requirements = json_decode( $requirements, true );
+		if ( json_last_error() ) {
 			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-pro' ) );
 		}
 
-		$job_data   = $this->job_handler->get_migration_job( $job_id, $requirements );
+		$job_data   = $this->job_handler->get_migration_job( $requirements['job_requirements'], $job_id );
 		$active_job = $this->job_handler->get_active_job( $job_data );
 		if ( $active_job ) {
-			return $this->job_handler->process_job( $active_job, $job_data );
+			try {
+				$job_data = $this->job_handler->process_job( $active_job, $job_data );
+				$this->json_response( __( 'Migration in progress', 'tutor-pro' ), $job_data );
+			} catch ( \Throwable $th ) {
+				$this->json_response( __( 'Migration failed', 'tutor-pro' ), $job_data, HttpHelper::STATUS_INTERNAL_SERVER_ERROR );
+			}
 		}
 
 		$job_data['status']   = self::STATUS_SUCCESS;

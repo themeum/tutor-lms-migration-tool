@@ -40,40 +40,51 @@ class JobHandler {
 	 *
 	 * @throws \Throwable If failed to create sales data object.
 	 *
-	 * @param string $active_job Currently active job type like: orders, coupons, etc.
+	 * @param string $active_job_type Currently active job type like: orders, coupons, etc.
 	 * @param array  $job_data Job data array.
 	 *
-	 * @return void
+	 * @return array updated job data.
 	 */
-	public function process_job( string $active_job, array $job_data ) {
+	public function process_job( string $active_job_type, array $job_data ) {
 		try {
 
 			$requirements    = $job_data['requirements'];
-			$active_job      = $requirements[ $active_job ];
+			$active_job      = $requirements[ $active_job_type ];
 			$total_items     = $active_job['total'];
 			$processed_items = $active_job['processed'];
 			$limit           = 10;
 
-			$data_obj = tlmt_get_sales_data_object( $active_job, MigrationTypes::WC_TO_NATIVE );
+			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
 			$items    = $data_obj->get_items( $limit, $processed_items );
 
 			// Migrate each item.
 			foreach ( $items as $item ) {
 				try {
 					$data_obj->extract( $item )->transform()->migrate();
+
+					// Keep track.
 					$processed_items++;
+					$active_job['succeed'][] = $item->get_id();
 				} catch ( \Throwable $th ) {
 					$job_data['error_log'][] = $th->getMessage();
+					$active_job['failed'][]  = $item->get_id();
 				}
 			}
 
 			// Mark as done if all items are processed.
-			$job_data['job_requirements'][ $active_job ]['processed'] = $processed_items;
+			$active_job['processed'] = $processed_items;
 			if ( $processed_items >= $total_items ) {
-				$job_data['job_requirements'][ $active_job ]['is_done'] = true;
+				$active_job['is_done'] = true;
 			}
 
+			// Update job data.
+			$requirement[ $active_job_type ] = $active_job;
+			$job_data['progress']            = $this->get_job_progress( $job_data );
+			$job_data['requirements']        = $requirement;
+
 			$this->update_job_data( $job_data );
+			return $job_data;
+
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
@@ -109,11 +120,11 @@ class JobHandler {
 	public function get_migration_job( array $requirements, $job_id = 0 ): array {
 		if ( $job_id ) {
 			$job_data = get_option( self::JOB_OPT_NAME . $job_id, null );
-			return json_decode( $job_data );
+			return json_decode( $job_data, true );
 		}
 
 		$job_schema       = $this->get_job_schema();
-		$job_requirements = $job_schema['job_requirements'];
+		$job_requirements = $job_schema['requirements'];
 
 		foreach ( $job_requirements as $key => $requirement ) {
 			if ( ! in_array( $key, $requirements ) ) {
@@ -132,7 +143,7 @@ class JobHandler {
 			$job_requirements[ $key ]['total'] = call_user_func( array( $data_obj, 'get_total_items_count' ) );
 		}
 
-		$job_schema['job_requirements'] = $job_requirements;
+		$job_schema['requirements'] = $job_requirements;
 
 		return $job_schema;
 	}
@@ -147,7 +158,7 @@ class JobHandler {
 	 * @return string|bool Active job key or false if no active job found
 	 */
 	public function get_active_job( array $job_data ) {
-		$requirements = $job_data['job_requirements'];
+		$requirements = $job_data['requirements'];
 		foreach ( $requirements as $key => $requirement ) {
 			if ( $requirement['is_done'] ) {
 				continue;
@@ -170,10 +181,10 @@ class JobHandler {
 	 * @return int
 	 */
 	public function get_job_progress( array $job_data ) {
-		$requirements  = $job_data['job_requirements'];
+		$requirements  = $job_data['requirements'];
 		$total_jobs    = count( $requirements );
 		$completed_job = 0;
-		foreach ( $requirements as $key => $requirement ) {
+		foreach ( $requirements as $requirement ) {
 			if ( $requirement['is_done'] ) {
 				$completed_job++;
 			}
@@ -196,12 +207,12 @@ class JobHandler {
 	 */
 	public function get_job_schema() {
 		return array(
-			'job_id'           => wp_rand( 10, 15 ),
-			'started_at'       => current_time( 'mysql', false ),
-			'progress'         => 0,
-			'status'           => '',
-			'message'          => '',
-			'job_requirements' => array(
+			'job_id'       => uniqid(),
+			'started_at'   => current_time( 'mysql', false ),
+			'progress'     => 0,
+			'status'       => '',
+			'message'      => '',
+			'requirements' => array(
 				'orders'        => array(
 					'total'     => 0,
 					'processed' => 0,
@@ -224,7 +235,7 @@ class JobHandler {
 					'is_done'   => false,
 				),
 			),
-			'error_log'        => array(),
+			'error_log'    => array(),
 
 		);
 	}
