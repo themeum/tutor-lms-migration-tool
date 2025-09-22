@@ -419,43 +419,67 @@ jQuery(document).ready(function ($) {
             beforeSend: function (XMLHttpRequest) {
                 $migrateBtn.attr('disabled', 'disabled');
 
-                // Store original checkboxes before replacing
-                const $checkboxes = $('#tutor-wc-custom-migrate-tab').find('input[type="checkbox"]');
-                originalCheckboxes = []; // Clear previous data
+                if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+                    // Store original checkboxes before replacing
+                    const $checkboxes = $('#tutor-wc-custom-migrate-tab').find('input[type="checkbox"]');
+                    originalCheckboxes = []; // Clear previous data
 
-                $checkboxes.each(function () {
-                    const $checkbox = $(this);
-                    originalCheckboxes.push({
-                        id: $checkbox.attr('id'),
-                        name: $checkbox.attr('name'),
-                        value: $checkbox.attr('value'),
-                        class: $checkbox.attr('class'),
-                        checked: $checkbox.is(':checked')
+                    $checkboxes.each(function () {
+                        const $checkbox = $(this);
+                        originalCheckboxes.push({
+                            id: $checkbox.attr('id'),
+                            name: $checkbox.attr('name'),
+                            value: $checkbox.attr('value'),
+                            class: $checkbox.attr('class'),
+                            checked: $checkbox.is(':checked')
+                        });
                     });
-                });
 
-                // Replace with spinners
-                $checkboxes.each(function () {
-                    const inputId = $(this).attr('id');
-                    $(this).replaceWith(`<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`);
-                });
+                    // Replace with spinners
+                    $checkboxes.each(function () {
+                        const inputId = $(this).attr('id');
+                        $(this).replaceWith(`<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`);
+                    });
+
+                    return;
+                }
+                toggleAllSpinner('spin');
+
             },
             success: function (data) {
                 $('.lp-success-modal').addClass('active');
+                toggleAllSpinner('done');
             },
             error: function () {
                 $('.lp-error-modal').addClass('active');
-                revertCheckboxesSimple(); // Revert all checkboxes on error
+                toggleAllSpinner('stop');
+                revertCheckboxes();
             },
             complete: function () {
-                $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
                 $migrateBtn.removeAttr('disabled');
             }
         });
     });
 
-    // Alternative simpler approach - recreate checkboxes with known structure
-    function revertCheckboxesSimple() {
+    /**
+     * 
+     * @param {string} mode - spin, stop, done
+     */
+    function toggleAllSpinner(mode) {
+        $('#tutor-wc-auto-migrate-tab').find('span.j-spinner').each(function () {
+            const $spinner = $(this);
+            if (mode === 'spin') {
+                $spinner.addClass('tmtl_spin');
+            } else if (mode === 'stop') {
+                $spinner.removeClass('tmtl_spin');
+            } else if (mode === 'done') {
+                $spinner.removeClass('tmtl_spin');
+                $spinner.addClass('tmtl_done');
+            }
+        });
+    }
+
+    function revertCheckboxes() {
         const checkboxConfigs = [
             { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
             { id: 'woo-customers', name: 'job_requirements[]', value: 'customers' },
