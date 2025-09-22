@@ -357,36 +357,40 @@ jQuery(document).ready(function ($) {
     });
 
     /** 
-    * Woocommerce migration start
+    * Woocommerce migration
+    * 
+    * @author Themeum <support@themeum.com>
+    * @link https://themeum.com
+    * @since 2.3.2
     */
-    const $migrationPage = $('.tutor-migration-page');
-    const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
-    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+    const migrationPage = $('.tutor-migration-page');
+    const migrateBtn = migrationPage.find('.migrate-now-btn ');
+    const checkboxes = migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
 
     function getActiveTab() {
-        return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
+        return migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
     }
 
     function toggleMigrateBtn() {
         // this will be called on page load, so we need to wait for the checkboxes to be checked
         setTimeout(function () {
             if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
-                const anyChecked = $checkboxes.is(':checked');
-                $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+                const anyChecked = checkboxes.is(':checked');
+                migrateBtn.prop('disabled', !anyChecked); // disable if none checked
             } else {
-                $migrateBtn.prop('disabled', false); // always enabled on auto tab
+                migrateBtn.prop('disabled', false); // always enabled on auto tab
             }
         }, 0);
     }
 
     // Handle tab switching (only inside migration page)
-    $migrationPage.find('.tutor-nav-link').on('click', function (e) {
+    migrationPage.find('.tutor-nav-link').on('click', function (e) {
         e.preventDefault();
         toggleMigrateBtn();
     });
 
     // Handle checkbox changes
-    $checkboxes.on('change', toggleMigrateBtn);
+    checkboxes.on('change', toggleMigrateBtn);
 
     // Initial state
     toggleMigrateBtn();
