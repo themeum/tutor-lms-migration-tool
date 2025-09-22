@@ -363,34 +363,34 @@ jQuery(document).ready(function ($) {
     * @link https://themeum.com
     * @since 2.3.2
     */
-    const migrationPage = $('.tutor-migration-page');
-    const migrateBtn = migrationPage.find('.migrate-now-btn ');
-    const checkboxes = migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+    const $migrationPage = $('.tutor-migration-page');
+    const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
+    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
 
     function getActiveTab() {
-        return migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
+        return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
     }
 
     function toggleMigrateBtn() {
         // this will be called on page load, so we need to wait for the checkboxes to be checked
         setTimeout(function () {
             if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
-                const anyChecked = checkboxes.is(':checked');
-                migrateBtn.prop('disabled', !anyChecked); // disable if none checked
+                const anyChecked = $checkboxes.is(':checked');
+                $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
             } else {
-                migrateBtn.prop('disabled', false); // always enabled on auto tab
+                $migrateBtn.prop('disabled', false); // always enabled on auto tab
             }
         }, 0);
     }
 
     // Handle tab switching (only inside migration page)
-    migrationPage.find('.tutor-nav-link').on('click', function (e) {
+    $migrationPage.find('.tutor-nav-link').on('click', function (e) {
         e.preventDefault();
         toggleMigrateBtn();
     });
 
     // Handle checkbox changes
-    checkboxes.on('change', toggleMigrateBtn);
+    $checkboxes.on('change', toggleMigrateBtn);
 
     // Initial state
     toggleMigrateBtn();
@@ -398,7 +398,15 @@ jQuery(document).ready(function ($) {
     $(document).on('submit', '#wc-sales-data-migration-form', function (event) {
         event.preventDefault();
         const formData = new FormData(this);
-        formData.append('action', 'wc_sales_data_migration');
+        formData.append('action', 'tlmt_migrate_sales_data');
+        formData.append('job_id', 0);
+
+        console.log(getActiveTab())
+
+        if (getActiveTab() !== 'tutor-wc-custom-migrate-tab') {
+            formData.delete('requirements[]');
+            formData.append('requirements[]', 'all');
+        }
 
         $.ajax({
             url: ajaxurl,
@@ -407,7 +415,7 @@ jQuery(document).ready(function ($) {
             processData: false,
             contentType: false,
             beforeSend: function (XMLHttpRequest) {
-                migrateBtn.attr('disabled', 'disabled');
+                $migrateBtn.attr('disabled', 'disabled');
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
             },
             success: function (data) {
@@ -419,7 +427,7 @@ jQuery(document).ready(function ($) {
             complete: function () {
                 // @TODO: need to add a check for the migrate status
                 $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin');
-                migrateBtn.removeAttr('disabled');
+                $migrateBtn.removeAttr('disabled');
             }
         });
     });
