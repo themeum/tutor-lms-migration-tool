@@ -407,7 +407,7 @@ jQuery(document).ready(function ($) {
 
         if (getActiveTab() !== WOO_CUSTOM_MIGRATION_TAB_ID) {
             formData.delete('job_requirements[]');
-            formData.append('job_requirements[]', 'all');
+            formData.append('job_requirements[]', '');
         }
 
         $.ajax({
@@ -486,7 +486,6 @@ jQuery(document).ready(function ($) {
     function revertCheckboxes() {
         const checkboxConfigs = [
             { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
-            { id: 'woo-customers', name: 'job_requirements[]', value: 'customers' },
             { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
         ];

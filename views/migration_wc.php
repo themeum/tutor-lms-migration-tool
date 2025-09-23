@@ -53,6 +53,7 @@ $items_count = 10;
 			<!-- Auto Migrate -->
 			<div class="tutor-migration-tab-item">
 				<form id="wc-sales-data-migration-form">
+					<?php tutor_nonce_field(); ?>
 					<div id="tutor-wc-auto-migrate-tab" class="tutor-tab-item is-active">
 						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
@@ -70,25 +71,6 @@ $items_count = 10;
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
 													<?php esc_html_e( 'History and fulfillment data.', 'tutor-lms-migration-tool' ); ?>
-												</div>
-											</div>
-										</div>
-									</label>
-								</div>
-
-								<!-- Sales Data -->
-								<div id="sectionCustomers" class="tutor-pb-16">
-									<label>
-										<div class="lp-migration-singlebox wc-migration-singlebox">
-											<div class="lp-migration-singlebox-checkbox">
-												<span class="j-spinner"></span>
-											</div>
-											<div class="lp-migration-singlebox-desc">
-												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													<?php esc_html_e( 'Customers', 'tutor-lms-migration-tool' ); ?>
-												</div>
-												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php esc_html_e( 'Includes profiles, contact info, and billing details.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 											</div>
 										</div>
@@ -149,19 +131,6 @@ $items_count = 10;
 											</label>
 											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
 												<?php esc_html_e( 'Order history, fulfillment data.' ); ?>
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="tutor-py-16">
-									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
-										<input id="woo-customers" type="checkbox" name="job_requirements[]" value="customers" class="tutor-form-check-input lp-migration-singlebox-checkbox">
-										<div class="tutor-mt-2">
-											<label for="woo-customers" class="tutor-form-check-label">
-												<?php esc_html_e( 'Customers', 'tutor-lms-migration-tool' ); ?>
-											</label>
-											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
-												<?php esc_html_e( 'User profiles, contact information, and shipping details.', 'tutor-lms-migration-tool' ); ?>
 											</div>
 										</div>
 									</div>
