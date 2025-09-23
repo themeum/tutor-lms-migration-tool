@@ -361,11 +361,13 @@ jQuery(document).ready(function ($) {
     * 
     * @author Themeum <support@themeum.com>
     * @link https://themeum.com
-    * @since 2.3.2
+    * @since 2.4.0
     */
+    const WOO_CUSTOM_MIGRATION_TAB_ID = 'tutor-wc-custom-migrate-tab';
+    const WOO_AUTO_MIGRATION_TAB_ID = 'tutor-wc-auto-migrate-tab';
     const $migrationPage = $('.tutor-migration-page');
     const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
-    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+    const $checkboxes = $migrationPage.find(`#${WOO_CUSTOM_MIGRATION_TAB_ID} input[type="checkbox"]`);
 
     function getActiveTab() {
         return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
@@ -374,7 +376,7 @@ jQuery(document).ready(function ($) {
     function toggleMigrateBtn() {
         // this will be called on page load, so we need to wait for the checkboxes to be checked
         setTimeout(function () {
-            if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
+            if (getActiveTab() === WOO_CUSTOM_MIGRATION_TAB_ID) {
                 const anyChecked = $checkboxes.is(':checked');
                 $migrateBtn.prop('disabled', !anyChecked); // disable if none checked
             } else {
@@ -403,9 +405,7 @@ jQuery(document).ready(function ($) {
         formData.append('action', 'tlmt_migrate_sales_data');
         formData.append('job_id', 0);
 
-        console.log(getActiveTab())
-
-        if (getActiveTab() !== 'tutor-wc-custom-migrate-tab') {
+        if (getActiveTab() !== WOO_CUSTOM_MIGRATION_TAB_ID) {
             formData.delete('job_requirements[]');
             formData.append('job_requirements[]', 'all');
         }
@@ -419,10 +419,9 @@ jQuery(document).ready(function ($) {
             beforeSend: function (XMLHttpRequest) {
                 $migrateBtn.attr('disabled', 'disabled');
 
-                if (getActiveTab() === 'tutor-wc-custom-migrate-tab') {
-                    // Store original checkboxes before replacing
-                    const $checkboxes = $('#tutor-wc-custom-migrate-tab').find('input[type="checkbox"]');
-                    originalCheckboxes = []; // Clear previous data
+                if (getActiveTab() === WOO_CUSTOM_MIGRATION_TAB_ID) {
+                    const $checkboxes = $(`#${WOO_CUSTOM_MIGRATION_TAB_ID}`).find('input[type="checkbox"]');
+                    originalCheckboxes = [];
 
                     $checkboxes.each(function () {
                         const $checkbox = $(this);
@@ -443,17 +442,20 @@ jQuery(document).ready(function ($) {
 
                     return;
                 }
-                toggleAllSpinner('spin');
+                toggleAllSpinner(WOO_AUTO_MIGRATION_TAB_ID, 'spin');
 
             },
             success: function (data) {
                 $('.lp-success-modal').addClass('active');
-                toggleAllSpinner('done');
+                toggleAllSpinner(WOO_AUTO_MIGRATION_TAB_ID, 'done');
             },
             error: function () {
                 $('.lp-error-modal').addClass('active');
-                toggleAllSpinner('stop');
-                revertCheckboxes();
+                toggleAllSpinner(WOO_AUTO_MIGRATION_TAB_ID, 'stop');
+                if (getActiveTab() === WOO_CUSTOM_MIGRATION_TAB_ID) {
+                    toggleAllSpinner(WOO_CUSTOM_MIGRATION_TAB_ID, 'stop');
+                    revertCheckboxes();
+                }
             },
             complete: function () {
                 $migrateBtn.removeAttr('disabled');
@@ -462,11 +464,13 @@ jQuery(document).ready(function ($) {
     });
 
     /**
+     * Toggle all spinners
      * 
+     * @param {string} tab - tutor-wc-auto-migrate-tab, tutor-wc-custom-migrate-tab
      * @param {string} mode - spin, stop, done
      */
-    function toggleAllSpinner(mode) {
-        $('#tutor-wc-auto-migrate-tab').find('span.j-spinner').each(function () {
+    function toggleAllSpinner(tab, mode) {
+        $(`#${tab}`).find('span.j-spinner').each(function () {
             const $spinner = $(this);
             if (mode === 'spin') {
                 $spinner.addClass('tmtl_spin');
@@ -487,8 +491,7 @@ jQuery(document).ready(function ($) {
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
         ];
 
-        // Remove all spinners
-        $('#tutor-wc-custom-migrate-tab').find('span.j-spinner').remove();
+        $(`#${WOO_CUSTOM_MIGRATION_TAB_ID}`).find('span.j-spinner').remove();
 
         // Recreate each checkbox in its proper location
         checkboxConfigs.forEach(function (config) {
