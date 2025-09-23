@@ -361,13 +361,13 @@ jQuery(document).ready(function ($) {
     * 
     * @author Themeum <support@themeum.com>
     * @link https://themeum.com
-    * @since 2.3.2
+    * @since 2.4.0
     */
     const WOO_CUSTOM_MIGRATION_TAB_ID = 'tutor-wc-custom-migrate-tab';
     const WOO_AUTO_MIGRATION_TAB_ID = 'tutor-wc-auto-migrate-tab';
     const $migrationPage = $('.tutor-migration-page');
     const $migrateBtn = $migrationPage.find('.migrate-now-btn ');
-    const $checkboxes = $migrationPage.find('#tutor-wc-custom-migrate-tab input[type="checkbox"]');
+    const $checkboxes = $migrationPage.find(`#${WOO_CUSTOM_MIGRATION_TAB_ID} input[type="checkbox"]`);
 
     function getActiveTab() {
         return $migrationPage.find('.tutor-nav-link.is-active').data('tutorNavTarget');
