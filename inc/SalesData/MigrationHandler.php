@@ -65,18 +65,21 @@ class MigrationHandler {
 	 * @return wp_json response
 	 */
 	public function ajax_handle_migration() {
-		tutor_utils()->checking_nonce();
+		if ( ! tutor_utils()->is_nonce_verified() ) {
+			$this->response_bad_request( __( 'Invalid nonce', 'tutor-lms-migration-tool' ) );
+		}
+
 		tutor_utils()->check_current_user_capability();
 
 		$job_id       = Input::post( 'job_id' );
 		$requirements = $this->get_migration_data_types();
 		if ( ! $requirements ) {
-			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-pro' ) );
+			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-lms-migration-tool' ) );
 		}
 
 		$requirements = is_array( $requirements ) ? $requirements : json_decode( $requirements, true );
 		if ( json_last_error() ) {
-			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-pro' ) );
+			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-lms-migration-tool' ) );
 		}
 
 		$job_data   = $this->job_handler->get_migration_job( $requirements, $job_id );
@@ -84,16 +87,16 @@ class MigrationHandler {
 		if ( $active_job ) {
 			try {
 				$job_data = $this->job_handler->process_job( $active_job, $job_data );
-				$this->json_response( __( 'Migration in progress', 'tutor-pro' ), $job_data );
+				$this->json_response( __( 'Migration in progress', 'tutor-lms-migration-tool' ), $job_data );
 			} catch ( \Throwable $th ) {
-				$this->json_response( __( 'Migration failed', 'tutor-pro' ), $job_data, HttpHelper::STATUS_INTERNAL_SERVER_ERROR );
+				$this->json_response( __( 'Migration failed', 'tutor-lms-migration-tool' ), $job_data, HttpHelper::STATUS_INTERNAL_SERVER_ERROR );
 			}
 		}
 
 		$job_data['status']   = self::STATUS_SUCCESS;
 		$job_data['progress'] = 100;
 
-		return $this->json_response( __( 'Migration completed successfully', 'tutor-pro' ), $job_data );
+		return $this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 	}
 
 	/**
@@ -106,8 +109,8 @@ class MigrationHandler {
 	public function get_migration_data_types() {
 		return array(
 			SalesDataTypes::ORDERS,
-			SalesDataTypes::COUPONS,
-			SalesDataTypes::SUBSCRIPTIONS,
+			// SalesDataTypes::COUPONS,
+			// SalesDataTypes::SUBSCRIPTIONS,
 		);
 	}
 

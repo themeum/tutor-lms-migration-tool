@@ -112,7 +112,7 @@ class Orders implements MigrationTemplate {
 			)
 		);
 
-		return $orders;
+		return $orders->orders;
 	}
 
 	/**
