@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
+use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 use Tutor\Helpers\HttpHelper;
 use TUTOR\Input;
 use Tutor\Traits\JsonResponse;
@@ -68,17 +69,17 @@ class MigrationHandler {
 		tutor_utils()->check_current_user_capability();
 
 		$job_id       = Input::post( 'job_id' );
-		$requirements = Input::post( 'job_requirements' );
+		$requirements = $this->get_migration_data_types();
 		if ( ! $requirements ) {
 			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-pro' ) );
 		}
 
-		$requirements = json_decode( $requirements, true );
+		$requirements = is_array( $requirements ) ? $requirements : json_decode( $requirements, true );
 		if ( json_last_error() ) {
 			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-pro' ) );
 		}
 
-		$job_data   = $this->job_handler->get_migration_job( $requirements['job_requirements'], $job_id );
+		$job_data   = $this->job_handler->get_migration_job( $requirements, $job_id );
 		$active_job = $this->job_handler->get_active_job_type( $job_data );
 		if ( $active_job ) {
 			try {
@@ -93,6 +94,21 @@ class MigrationHandler {
 		$job_data['progress'] = 100;
 
 		return $this->json_response( __( 'Migration completed successfully', 'tutor-pro' ), $job_data );
+	}
+
+	/**
+	 * Get migration data types
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	public function get_migration_data_types() {
+		return array(
+			SalesDataTypes::ORDERS,
+			SalesDataTypes::COUPONS,
+			SalesDataTypes::SUBSCRIPTIONS,
+		);
 	}
 
 }
