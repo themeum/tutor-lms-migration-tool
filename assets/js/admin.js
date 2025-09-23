@@ -405,9 +405,7 @@ jQuery(document).ready(function ($) {
         formData.append('action', 'tlmt_migrate_sales_data');
         formData.append('job_id', 0);
 
-        console.log(getActiveTab())
-
-        if (getActiveTab() !== 'tutor-wc-custom-migrate-tab') {
+        if (getActiveTab() !== WOO_CUSTOM_MIGRATION_TAB_ID) {
             formData.delete('job_requirements[]');
             formData.append('job_requirements[]', 'all');
         }
