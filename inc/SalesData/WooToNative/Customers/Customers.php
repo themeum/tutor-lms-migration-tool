@@ -14,7 +14,6 @@ use AllowDynamicProperties;
 use Exception;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Tutor\Helpers\QueryHelper;
-use Tutor\Models\BillingModel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,21 +24,15 @@ defined( 'ABSPATH' ) || exit;
  */
 #[AllowDynamicProperties]
 class Customers implements MigrationTemplate {
+
 	/**
-	 * Customer data
+	 * Tutor Orders Meta table
 	 *
 	 * @since 2.4.0
 	 *
-	 * @var array
+	 * @var string
 	 */
-	public $customer_data = array();
-
-	/**
-	 * $woo_customers description
-	 *
-	 * @var array
-	 */
-	public $woo_customers = array();
+	protected $tutor_customers_table = 'tutor_customers';
 
 	/**
 	 * Total customer count
@@ -57,41 +50,14 @@ class Customers implements MigrationTemplate {
 	 *
 	 * @var array
 	 */
-	public $customer_meta_data = array();
-
-	/**
-	 * Tutor Orders table
-	 *
-	 * @since 2.4.0
-	 *
-	 * @var string
-	 */
-	protected $tutor_order_table = 'tutor_orders';
-
-	/**
-	 * Tutor Orders Meta table
-	 *
-	 * @since 2.4.0
-	 *
-	 * @var string
-	 */
-	protected $tutor_customers_table = 'tutor_customers';
+	public $customer_billing_data = array();
 
 	/**
 	 * User_orders description]
 	 *
 	 * @var object
 	 */
-	public $user_orders = array();
-
-	/**
-	 * Customer construction
-	 *
-	 * @return  void
-	 */
-	public function __construct() {
-		$this->woo_customers = $this->get_woocommerce_customers( -1 );
-	}
+	public $current_customer = array();
 
 	/**
 	 * Get items from source
@@ -115,6 +81,7 @@ class Customers implements MigrationTemplate {
 	 * @return int
 	 */
 	public function get_total_items_count(): int {
+		$this->total_customer_count = $this->get_woocommerce_customers_count();
 		return $this->total_customer_count;
 	}
 
@@ -126,18 +93,21 @@ class Customers implements MigrationTemplate {
 	 * @param object $customer customer order object.
 	 *
 	 * @return self
+	 * @throws \Throwable Return throws.
+	 * @throws Exception If customer data not found.
 	 */
 	public function extract( $customer = null ): self {
-		$args = array(
-			'customer_id' => $customer->id,
-			'limit'       => -1,
-			'orderby'     => 'date',
-			'order'       => 'DESC',
-		);
+		try {
+			if ( empty( $customer ) ) {
+				throw new Exception( 'Customer data not found!' );
+			}
 
-		$orders            = wc_get_orders( $args );
-		$this->user_orders = $orders[0];
-		return $this;
+			$customer               = new \WC_Customer( $customer['id'] );
+			$this->current_customer = (object) $customer;
+			return $this;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
 	}
 
 	/**
@@ -149,41 +119,48 @@ class Customers implements MigrationTemplate {
 	 * @param int $offset Number of items to skip from source.
 	 *
 	 * @return array
+	 * @throws \Throwable Return throws.
 	 */
 	public function get_woocommerce_customers( $limit = 5, $offset = 1 ) {
-		$args = array(
-			'status'     => array( 'completed', 'processing', 'on-hold' ),
-			'limit'      => $limit,
-			'paged'      => $offset,
-			'return'     => 'ids',
-			'meta_query' => array(
-				array(
-					'key'     => '_is_tutor_order_for_course',
-					'compare' => 'EXISTS',
+		// $limit  = 1;
+		// $offset = 4;
+		// 279 273 270 264
+		try {
+			$args      = array(
+				'status'     => array( 'completed', 'processing', 'on-hold' ),
+				'limit'      => $limit,
+				'paged'      => $offset,
+				'return'     => 'ids',
+				'meta_query' => array(
+					array(
+						'key'     => '_is_tutor_order_for_course',
+						'compare' => 'EXISTS',
+					),
 				),
-			),
-		);
-
-		$orders    = wc_get_orders( $args );
-		$customers = array();
-
-		foreach ( $orders as $order_id ) {
-			$order = wc_get_order( $order_id );
-
-			$customers[] = array(
-				'id'    => $order->get_user_id(),
-				'name'  => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-				'email' => $order->get_billing_email(),
 			);
+			$orders    = wc_get_orders( $args );
+			$customers = array();
+			$user_map  = array();
+
+			foreach ( $orders as $order_id ) {
+				$order   = wc_get_order( $order_id );
+				$user_id = $order->get_user_id();
+				if ( ! in_array( $user_id, $user_map ) ) {
+					$customers[] = array(
+						'id'    => $user_id,
+						'name'  => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+						'email' => $order->get_billing_email(),
+					);
+					$user_map[]  = $user_id;
+				}
+			}
+			// Remove duplicates.
+			$customers = array_unique( $customers, SORT_REGULAR );
+
+			return $customers;
+		} catch ( \Throwable $th ) {
+			throw $th;
 		}
-
-		// Remove duplicates.
-		$customers = array_unique( $customers, SORT_REGULAR );
-
-		$this->woo_customers        = $customers;
-		$this->total_customer_count = count( $customers );
-
-		return $customers;
 	}
 
 	/**
@@ -192,37 +169,47 @@ class Customers implements MigrationTemplate {
 	 * @since 2.4.0
 	 *
 	 * @return int
+	 * @throws \Throwable Return throws.
 	 */
 	public function get_woocommerce_customers_count() {
-		$args = array(
-			'status'     => array( 'completed', 'processing', 'on-hold' ),
-			'limit'      => -1,
-			'return'     => 'ids',
-			'meta_query' => array(
-				array(
-					'key'     => '_is_tutor_order_for_course',
-					'compare' => 'EXISTS',
-				),
-			),
-		);
+		global $wpdb;
+		try {
+			$is_hpos_enabled = false;
 
-		$orders    = wc_get_orders( $args );
-		$customers = array();
+			if ( class_exists( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class ) ) {
+				$controller      = wc_get_container()->get( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class );
+				$is_hpos_enabled = $controller->custom_orders_table_usage_is_enabled();
+			}
 
-		foreach ( $orders as $order_id ) {
-			$order = wc_get_order( $order_id );
+			if ( $is_hpos_enabled ) {
+				// HPOS query.
+				$query = "
+				SELECT DISTINCT c.customer_id, c.user_id, c.email, c.first_name, c.last_name
+				FROM {$wpdb->prefix}wc_customer_lookup AS c
+				INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
+					ON c.customer_id = s.customer_id
+				INNER JOIN {$wpdb->prefix}wc_orders_meta AS om 
+					ON om.order_id = s.order_id
+				WHERE om.meta_key = %s
+			";
+			} else {
+				// Legacy postmeta query.
+				$query = "
+				SELECT DISTINCT c.customer_id, c.user_id, c.email, c.first_name, c.last_name
+				FROM {$wpdb->prefix}wc_customer_lookup AS c
+				INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
+					ON c.customer_id = s.customer_id
+				INNER JOIN {$wpdb->postmeta} AS pm 
+					ON pm.post_id = s.order_id
+				WHERE pm.meta_key = %s
+			";
+			}
 
-			$customers[] = array(
-				'id'    => $order->get_user_id(),
-				'name'  => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-				'email' => $order->get_billing_email(),
-			);
+			$customers = $wpdb->get_results( $wpdb->prepare( $query, '_is_tutor_order_for_course' ) ); //phpcs:ignore
+			return count( $customers );
+		} catch ( \Throwable $th ) {
+			throw $th;
 		}
-
-		// Remove duplicates.
-		$customers = array_unique( $customers, SORT_REGULAR );
-
-		return count( $customers );
 	}
 
 	/**
@@ -237,28 +224,24 @@ class Customers implements MigrationTemplate {
 	 */
 	public function transform(): self {
 		try {
-			$order = $this->user_orders;
-			if ( empty( $order ) ) {
+			if ( empty( $this->current_customer ) ) {
 				throw new Exception( 'Customer data not found!' );
 			}
 
-			$user_id = $order->get_user_id();
-			$user    = $user_id ? get_userdata( $user_id ) : null;
-
-			$customer_meta_value = array(
-				'user_id'            => $user->ID,
-				'billing_first_name' => $order->get_address( 'billing' )['first_name'] ?? '',
-				'billing_last_name'  => $order->get_address( 'billing' )['last_name'] ?? '',
-				'billing_email'      => $user->user_email ?? '',
-				'billing_phone'      => $order->get_address( 'billing' )['phone'] ?? '',
-				'billing_zip_code'   => $order->get_address( 'billing' )['postcode'] ?? '',
-				'billing_address'    => $order->get_address( 'billing' )['address_1'] ?? '',
-				'billing_country'    => $order->get_address( 'billing' )['country'] ?? '',
-				'billing_state'      => $order->get_address( 'billing' )['state'] ?? '',
-				'billing_city'       => $order->get_address( 'billing' )['city'] ?? '',
+			$customer_info = array(
+				'user_id'            => $this->current_customer->get_id(),
+				'billing_first_name' => $this->current_customer->get_billing_first_name(),
+				'billing_last_name ' => $this->current_customer->get_billing_last_name(),
+				'billing_email'      => $this->current_customer->get_billing_email(),
+				'billing_phone'      => $this->current_customer->get_billing_phone(),
+				'billing_zip_code'   => $this->current_customer->get_billing_postcode(),
+				'billing_address'    => $this->current_customer->get_billing_address_1(),
+				'billing_country'    => $this->current_customer->get_billing_country(),
+				'billing_state'      => $this->current_customer->get_billing_state(),
+				'billing_city'       => $this->current_customer->get_billing_city(),
+				// 'billing_address_2'  => $this->current_customer->get_billing_address_2(),
 			);
-
-			$this->customer_meta_data = $customer_meta_value;
+			$this->customer_billing_data = $customer_info;
 			return $this;
 		} catch ( \Throwable $th ) {
 			throw $th;
@@ -276,16 +259,84 @@ class Customers implements MigrationTemplate {
 	 */
 	public function migrate(): bool {
 		try {
-			if ( empty( $this->customer_meta_data ) ) {
+			if ( empty( $this->customer_billing_data ) ) {
 				throw new Exception( 'Customer data not found!' );
 			}
-
 			global $wpdb;
-			$order_meta_inserted = QueryHelper::insert( $wpdb->prefix . $this->tutor_customers_table, $this->customer_meta_data );
+			$existing_customer = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id, user_id FROM {$wpdb->prefix}{$this->tutor_customers_table} WHERE user_id = %d", //phpcs:ignore
+					$this->customer_billing_data['user_id']
+				)
+			);
+			if ( $existing_customer ) {
+				$this->customer_billing_data['billing_country'] = 'BD';
+				// Update existing customer.
+				$order_meta_inserted = QueryHelper::update(
+					$wpdb->prefix . $this->tutor_customers_table,
+					$this->customer_billing_data,
+					array(
+						'id'      => $existing_customer,
+						'user_id' => $this->customer_billing_data['user_id'],
+					)
+				);
+				if ( ! $order_meta_inserted ) {
+					throw new Exception( 'Customer migration failed!' );
+				}
+				return true;
+			}
+			// Insert data in tutor_customers table.
+			$order_meta_inserted = QueryHelper::insert( $wpdb->prefix . $this->tutor_customers_table, $this->customer_billing_data );
 			if ( ! $order_meta_inserted ) {
 				throw new Exception( 'Customer migration failed!' );
 			}
 			return true;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
+	}
+
+	/**
+	 * Get total WooCommerce customers count from orders
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return int
+	 * @throws \Throwable Return throws.
+	 */
+	public function set_woocommerce_customers_info() {
+		try {
+			$args = array(
+				'status'     => array( 'completed', 'processing', 'on-hold' ),
+				'limit'      => -1,
+				'return'     => 'ids',
+				'meta_query' => array(
+					array(
+						'key'     => '_is_tutor_order_for_course',
+						'compare' => 'EXISTS',
+					),
+				),
+			);
+
+			$orders    = wc_get_orders( $args );
+			$customers = array();
+			$user_map  = array();
+
+			foreach ( $orders as $order_id ) {
+				$order   = wc_get_order( $order_id );
+				$user_id = $order->get_user_id();
+				if ( ! in_array( $user_id, $user_map, true ) ) {
+					$user_map[]             = $user_id;
+					$this->current_customer = $order;
+					$this->transform();
+					$customers[] = $this->current_customer;
+				}
+			}
+
+			$this->woo_customers        = $customers;
+			$this->total_customer_count = count( $customers );
+			$this->current_customer     = array(); // reset customer meta.
+			return $this;
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
