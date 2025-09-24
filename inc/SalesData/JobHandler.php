@@ -36,6 +36,8 @@ class JobHandler {
 	/**
 	 * Process the active job
 	 *
+	 * If not items available then skip and return
+	 *
 	 * @since 2.4.0
 	 *
 	 * @throws \Throwable If failed to create sales data object.
@@ -47,12 +49,15 @@ class JobHandler {
 	 */
 	public function process_job( string $active_job_type, array $job_data ) {
 		try {
-
 			$requirements    = $job_data['requirements'];
 			$active_job      = $requirements[ $active_job_type ];
 			$total_items     = $active_job['total'];
 			$processed_items = $active_job['processed'];
 			$limit           = 10;
+
+			if ( ! $total_items ) {
+				return;
+			}
 
 			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
 			$items    = $data_obj->get_items( $limit, $processed_items );
@@ -79,8 +84,8 @@ class JobHandler {
 
 			// Update job data.
 			$requirement[ $active_job_type ] = $active_job;
-			$job_data['progress']            = $this->get_job_progress( $job_data );
 			$job_data['requirements']        = $requirement;
+			$job_data['progress']            = $this->get_job_progress( $job_data );
 
 			$this->update_job_data( $job_data );
 			return $job_data;

@@ -104,10 +104,6 @@ class Orders implements MigrationTemplate {
 						'key'     => '_is_tutor_order_for_course',
 						'compare' => 'EXISTS',
 					),
-					array(
-						'key'   => '_tutor_order_type',
-						'value' => 'single_order',
-					),
 				),
 			)
 		);
@@ -132,10 +128,6 @@ class Orders implements MigrationTemplate {
 					array(
 						'key'     => '_is_tutor_order_for_course',
 						'compare' => 'EXISTS',
-					),
-					array(
-						'key'   => '_tutor_order_type',
-						'value' => 'single_order',
 					),
 				),
 			)
