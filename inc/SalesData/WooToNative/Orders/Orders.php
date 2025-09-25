@@ -271,6 +271,8 @@ class Orders implements MigrationTemplate {
 	 * @return bool true|false
 	 */
 	public function migrate(): bool {
+		$order_data = $this->order_data;
+		$order_meta_data = $this->order_meta_data;
 		return true;
 	}
 }
