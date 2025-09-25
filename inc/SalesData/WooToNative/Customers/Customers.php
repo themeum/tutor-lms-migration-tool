@@ -75,7 +75,7 @@ class Customers implements MigrationTemplate {
 	}
 
 	/**
-	 * Total items count from source
+	 * Total customer count
 	 *
 	 * @since 2.4.0
 	 *
@@ -152,8 +152,6 @@ class Customers implements MigrationTemplate {
 					$user_map[]  = $user_id;
 				}
 			}
-			// Remove duplicates.
-			$customers = array_unique( $customers, SORT_REGULAR );
 
 			return $customers;
 		} catch ( \Throwable $th ) {
@@ -211,7 +209,7 @@ class Customers implements MigrationTemplate {
 	}
 
 	/**
-	 * Transform the customer data to native customer
+	 * Transform the customer data to tutor native customer
 	 *
 	 * @since 2.4.0
 	 *
@@ -268,7 +266,7 @@ class Customers implements MigrationTemplate {
 			);
 			if ( $existing_customer ) {
 				$this->customer_billing_data['billing_country'] = 'BD';
-				// Update existing customer.
+				// Update existing customer billing info.
 				$order_meta_inserted = QueryHelper::update(
 					$wpdb->prefix . $this->tutor_customers_table,
 					$this->customer_billing_data,
