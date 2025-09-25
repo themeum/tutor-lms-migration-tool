@@ -11,6 +11,7 @@
 namespace Themeum\TutorLMSMigrationTool;
 
 use Themeum\TutorLMSMigrationTool\SalesData\InitSalesMigration;
+use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,7 +41,8 @@ class Init {
 	private function boot() {
 		new ActionHandler();
 
-		// Init WC to Native migration.
+		// Init WC to Native sales data migration.
 		new InitSalesMigration();
+		new MigrationHandler();
 	}
 }
