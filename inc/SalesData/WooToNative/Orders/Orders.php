@@ -335,6 +335,8 @@ class Orders implements MigrationTemplate {
 				continue;
 			}
 
+			$this->order_course_id = $course->post_id;
+
 			$regular_price  = $item->get_subtotal();
 			$sale_price     = $item->get_total();
 			$discount_price = null;
