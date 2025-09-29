@@ -95,15 +95,9 @@ class Customers implements MigrationTemplate {
 	 *
 	 * @return self
 	 * @throws \Throwable Return throws.
-	 * @throws Exception If customer data not found.
 	 */
 	public function extract( $customer = null ): self {
 		try {
-			if ( empty( $customer ) ) {
-				throw new Exception( 'Customer data not found!' );
-			}
-
-			$customer               = new \WC_Customer( $customer['id'] );
 			$this->current_customer = (object) $customer;
 			return $this;
 		} catch ( \Throwable $th ) {
@@ -258,20 +252,18 @@ class Customers implements MigrationTemplate {
 				throw new Exception( 'Customer data not found!' );
 			}
 			global $wpdb;
-			$existing_customer = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT id, user_id FROM {$wpdb->prefix}{$this->tutor_customers_table} WHERE user_id = %d", //phpcs:ignore
-					$this->customer_billing_data['user_id']
-				)
+			$is_customer_exist = QueryHelper::get_row(
+				$this->tutor_customers_table,
+				array( 'user_id' => $this->customer_billing_data['user_id'] ),
+				'id'
 			);
-			if ( $existing_customer ) {
-				$this->customer_billing_data['billing_country'] = 'BD';
+			if ( ! empty( $is_customer_exist ) ) {
 				// Update existing customer billing info.
 				$order_meta_inserted = QueryHelper::update(
 					$wpdb->prefix . $this->tutor_customers_table,
 					$this->customer_billing_data,
 					array(
-						'id'      => $existing_customer,
+						'id'      => $is_customer_exist->id,
 						'user_id' => $this->customer_billing_data['user_id'],
 					)
 				);
