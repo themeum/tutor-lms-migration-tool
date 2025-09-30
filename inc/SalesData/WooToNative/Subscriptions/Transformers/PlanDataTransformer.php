@@ -19,7 +19,7 @@ use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
  *
  * @since 2.4.0
  */
-class PlanDataTransformer extends DataTransformer {
+class PlanDataTransformer implements DataTransformer {
 	/**
 	 * Transform data from woo to native
 	 *
