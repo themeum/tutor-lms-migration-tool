@@ -253,10 +253,22 @@ class Subscriptions implements MigrationTemplate {
 			$orders_map = array();
 			foreach ( $this->transformed_data[ self::ORDERS ] as $order ) {
 				$wc_order_id = $order['wc_order_id'];
+				$meta_data   = $order['meta_data'];
 				unset( $order['wc_order_id'] );
+				unset( $order['meta_data'] );
 
 				$tutor_order_id             = $this->order_model->create_order( $order );
 				$orders_map[ $wc_order_id ] = $tutor_order_id;
+
+				// Store order meta data.
+				$meta_data = array_map(
+					function ( $meta ) use ( $tutor_order_id ) {
+						$meta['order_id'] = $tutor_order_id;
+						return $meta;
+					},
+					$meta_data
+				);
+				QueryHelper::insert_multiple_rows( 'tutor_ordermeta', $meta_data, false, false );
 			}
 
 			// Update parent order id.

@@ -72,24 +72,13 @@ class OrderDataTransformer implements DataTransformer {
 			$discount = $order->get_total_discount();
 			$earnings = $total - ( $refunded + $fees );
 
+			$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+			$updated_at_gmt = $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+
 			$tax_rate = 0;
 			foreach ( $order->get_items( 'tax' ) as $tax_item ) {
 				$tax_rate = $tax_item->get_rate_percent();
 			}
-
-			$billing_data = array(
-				'id'                 => $order->get_customer_id(),
-				'user_id'            => $order->get_user_id(),
-				'billing_first_name' => $order->get_billing_first_name(),
-				'billing_last_name'  => $order->get_billing_last_name(),
-				'billing_email'      => $order->get_billing_email(),
-				'billing_phone'      => $order->get_billing_phone(),
-				'billing_zip_code'   => $order->get_billing_postcode(),
-				'billing_address'    => $order->get_billing_address_1(),
-				'billing_country'    => $order->get_billing_country(),
-				'billing_state'      => $order->get_billing_state(),
-				'billing_city'       => $order->get_billing_city(),
-			);
 
 			$order_data[] = array(
 				'wc_order_id'      => $order->get_id(),
@@ -125,14 +114,53 @@ class OrderDataTransformer implements DataTransformer {
 
 				'created_by'       => $order->get_customer_id(),
 				'updated_by'       => $order->get_customer_id(),
-				'created_at_gmt'   => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : null,
-				'updated_at_gmt'   => $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : null,
+				'created_at_gmt'   => $created_at_gmt,
+				'updated_at_gmt'   => $updated_at_gmt,
 
 				'items'            => $items,
-				'billing_data'     => wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ),
+				'meta_data'        => $this->prepare_meta_data( $order ),
 			);
 		}
 
 		return $order_data;
+	}
+
+	/**
+	 * Prepare meta data for order
+	 *
+	 * @param WC_Order $order wc order object..
+	 *
+	 * @return array
+	 */
+	public function prepare_meta_data( $order ) {
+		$billing_data = array(
+			'id'                 => $order->get_customer_id(),
+			'user_id'            => $order->get_user_id(),
+			'billing_first_name' => $order->get_billing_first_name(),
+			'billing_last_name'  => $order->get_billing_last_name(),
+			'billing_email'      => $order->get_billing_email(),
+			'billing_phone'      => $order->get_billing_phone(),
+			'billing_zip_code'   => $order->get_billing_postcode(),
+			'billing_address'    => $order->get_billing_address_1(),
+			'billing_country'    => $order->get_billing_country(),
+			'billing_state'      => $order->get_billing_state(),
+			'billing_city'       => $order->get_billing_city(),
+		);
+
+		$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+		$updated_at_gmt = $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+
+		$meta_data = array(
+			array(
+				'meta_key'       => OrderModel::META_KEY_BILLING_ADDRESS,
+				'meta_value'     => wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ),
+				'created_at_gmt' => $created_at_gmt,
+				'updated_at_gmt' => $updated_at_gmt,
+				'created_by'     => $order->get_customer_id(),
+				'updated_by'     => $order->get_customer_id(),
+			),
+		);
+
+		return $meta_data;
 	}
 }
