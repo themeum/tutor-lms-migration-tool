@@ -8,10 +8,9 @@
  * @since 2.4.0
  */
 
-namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Earnings;
+namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 
 use AllowDynamicProperties;
-use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -21,7 +20,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * WooCommerce to Tutor Earnings migration class.
  */
-class Earnings implements MigrationTemplate {
+class Earnings {
 
 	/**
 	 * Tutor earning table.
@@ -58,76 +57,6 @@ class Earnings implements MigrationTemplate {
 	 */
 	private $new_order_id = 0;
 
-	/**
-	 * Get Tutor Earnings List.
-	 *
-	 * @since 2.4.0
-	 *
-	 * @throws \Exception If data cannot be obtained.
-	 *
-	 * @param integer $limit the data limit.
-	 * @param integer $offset the data offset.
-	 *
-	 * @return array
-	 */
-	public function get_items( int $limit = 5, int $offset = 0 ): array {
-		$wc_earnings = array();
-
-		try {
-			$wc_earnings = QueryHelper::get_all_with_search(
-				$this->tutor_earning_table,
-				array(
-					'process_by'   => 'woocommerce',
-					'order_status' => array(
-						'IN',
-						tutor_utils()->get_earnings_completed_statuses(),
-					),
-				),
-				array(),
-				'created_at',
-				$limit,
-				$offset,
-				'DESC',
-				'OBJECT'
-			);
-		} catch ( \Exception $e ) {
-			throw $e;
-		}
-
-		return $wc_earnings['results'];
-	}
-
-	/**
-	 * Get Tutor Earnings Count.
-	 *
-	 * @since 2.4.0
-	 *
-	 * @throws \Exception If data cannot be obtained.
-	 *
-	 * @return integer
-	 */
-	public function get_total_items_count(): int {
-		$wc_earning_count = 0;
-
-		try {
-			$wc_earning_count = QueryHelper::get_count(
-				$this->tutor_earning_table,
-				array(
-					'process_by'   => 'woocommerce',
-					'order_status' => array(
-						'IN',
-						tutor_utils()->get_earnings_completed_statuses(),
-					),
-				),
-				array(),
-				'earning_id'
-			);
-		} catch ( \Exception $e ) {
-			throw $e;
-		}
-
-		return $wc_earning_count;
-	}
 
 	/**
 	 * Extract earning data from order.
@@ -138,9 +67,9 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @param int|object $order the order object or id.
 	 *
-	 * @return MigrationTemplate
+	 * @return void
 	 */
-	public function extract( $order ): MigrationTemplate {
+	private function extract( $order ) {
 		$this->old_order_id = (int) $order->old_order_id;
 		$this->new_order_id = (int) $order->new_order_id;
 
@@ -160,8 +89,6 @@ class Earnings implements MigrationTemplate {
 		} catch ( \Exception $e ) {
 			throw $e;
 		}
-
-		return $this;
 	}
 
 	/**
@@ -171,9 +98,9 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @throws \Exception If earning data not found.
 	 *
-	 * @return MigrationTemplate
+	 * @return void
 	 */
-	public function transform(): MigrationTemplate {
+	private function transform() {
 		if ( $this->tutor_wc_order_earnings ) {
 			$transformed_earnings = array(
 				'order_id'   => $this->new_order_id,
@@ -184,7 +111,6 @@ class Earnings implements MigrationTemplate {
 		} else {
 			throw new \Exception( esc_html__( 'Earnings not found for order', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
 		}
-		return $this;
 	}
 
 	/**
@@ -194,11 +120,20 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @throws \Exception If earning data cannot be updated.
 	 *
+	 * @param object $order the order object.
+	 *
 	 * @return boolean
 	 */
-	public function migrate(): bool {
-		// Update earnings data.
+	public function migrate( $order ): bool {
+		// Extract the data.
+		try {
+			$this->extract( $order );
+			$this->transform();
+		} catch ( \Exception $e ) {
+			throw $e;
+		}
 
+		// Update earnings data.
 		$result = QueryHelper::update(
 			$this->tutor_earning_table,
 			$this->tutor_transformed_order_earnings,

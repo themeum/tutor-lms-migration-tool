@@ -15,7 +15,6 @@ use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Coupons\Coupons;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Customers\Customers;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Earnings\Earnings;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders\Orders;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
 use Themeum\TutorLMSMigrationTool\SalesDataTypes;
@@ -48,8 +47,6 @@ abstract class SalesDataFactory {
 					return new Customers();
 				} elseif ( SalesDataTypes::COUPONS === $data_type ) {
 					return new Coupons();
-				} elseif ( SalesDataTypes::EARNINGS === $data_type ) {
-					return new Earnings();
 				}
 				break;
 			default:
