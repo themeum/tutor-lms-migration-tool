@@ -18,6 +18,7 @@ use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transforme
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\PlanDataTransformer;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\SubscriptionDataTransformer;
 use TUTOR\Course;
+use TUTOR\Earnings;
 use Tutor\Helpers\QueryHelper;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\PlanModel;
@@ -38,6 +39,17 @@ class Subscriptions implements MigrationTemplate {
 	 * @var string
 	 */
 	const MAP_KEY = 'tutor_wc2native_subscription_map';
+
+	/**
+	 * Constants
+	 *
+	 * @var string
+	 */
+	const PLANS        = 'plans';
+	const SUBSCRIPTION = 'subscription';
+	const ENROLLMENTS  = 'enrollments';
+	const ORDERS       = 'orders';
+
 
 	/**
 	 * Subscription object
@@ -215,10 +227,10 @@ class Subscriptions implements MigrationTemplate {
 	 */
 	public function transform(): MigrationTemplate {
 		$this->transformed_data = array(
-			'plans'        => $this->plan_data_transformer->transform( $this->subscription ),
-			'subscription' => $this->subscription_data_transformer->transform( $this->subscription ),
-			'enrollments'  => $this->enrollment_data_transformer->transform( $this->subscription ),
-			'orders'       => $this->order_data_transformer->transform( $this->subscription ),
+			self::PLANS        => $this->plan_data_transformer->transform( $this->subscription ),
+			self::SUBSCRIPTION => $this->subscription_data_transformer->transform( $this->subscription ),
+			self::ENROLLMENTS  => $this->enrollment_data_transformer->transform( $this->subscription ),
+			self::ORDERS       => $this->order_data_transformer->transform( $this->subscription ),
 		);
 
 		$this->log_data( $this->transformed_data );
@@ -239,7 +251,7 @@ class Subscriptions implements MigrationTemplate {
 		try {
 			// Orders migration.
 			$orders_map = array();
-			foreach ( $this->transformed_data['orders'] as $order ) {
+			foreach ( $this->transformed_data[ self::ORDERS ] as $order ) {
 				$wc_order_id = $order['wc_order_id'];
 				unset( $order['wc_order_id'] );
 
@@ -261,11 +273,11 @@ class Subscriptions implements MigrationTemplate {
 				}
 			}
 
-			$this->mapper->set_map_by_key( 'orders', $orders_map );
+			$this->mapper->set_map_by_key( self::ORDERS, $orders_map );
 
 			// Subscription migration.
-			$plans_map         = $this->mapper->get_map_by_key( 'plans' );
-			$subscription_data = $this->transformed_data['subscription'];
+			$plans_map         = $this->mapper->get_map_by_key( self::PLANS );
+			$subscription_data = $this->transformed_data[ self::SUBSCRIPTION ];
 			if ( $subscription_data ) {
 				$subscription_data['plan_id']         = $plans_map[ $subscription_data['plan_id'] ];
 				$subscription_data['first_order_id']  = $orders_map[ $subscription_data['first_order_id'] ];
@@ -275,7 +287,7 @@ class Subscriptions implements MigrationTemplate {
 			}
 
 			// Enrollment migration.
-			$enrollments = $this->transformed_data['enrollments'];
+			$enrollments = $this->transformed_data[ self::ENROLLMENTS ];
 			if ( tutor_utils()->count( $enrollments ) && $tutor_subscription_id ) {
 				foreach ( $enrollments as $enrollment ) {
 					$this->subscription_model->mark_as_subscription_enrollment( $enrollment->post_id, $tutor_subscription_id );
@@ -288,11 +300,11 @@ class Subscriptions implements MigrationTemplate {
 					'tutor_earnings',
 					array(
 						'order_id'   => $tutor_order_id,
-						'process_by' => 'tutor',
+						'process_by' => Earnings::PROCESS_BY_TUTOR,
 					),
 					array(
 						'order_id'   => $wc_order_id,
-						'process_by' => 'wc',
+						'process_by' => Earnings::PROCESS_BY_WOOCOMMERCE,
 					)
 				);
 			}
