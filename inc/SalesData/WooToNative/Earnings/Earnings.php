@@ -12,6 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Earnings;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
+use Themeum\TutorLMSMigrationTool\MigrationMapper;
 use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -29,6 +30,33 @@ class Earnings implements MigrationTemplate {
 	 * @var string
 	 */
 	private $tutor_earning_table = 'tutor_earnings';
+
+	/**
+	 * Tutor WooCommerce Order Earnings.
+	 *
+	 * @var mixed
+	 */
+	private $tutor_wc_order_earnings = null;
+
+	/**
+	 * Transformed Tutor Order Earnings List.
+	 *
+	 * @var array
+	 */
+	private $tutor_transformed_order_earnings = array();
+
+	/**
+	 * Tutor Migration Tool Mapper Class Instance.
+	 *
+	 * @var MigrationMapper
+	 */
+	private $migration_mapper;
+
+	/**
+	 * Earning Migration Class Constructor.
+	 */
+	public function __construct() {
+	}
 
 	/**
 	 * Get Tutor Earnings List.
@@ -66,7 +94,7 @@ class Earnings implements MigrationTemplate {
 			throw $e;
 		}
 
-		return $wc_earnings;
+		return $wc_earnings['results'];
 	}
 
 	/**
@@ -106,11 +134,31 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param int|object $order the order object or id.
+	 * @throws \Exception If data cannot be obtained.
+	 *
+	 * @param int|object $earning the earning object or id.
 	 *
 	 * @return MigrationTemplate
 	 */
-	public function extract( $order ): MigrationTemplate {
+	public function extract( $earning ): MigrationTemplate {
+		try {
+			$this->tutor_wc_order_earnings = QueryHelper::get_row(
+				$this->tutor_earning_table,
+				array(
+					'order_id'     => $earning->order_id,
+					'course_id'    => $earning->course_id,
+					'process_by'   => 'woocommerce',
+					'order_status' => array(
+						'IN',
+						tutor_utils()->get_earnings_completed_statuses(),
+					),
+				),
+				'created_at'
+			);
+		} catch ( \Exception $e ) {
+			throw $e;
+		}
+
 		return $this;
 	}
 
@@ -119,9 +167,33 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @throws \Exception If earning data not found.
+	 *
 	 * @return MigrationTemplate
 	 */
 	public function transform(): MigrationTemplate {
+		if ( $this->tutor_wc_order_earnings ) {
+			$transformed_earnings = array(
+				'user_id'                  => $this->tutor_wc_order_earnings->user_id,
+				'order_id'                 => $this->get_total_items_count() + 1, // TODO: need to update this with mapped order id.
+				'order_status'             => $this->tutor_wc_order_earnings->order_status,
+				'course_price_total'       => $this->tutor_wc_order_earnings->course_price_total,
+				'course_price_grand_total' => $this->tutor_wc_order_earnings->course_price_grand_total,
+				'instructor_amount'        => $this->tutor_wc_order_earnings->instructor_amount,
+				'instructor_rate'          => $this->tutor_wc_order_earnings->instructor_rate,
+				'admin_amount'             => $this->tutor_wc_order_earnings->admin_amount,
+				'admin_rate'               => $this->tutor_wc_order_earnings->admin_rate,
+				'commission_type'          => $this->tutor_wc_order_earnings->commission_type,
+				'deduct_fees_amount'       => $this->tutor_wc_order_earnings->deduct_fees_amount,
+				'deduct_fees_type'         => $this->tutor_wc_order_earnings->deduct_fees_type,
+				'process_by'               => 'tutor',
+				'created_at'               => $this->tutor_wc_order_earnings->created_at,
+			);
+
+			$this->tutor_transformed_order_earnings = $transformed_earnings;
+		} else {
+			throw new \Exception( esc_html__( 'Earnings not found for order', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
+		}
 		return $this;
 	}
 
@@ -130,9 +202,21 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @throws \Exception If cannot insert data.
+	 *
 	 * @return boolean
 	 */
 	public function migrate(): bool {
+		// Insert earnings data.
+		try {
+			$earning_id = QueryHelper::insert(
+				$this->tutor_earning_table,
+				$this->tutor_transformed_order_earnings
+			);
+		} catch ( \Exception $e ) {
+			throw $e;
+		}
+
 		return true;
 	}
 }

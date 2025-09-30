@@ -117,6 +117,7 @@ class MigrationHandler {
 			SalesDataTypes::ORDERS,
 			// SalesDataTypes::COUPONS,
 			// SalesDataTypes::SUBSCRIPTIONS,
+			SalesDataTypes::EARNINGS,
 		);
 	}
 
