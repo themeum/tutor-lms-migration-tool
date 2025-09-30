@@ -1,0 +1,115 @@
+<?php
+/**
+ * Subscription order data transformer.
+ *
+ * @package TutorLMSMigrationTool
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.4.0
+ */
+
+namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers;
+
+use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
+use Themeum\TutorLMSMigrationTool\MigrationMapper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Helper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
+use TutorPro\Subscription\Models\PlanModel;
+
+/**
+ * Class OrderDataTransformer
+ *
+ * @since 2.4.0
+ */
+class OrderDataTransformer implements DataTransformer {
+	/**
+	 * Transform subscriptions orders data from woo to native
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WC_Subscription $subscription subscription object.
+	 *
+	 * @return array
+	 */
+	public function transform( $subscription ) {
+		$plan_model = new PlanModel();
+		$mapper     = new MigrationMapper( Subscriptions::MAP_KEY );
+
+		$tax_type   = get_option( 'woocommerce_prices_include_tax' ) === 'yes' ? 'inclusive' : 'exclusive';
+		$order_ids  = $subscription->get_related_orders( 'ids', array( 'parent', 'renewal' ) );
+		$order_ids  = array_reverse( $order_ids ); // To get orders like subscription, renewal, renewal so on.
+		$orders     = array_map( 'wc_get_order', $order_ids );
+		$wc_plan_id = Helper::get_wc_product_id_by_subscription( $subscription );
+
+		/**
+		 * Order
+		 *
+		 * @var WC_Order $order
+		 */
+		$order_data = array();
+		$plans_map  = $mapper->get_map_by_key( 'plans' );
+		foreach ( $orders as $order ) {
+			$order_type     = wcs_order_contains_renewal( $order ) ? 'renewal' : 'subscription';
+			$parent_id      = 0;
+			$payment_status = 'completed' === $order->get_status() ? 'paid' : 'unpaid';
+			$tax_amount     = $order->get_total_tax();
+
+			$tutor_plan_id = $plans_map[ $wc_plan_id ];
+			$plan          = $plan_model->get_plan( $tutor_plan_id );
+
+			$items = array(
+				array(
+					'item_id'       => $plan->id,
+					'regular_price' => $plan->regular_price,
+					'sale_price'    => $plan->sale_price > 0 ? $plan->sale_price : null,
+				),
+			);
+
+			$tax_rate = 0;
+			foreach ( $order->get_items( 'tax' ) as $tax_item ) {
+				$tax_rate = $tax_item->get_rate_percent();
+			}
+
+			$order_data[] = array(
+				'wc_order_id'      => $order->get_id(),
+				'order_type'       => $order_type,
+				'parent_id'        => $parent_id,
+				'transaction_id'   => $order->get_transaction_id(),
+				'user_id'          => $order->get_customer_id(),
+				'order_status'     => $order->get_status(),
+				'payment_status'   => $payment_status,
+				'subtotal_price'   => $order->get_subtotal(),
+				'pre_tax_price'    => $order->get_subtotal(),
+
+				'tax_type'         => $tax_type,
+				'tax_rate'         => $tax_rate,
+				'tax_amount'       => $tax_amount,
+
+				'total_price'      => $order->get_total(),
+				'net_payment'      => $order->get_total(),
+
+				'coupon_code'      => '',
+				'coupon_amount'    => 0,
+				'discount_type'    => '',
+				'discount_amount'  => 0,
+				'discount_reason'  => '',
+				'fees'             => 0,
+				'earnings'         => 0,
+				'refund_amount'    => 0,
+
+				'payment_method'   => $order->get_payment_method(),
+				'payment_payloads' => '',
+				'note'             => '',
+
+				'created_by'       => $order->get_customer_id(),
+				'updated_by'       => $order->get_customer_id(),
+				'created_at_gmt'   => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : null,
+				'updated_at_gmt'   => $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : null,
+
+				'items'            => $items,
+			);
+		}
+
+		return $order_data;
+	}
+}
