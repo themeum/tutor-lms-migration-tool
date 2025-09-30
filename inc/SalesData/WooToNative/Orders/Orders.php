@@ -142,6 +142,10 @@ class Orders implements MigrationTemplate {
 				'limit'      => $limit,
 				'offset'     => $offset,
 				'status'     => $this->get_order_statuses(),
+				'type'       => array(
+					'shop_order',
+					'shop_order_refund',
+				),
 				'orderby'    => 'date',
 				'order'      => 'DESC',
 				'return'     => 'objects',
@@ -169,6 +173,10 @@ class Orders implements MigrationTemplate {
 			array(
 				'status'     => $this->get_order_statuses(),
 				'return'     => 'ids',
+				'type'       => array(
+					'shop_order',
+					'shop_order_refund',
+				),
 				'limit'      => -1,
 				'meta_query' => array(
 					array(
@@ -367,7 +375,7 @@ class Orders implements MigrationTemplate {
 	 */
 	public function migrate(): bool {
 		try {
-			$order_id = $this->tutor_order_model->create_order( $this->transform_order_data );
+			$order_id = $this->tutor_order_model->create_order( $this->transformed_order_data );
 
 			// Update enrollment map.
 			$enrollment = tutor_utils()->get_enrolled_data( $this->order_course_id, $this->order_customer_id );
