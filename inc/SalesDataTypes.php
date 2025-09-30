@@ -21,4 +21,5 @@ abstract class SalesDataTypes {
 	const COUPONS       = 'coupons';
 	const SUBSCRIPTIONS = 'subscriptions';
 	const CUSTOMERS     = 'customers';
+	const EARNINGS      = 'earnings';
 }
