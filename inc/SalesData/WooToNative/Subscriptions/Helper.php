@@ -10,6 +10,8 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions;
 
+use TutorPro\Subscription\Models\SubscriptionModel;
+
 /**
  * Class Helper
  *
@@ -59,5 +61,27 @@ class Helper {
 		$product_id  = ! empty( $product_ids ) ? reset( $product_ids ) : null;
 
 		return $product_id;
+	}
+
+	/**
+	 * Get tutor subscription status by wc subscription status.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WC_Subscription $wc_subscription wc subscription object.
+	 *
+	 * @return string
+	 */
+	public static function get_subscription_status( $wc_subscription ) {
+		$status = $wc_subscription->get_status();
+		$map    = array(
+			'pending'   => SubscriptionModel::STATUS_PENDING,
+			'on-hold'   => SubscriptionModel::STATUS_HOLD,
+			'active'    => SubscriptionModel::STATUS_ACTIVE,
+			'cancelled' => SubscriptionModel::STATUS_CANCELLED,
+			'expired'   => SubscriptionModel::STATUS_EXPIRED,
+		);
+
+		return $map[ $status ] ?? SubscriptionModel::STATUS_PENDING;
 	}
 }
