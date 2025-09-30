@@ -367,7 +367,7 @@ class Orders implements MigrationTemplate {
 	 */
 	public function migrate(): bool {
 		try {
-			$order_id = $this->tutor_order_model->create_order( $this->transform_order_data );
+			$order_id = $this->tutor_order_model->create_order( $this->transformed_order_data );
 
 			// Update enrollment map.
 			$enrollment = tutor_utils()->get_enrolled_data( $this->order_course_id, $this->order_customer_id );
