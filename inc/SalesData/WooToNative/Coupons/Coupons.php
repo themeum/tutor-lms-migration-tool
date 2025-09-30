@@ -217,7 +217,7 @@ class Coupons implements MigrationTemplate {
 
 			return array(
 				'type'          => CouponModel::APPLIES_TO_SPECIFIC_CATEGORY,
-				'reference_ids' => $this->get_tutor_category_id( $product_categories ),
+				'reference_ids' => $this->get_tutor_category_ids( $product_categories ),
 			);
 		}
 
@@ -281,36 +281,25 @@ class Coupons implements MigrationTemplate {
 	 * @param int[] $product_categories WooCommerce product category IDs.
 	 * @return int[] Tutor LMS category IDs.
 	 */
-	private function get_tutor_category_id( $product_categories ) {
+	private function get_tutor_category_ids( $product_categories ) {
 
-		$tutor_category_ids = array();
+		return array_filter(
+			array_map(
+				function ( $category_id ) {
 
-		foreach ( $product_categories as $category_id ) {
+					$wc_term = get_term( $category_id, 'product_cat' );
 
-			$wc_term = get_term( $category_id, 'product_cat' );
+					if ( empty( $wc_term ) || is_wp_error( $wc_term ) ) {
+						throw new \Exception( 'Invalid WooCommerce term' );
+					}
 
-			if ( empty( $wc_term ) || is_wp_error( $wc_term ) ) {
-				throw new \Exception( 'Invalid WooCommerce term' );
-			}
-
-			if ( term_exists( $wc_term->slug, CourseModel::COURSE_CATEGORY ) ) {
-				$tutor_category_ids[] = $wc_term->term_id;
-				continue;
-			}
-
-			$is_created = wp_insert_term(
-				$wc_term->name,
-				CourseModel::COURSE_CATEGORY,
-			);
-
-			if ( is_wp_error( $is_created ) ) {
-				throw new \Exception( 'Failed to create Tutor LMS category' );
-			}
-
-			$tutor_category_ids[] = $is_created['term_id'];
-		}
-
-		return $tutor_category_ids;
+					if ( term_exists( $wc_term->slug, CourseModel::COURSE_CATEGORY ) ) {
+						return $wc_term->term_id;
+					}
+				},
+				$product_categories
+			)
+		);
 	}
 
 
