@@ -14,6 +14,7 @@ use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
 use Themeum\TutorLMSMigrationTool\MigrationMapper;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Helper;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
+use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\PlanModel;
 
 /**
@@ -49,9 +50,9 @@ class OrderDataTransformer implements DataTransformer {
 		$order_data = array();
 		$plans_map  = $mapper->get_map_by_key( 'plans' );
 		foreach ( $orders as $order ) {
-			$order_type     = wcs_order_contains_renewal( $order ) ? 'renewal' : 'subscription';
+			$order_type     = wcs_order_contains_renewal( $order ) ? OrderModel::TYPE_RENEWAL : OrderModel::TYPE_SUBSCRIPTION;
 			$parent_id      = 0;
-			$payment_status = 'completed' === $order->get_status() ? 'paid' : 'unpaid';
+			$payment_status = 'completed' === $order->get_status() ? OrderModel::PAYMENT_PAID : OrderModel::PAYMENT_UNPAID;
 			$tax_amount     = $order->get_total_tax();
 
 			$tutor_plan_id = $plans_map[ $wc_plan_id ];
@@ -64,6 +65,12 @@ class OrderDataTransformer implements DataTransformer {
 					'sale_price'    => $plan->sale_price > 0 ? $plan->sale_price : null,
 				),
 			);
+
+			$total    = $order->get_total();
+			$refunded = $order->get_total_refunded();
+			$fees     = $order->get_total_fees();
+			$discount = $order->get_total_discount();
+			$earnings = $total - ( $refunded + $fees );
 
 			$tax_rate = 0;
 			foreach ( $order->get_items( 'tax' ) as $tax_item ) {
@@ -85,21 +92,22 @@ class OrderDataTransformer implements DataTransformer {
 				'tax_rate'         => $tax_rate,
 				'tax_amount'       => $tax_amount,
 
-				'total_price'      => $order->get_total(),
-				'net_payment'      => $order->get_total(),
+				'total_price'      => $total,
+				'net_payment'      => $total - $refunded,
 
-				'coupon_code'      => '',
-				'coupon_amount'    => 0,
+				'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
+				'coupon_amount'    => $discount,
+				'discount_amount'  => $discount,
 				'discount_type'    => '',
-				'discount_amount'  => 0,
 				'discount_reason'  => '',
-				'fees'             => 0,
-				'earnings'         => 0,
-				'refund_amount'    => 0,
+
+				'fees'             => $fees,
+				'refund_amount'    => $refunded,
+				'earnings'         => $earnings,
 
 				'payment_method'   => $order->get_payment_method(),
 				'payment_payloads' => '',
-				'note'             => '',
+				'note'             => $order->get_customer_note(),
 
 				'created_by'       => $order->get_customer_id(),
 				'updated_by'       => $order->get_customer_id(),
