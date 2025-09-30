@@ -142,6 +142,10 @@ class Orders implements MigrationTemplate {
 				'limit'      => $limit,
 				'offset'     => $offset,
 				'status'     => $this->get_order_statuses(),
+				'type'       => array(
+					'shop_order',
+					'shop_order_refund',
+				),
 				'orderby'    => 'date',
 				'order'      => 'DESC',
 				'return'     => 'objects',
@@ -169,6 +173,10 @@ class Orders implements MigrationTemplate {
 			array(
 				'status'     => $this->get_order_statuses(),
 				'return'     => 'ids',
+				'type'       => array(
+					'shop_order',
+					'shop_order_refund',
+				),
 				'limit'      => -1,
 				'meta_query' => array(
 					array(
