@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative;
 
+use Tutor\Models\CouponModel;
 use Tutor\Models\OrderModel;
 use WC_Order;
 
@@ -82,5 +83,58 @@ class Helper {
 		);
 
 		return $map[ $wc_status ] ?? OrderModel::PAYMENT_UNPAID;
+	}
+
+	/**
+	 * Get transformed coupon status from WooCommerce coupon.
+	 *
+	 * This method will transform wc coupon status to native coupon status
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param object $wc_coupon WC_Coupon.
+	 *
+	 * @return string Tutor native coupon status.
+	 */
+	public static function get_coupon_status( $wc_coupon ): string {
+
+		$wc_coupon_status      = $wc_coupon->get_status();
+		$wc_coupon_expire_date = $wc_coupon->get_date_expires();
+
+		if ( ! empty( $wc_coupon_expire_date ) && $wc_coupon_expire_date->getTimestamp() < time() ) {
+			return CouponModel::STATUS_EXPIRED;
+		}
+
+		$map = array(
+			'publish' => CouponModel::STATUS_ACTIVE,
+			'future'  => CouponModel::STATUS_ACTIVE,
+			'trash'   => CouponModel::STATUS_TRASH,
+			'private' => CouponModel::STATUS_INACTIVE,
+			'pending' => CouponModel::STATUS_INACTIVE,
+			'draft'   => CouponModel::STATUS_INACTIVE,
+		);
+
+		return $map[ $wc_coupon_status ] ?? CouponModel::STATUS_INACTIVE;
+	}
+
+	/**
+	 * Get the tutor discount type for a given WooCommerce coupon.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param \WC_Coupon $wc_coupon WooCommerce coupon object.
+	 * @return string Tutor discount type for WooCommerce Coupon.
+	 */
+	public static function get_coupon_discount_type( $wc_coupon ): string {
+
+		$wc_discount_type = $wc_coupon->get_discount_type();
+
+		$map = array(
+			'percent'       => CouponModel::DISCOUNT_TYPE_PERCENTAGE,
+			'fixed_cart'    => CouponModel::DISCOUNT_TYPE_FLAT,
+			'fixed_product' => CouponModel::DISCOUNT_TYPE_FLAT,
+		);
+
+		return $map[ $wc_discount_type ] ?? CouponModel::DISCOUNT_TYPE_PERCENTAGE;
 	}
 }

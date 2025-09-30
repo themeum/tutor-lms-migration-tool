@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
+use WP_Post;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
@@ -68,11 +69,11 @@ class JobHandler {
 					$data_obj->extract( $item )->transform()->migrate();
 
 					// Keep track.
-					$processed_items++;
-					$active_job['succeed'][] = $item->get_id();
+					++$processed_items;
+					$active_job['succeed'][] = self::get_item_id( $item );
 				} catch ( \Throwable $th ) {
 					$job_data['error_log'][] = $th->getMessage();
-					$active_job['failed'][]  = $item->get_id();
+					$active_job['failed'][]  = self::get_item_id( $item );
 				}
 			}
 
@@ -191,7 +192,7 @@ class JobHandler {
 		$completed_job = 0;
 		foreach ( $requirements as $requirement ) {
 			if ( $requirement['is_done'] ) {
-				$completed_job++;
+				++$completed_job;
 			}
 		}
 
@@ -243,5 +244,22 @@ class JobHandler {
 			'error_log'    => array(),
 
 		);
+	}
+
+	/**
+	 * Retrieve the ID of a given item, supporting both WP_Post and WC_Data objects.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WP_Post|object $item The item object (e.g., WP_Post or WC_Data).
+	 * @return int The numeric ID of the item.
+	 */
+	private function get_item_id( $item ) {
+
+		if ( $item instanceof WP_Post ) {
+			return $item->ID;
+		}
+
+		return $item->get_id();
 	}
 }
