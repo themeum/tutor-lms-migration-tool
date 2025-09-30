@@ -11,6 +11,8 @@
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Coupons;
 
 use AllowDynamicProperties;
+use Tutor\Helpers\QueryHelper;
+
 use Tutor\Models\CourseModel;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
@@ -47,6 +49,15 @@ class Coupons implements MigrationTemplate {
 	 * @var array
 	 */
 	private $tutor_coupon_data;
+
+	/**
+	 * Coupon usage table name
+	 *
+	 * @since 2.4.0
+	 *
+	 * @var string
+	 */
+	private $coupon_usage_table = 'tutor_coupon_usages';
 
 	/**
 	 * Retrieve coupon posts with pagination.
@@ -120,7 +131,7 @@ class Coupons implements MigrationTemplate {
 			'coupon_code'                => $code,
 			'coupon_title'               => ucfirst( $code ),
 			'coupon_description'         => $this->wc_coupon_data->get_description(),
-			'discount_type'              => $this->wc_coupon_data->get_discount_type(),
+			'discount_type'              => Helper::get_coupon_discount_type( $this->wc_coupon_data ),
 			'discount_amount'            => $this->wc_coupon_data->get_amount(),
 			'applies_to'                 => $application_type['type'],
 			'total_usage_limit'          => (int) $this->wc_coupon_data->get_usage_limit(),
@@ -134,6 +145,7 @@ class Coupons implements MigrationTemplate {
 			'updated_at_gmt'             => $modified_date,
 			'updated_by'                 => get_post_meta( $coupon_post->ID, '_edit_last', true ),
 			'reference_ids'              => $application_type['reference_ids'],
+			'usage'                      => $this->get_tutor_coupon_usage_info(),
 		);
 
 		return $this;
@@ -144,10 +156,38 @@ class Coupons implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @throws \Throwable If any error occurs during migration.
+	 *
 	 * @return bool true|false
 	 */
 	public function migrate(): bool {
-		return true;
+
+		$coupon_model  = new CouponModel();
+		$reference_ids = $this->tutor_coupon_data['reference_ids'];
+		$usage         = $this->tutor_coupon_data['usage'];
+
+		unset( $this->tutor_coupon_data['reference_ids'], $this->tutor_coupon_data['usage'] );
+
+		try {
+			$tutor_coupon_id = $coupon_model->create_coupon( $this->tutor_coupon_data );
+
+			if ( ! $tutor_coupon_id ) {
+				return false;
+			}
+
+			if ( ! empty( $reference_ids ) ) {
+				$coupon_model->insert_applies_to( $this->tutor_coupon_data['applies_to'], $reference_ids, $this->tutor_coupon_data['coupon_code'] );
+			}
+
+			if ( ! empty( $usage ) ) {
+				QueryHelper::insert_multiple_rows( $this->coupon_usage_table, $usage );
+			}
+
+			return true;
+
+		} catch ( \Throwable $error ) {
+			throw $error;
+		}
 	}
 
 	/**
@@ -250,8 +290,7 @@ class Coupons implements MigrationTemplate {
 			$wc_term = get_term( $category_id, 'product_cat' );
 
 			if ( empty( $wc_term ) || is_wp_error( $wc_term ) ) {
-				tutor_log( $wc_term );
-				continue;
+				throw new \Exception( 'Invalid WooCommerce term' );
 			}
 
 			if ( term_exists( $wc_term->slug, CourseModel::COURSE_CATEGORY ) ) {
@@ -265,8 +304,7 @@ class Coupons implements MigrationTemplate {
 			);
 
 			if ( is_wp_error( $is_created ) ) {
-				tutor_log( $is_created );
-				continue;
+				throw new \Exception( 'Failed to create Tutor LMS category' );
 			}
 
 			$tutor_category_ids[] = $is_created['term_id'];
@@ -300,5 +338,44 @@ class Coupons implements MigrationTemplate {
 		}
 
 		return $tutor_course_ids;
+	}
+
+	/**
+	 * Retrieve WooCommerce coupon usage information for tutor coupon.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @return array[] List of usage records. Each record contains:
+	 *                 - user_id (int)        The customer/user ID linked to the order.
+	 *                 - coupon_code (string) The WooCommerce coupon code.
+	 */
+	private function get_tutor_coupon_usage_info() {
+
+		global $wpdb;
+
+		$where          = array( 'wc_coupon_usage.coupon_id' => $this->wc_coupon_data->get_id() );
+		$primary_table  = "{$wpdb->prefix}wc_order_coupon_lookup AS wc_coupon_usage";
+		$joining_tables = array(
+			array(
+				'type'  => 'INNER',
+				'table' => "{$wpdb->prefix}wc_orders AS wc_orders",
+				'on'    => 'wc_coupon_usage.order_id = wc_orders.id',
+			),
+		);
+		$select_columns = array(
+			'wc_orders.customer_id as user_id',
+		);
+
+		$result = QueryHelper::get_joined_data( $primary_table, $joining_tables, $select_columns, $where, array(), '', -1, 0, '', ARRAY_A );
+
+		return array_map(
+			function ( $item ) {
+				$item['coupon_code'] = $this->wc_coupon_data->get_code();
+				return $item;
+			},
+			$result['results']
+		);
 	}
 }
