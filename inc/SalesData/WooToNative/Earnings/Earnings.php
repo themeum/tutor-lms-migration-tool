@@ -12,7 +12,6 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Earnings;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
-use Themeum\TutorLMSMigrationTool\MigrationMapper;
 use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,17 +45,18 @@ class Earnings implements MigrationTemplate {
 	private $tutor_transformed_order_earnings = array();
 
 	/**
-	 * Tutor Migration Tool Mapper Class Instance.
+	 * Old Order ID.
 	 *
-	 * @var MigrationMapper
+	 * @var integer
 	 */
-	private $migration_mapper;
+	private $old_order_id = 0;
 
 	/**
-	 * Earning Migration Class Constructor.
+	 * New Order ID.
+	 *
+	 * @var integer
 	 */
-	public function __construct() {
-	}
+	private $new_order_id = 0;
 
 	/**
 	 * Get Tutor Earnings List.
@@ -136,17 +136,19 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @throws \Exception If data cannot be obtained.
 	 *
-	 * @param int|object $earning the earning object or id.
+	 * @param int|object $order the order object or id.
 	 *
 	 * @return MigrationTemplate
 	 */
-	public function extract( $earning ): MigrationTemplate {
+	public function extract( $order ): MigrationTemplate {
+		$this->old_order_id = (int) $order->old_order_id;
+		$this->new_order_id = (int) $order->new_order_id;
+
 		try {
 			$this->tutor_wc_order_earnings = QueryHelper::get_row(
 				$this->tutor_earning_table,
 				array(
-					'order_id'     => $earning->order_id,
-					'course_id'    => $earning->course_id,
+					'order_id'     => $this->old_order_id,
 					'process_by'   => 'woocommerce',
 					'order_status' => array(
 						'IN',
@@ -174,20 +176,8 @@ class Earnings implements MigrationTemplate {
 	public function transform(): MigrationTemplate {
 		if ( $this->tutor_wc_order_earnings ) {
 			$transformed_earnings = array(
-				'user_id'                  => $this->tutor_wc_order_earnings->user_id,
-				'order_id'                 => $this->get_total_items_count() + 1, // TODO: need to update this with mapped order id.
-				'order_status'             => $this->tutor_wc_order_earnings->order_status,
-				'course_price_total'       => $this->tutor_wc_order_earnings->course_price_total,
-				'course_price_grand_total' => $this->tutor_wc_order_earnings->course_price_grand_total,
-				'instructor_amount'        => $this->tutor_wc_order_earnings->instructor_amount,
-				'instructor_rate'          => $this->tutor_wc_order_earnings->instructor_rate,
-				'admin_amount'             => $this->tutor_wc_order_earnings->admin_amount,
-				'admin_rate'               => $this->tutor_wc_order_earnings->admin_rate,
-				'commission_type'          => $this->tutor_wc_order_earnings->commission_type,
-				'deduct_fees_amount'       => $this->tutor_wc_order_earnings->deduct_fees_amount,
-				'deduct_fees_type'         => $this->tutor_wc_order_earnings->deduct_fees_type,
-				'process_by'               => 'tutor',
-				'created_at'               => $this->tutor_wc_order_earnings->created_at,
+				'order_id'   => $this->new_order_id,
+				'process_by' => 'tutor',
 			);
 
 			$this->tutor_transformed_order_earnings = $transformed_earnings;
@@ -202,21 +192,23 @@ class Earnings implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @throws \Exception If cannot insert data.
+	 * @throws \Exception If earning data cannot be updated.
 	 *
 	 * @return boolean
 	 */
 	public function migrate(): bool {
-		// Insert earnings data.
-		try {
-			$earning_id = QueryHelper::insert(
-				$this->tutor_earning_table,
-				$this->tutor_transformed_order_earnings
-			);
-		} catch ( \Exception $e ) {
-			throw $e;
+		// Update earnings data.
+
+		$result = QueryHelper::update(
+			$this->tutor_earning_table,
+			$this->tutor_transformed_order_earnings,
+			array( 'earning_id' => $this->tutor_wc_order_earnings->earning_id ),
+		);
+
+		if ( ! $result ) {
+            throw new \Exception( esc_html__( 'Error updating earning data.', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
 		}
 
-		return true;
+		return $result;
 	}
 }
