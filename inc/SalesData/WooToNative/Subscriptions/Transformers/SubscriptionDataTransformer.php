@@ -40,7 +40,7 @@ class SubscriptionDataTransformer implements DataTransformer {
 			'plan_id'               => $wc_plan_id,                             // This will be changed in the migration step.
 			'first_order_id'        => $subscription->get_parent_id(),          // This will be changed in the migration step.
 			'active_order_id'       => $subscription->get_last_order( 'ids' ),  // This will be changed in the migration step.
-			'status'                => $subscription->get_status(),
+			'status'                => Helper::get_subscription_status( $subscription ),
 			'auto_renew'            => $subscription->is_manual() ? 0 : 1,
 			'is_trial_enabled'      => empty( $trial_end_date_gmt ) || $is_trial_used ? 0 : 1,
 			'is_trial_used'         => $is_trial_used,
