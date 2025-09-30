@@ -61,7 +61,7 @@ class MigrationMapper {
 	public function get_map_by_key( $key ): array {
 		$map = $this->get_map();
 
-		return $map[ $key ];
+		return $map[ $key ] ?? array();
 	}
 
 	/**
