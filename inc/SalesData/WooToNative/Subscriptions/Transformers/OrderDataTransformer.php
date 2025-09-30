@@ -77,6 +77,20 @@ class OrderDataTransformer implements DataTransformer {
 				$tax_rate = $tax_item->get_rate_percent();
 			}
 
+			$billing_data = array(
+				'id'                 => $order->get_customer_id(),
+				'user_id'            => $order->get_user_id(),
+				'billing_first_name' => $order->get_billing_first_name(),
+				'billing_last_name'  => $order->get_billing_last_name(),
+				'billing_email'      => $order->get_billing_email(),
+				'billing_phone'      => $order->get_billing_phone(),
+				'billing_zip_code'   => $order->get_billing_postcode(),
+				'billing_address'    => $order->get_billing_address_1(),
+				'billing_country'    => $order->get_billing_country(),
+				'billing_state'      => $order->get_billing_state(),
+				'billing_city'       => $order->get_billing_city(),
+			);
+
 			$order_data[] = array(
 				'wc_order_id'      => $order->get_id(),
 				'order_type'       => $order_type,
@@ -115,6 +129,7 @@ class OrderDataTransformer implements DataTransformer {
 				'updated_at_gmt'   => $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : null,
 
 				'items'            => $items,
+				'billing_data'     => wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ),
 			);
 		}
 
