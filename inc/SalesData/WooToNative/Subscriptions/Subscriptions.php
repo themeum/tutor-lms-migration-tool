@@ -12,6 +12,16 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
+use Themeum\TutorLMSMigrationTool\MigrationMapper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\EnrollmentDataTransformer;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\OrderDataTransformer;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\PlanDataTransformer;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\SubscriptionDataTransformer;
+use TUTOR\Course;
+use Tutor\Helpers\QueryHelper;
+use Tutor\Models\OrderModel;
+use TutorPro\Subscription\Models\PlanModel;
+use TutorPro\Subscription\Models\SubscriptionModel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,6 +32,151 @@ defined( 'ABSPATH' ) || exit;
  */
 #[AllowDynamicProperties]
 class Subscriptions implements MigrationTemplate {
+	/**
+	 * Map key for subscription migration
+	 *
+	 * @var string
+	 */
+	const MAP_KEY = 'tutor_wc2native_subscription_map';
+
+	/**
+	 * Subscription object
+	 *
+	 * @var WC_Subscription
+	 */
+	protected $subscription;
+
+	/**
+	 * Transformed data
+	 *
+	 * @var array
+	 */
+	protected $transformed_data;
+
+	/**
+	 * Plan model
+	 *
+	 * @var PlanModel
+	 */
+	protected $plan_model;
+
+	/**
+	 * Order model
+	 *
+	 * @var OrderModel
+	 */
+	protected $order_model;
+
+	/**
+	 * Subscription model
+	 *
+	 * @var SubscriptionModel
+	 */
+	protected $subscription_model;
+
+	/**
+	 * Subscriptions migration mapper
+	 *
+	 * @var MigrationMapper
+	 */
+	protected $mapper;
+
+	/**
+	 * Constructor
+	 *
+	 * @since 2.4.0
+	 */
+	public function __construct() {
+		$this->mapper = new MigrationMapper( self::MAP_KEY );
+		$this->mapper->clear_map();
+
+		// Models.
+		$this->plan_model         = new PlanModel();
+		$this->order_model        = new OrderModel();
+		$this->subscription_model = new SubscriptionModel();
+
+		// Data Transformers.
+		$this->plan_data_transformer         = new PlanDataTransformer();
+		$this->order_data_transformer        = new OrderDataTransformer();
+		$this->subscription_data_transformer = new SubscriptionDataTransformer();
+		$this->enrollment_data_transformer   = new EnrollmentDataTransformer();
+	}
+
+	/**
+	 * Migrate WC plans to Tutor plans
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return bool
+	 */
+	public function migrate_plans(): bool {
+		$plans     = $this->plan_data_transformer->transform();
+		$plans_map = array();
+
+		foreach ( $plans as $plan ) {
+			// Course/Bundle ID.
+			$object_id   = $plan['object_id'];
+			$new_plan_id = $this->plan_model->create_subscription_plan( $object_id, $plan );
+
+			// Update selling option to subscription.
+			update_post_meta( $object_id, Course::COURSE_SELLING_OPTION_META, Course::SELLING_OPTION_SUBSCRIPTION );
+
+			$plans_map[ $plan['product_id'] ] = $new_plan_id;
+		}
+
+		$this->mapper->set_map_by_key( 'plans', $plans_map );
+
+		return true;
+	}
+
+	/**
+	 * Log data
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $data Data to log.
+	 */
+	private function log_data( $data ) {
+		file_put_contents( __DIR__ . '/subscriptions.json', json_encode( $data, JSON_PRETTY_PRINT ) );
+	}
+
+	/**
+	 * Get total number of subscriptions
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return int
+	 */
+	public function get_total_items_count(): int {
+		$subscription_ids = wcs_get_subscriptions_for_product( Helper::get_wc_plan_ids(), 'ids' );
+		return count( $subscription_ids );
+	}
+
+	/**
+	 * Get list of subscription that need to be migrated
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param int $limit  Number of subscriptions to fetch from source.
+	 * @param int $offset Number of subscriptions to skip from source.
+	 *
+	 * @return array
+	 */
+	public function get_items( int $limit = 5, int $offset = 0 ): array {
+		$wc_plans = Helper::get_wc_plans();
+		$ids      = array_map( fn( $plan) => $plan->get_id(), $wc_plans );
+
+		$subscriptions = wcs_get_subscriptions_for_product(
+			$ids,
+			'subscription',
+			array(
+				'limit'  => $limit,
+				'offset' => $offset,
+			)
+		);
+
+		return $subscriptions;
+	}
 
 	/**
 	 * Extract subscription data
@@ -30,10 +185,12 @@ class Subscriptions implements MigrationTemplate {
 	 *
 	 * @param int|object $subscription Subscription id or object.
 	 *
-	 * @return mixed
+	 * @return MigrationTemplate
 	 */
-	public function extract( $subscription ) {
-		return $this->subscription;
+	public function extract( $subscription ): MigrationTemplate {
+		$this->subscription = $subscription;
+
+		return $this;
 	}
 
 	/**
@@ -41,10 +198,19 @@ class Subscriptions implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return array
+	 * @return MigrationTemplate
 	 */
-	public function transform(): array {
-		return array();
+	public function transform(): MigrationTemplate {
+		$this->transformed_data = array(
+			'plans'        => $this->plan_data_transformer->transform( $this->subscription ),
+			'subscription' => $this->subscription_data_transformer->transform( $this->subscription ),
+			'enrollments'  => $this->enrollment_data_transformer->transform( $this->subscription ),
+			'orders'       => $this->order_data_transformer->transform( $this->subscription ),
+		);
+
+		$this->log_data( $this->transformed_data );
+
+		return $this;
 	}
 
 	/**
@@ -52,9 +218,75 @@ class Subscriptions implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return bool true|false
+	 * @return bool
+	 *
+	 * @throws \Throwable If fails to create subscription.
 	 */
 	public function migrate(): bool {
-		return true;
+		try {
+			// Orders migration.
+			$orders_map = array();
+			foreach ( $this->transformed_data['orders'] as $order ) {
+				$wc_order_id = $order['wc_order_id'];
+				unset( $order['wc_order_id'] );
+
+				$tutor_order_id             = $this->order_model->create_order( $order );
+				$orders_map[ $wc_order_id ] = $tutor_order_id;
+			}
+
+			// Update parent order id.
+			$wc_parent_order_id = $this->subscription->get_parent_id();
+			if ( isset( $orders_map[ $wc_parent_order_id ] ) ) {
+				$tutor_parent_order_id = $orders_map[ $wc_parent_order_id ];
+
+				foreach ( $orders_map as $wc_order_id => $tutor_order_id ) {
+					QueryHelper::update(
+						'tutor_orders',
+						array( 'parent_id' => $tutor_parent_order_id ),
+						array( 'id' => $tutor_order_id )
+					);
+				}
+			}
+
+			$this->mapper->set_map_by_key( 'orders', $orders_map );
+
+			// Subscription migration.
+			$plans_map         = $this->mapper->get_map_by_key( 'plans' );
+			$subscription_data = $this->transformed_data['subscription'];
+			if ( $subscription_data ) {
+				$subscription_data['plan_id']         = $plans_map[ $subscription_data['plan_id'] ];
+				$subscription_data['first_order_id']  = $orders_map[ $subscription_data['first_order_id'] ];
+				$subscription_data['active_order_id'] = $orders_map[ $subscription_data['active_order_id'] ];
+
+				$tutor_subscription_id = $this->subscription_model->create( $subscription_data );
+			}
+
+			// Enrollment migration.
+			$enrollments = $this->transformed_data['enrollments'];
+			if ( tutor_utils()->count( $enrollments ) && $tutor_subscription_id ) {
+				foreach ( $enrollments as $enrollment ) {
+					$this->subscription_model->mark_as_subscription_enrollment( $enrollment->post_id, $tutor_subscription_id );
+				}
+			}
+
+			// Earning migration.
+			foreach ( $orders_map as $wc_order_id => $tutor_order_id ) {
+				QueryHelper::update(
+					'tutor_earnings',
+					array(
+						'order_id'   => $tutor_order_id,
+						'process_by' => 'tutor',
+					),
+					array(
+						'order_id'   => $wc_order_id,
+						'process_by' => 'wc',
+					)
+				);
+			}
+
+			return true;
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
 	}
 }
