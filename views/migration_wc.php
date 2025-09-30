@@ -135,7 +135,7 @@ $items_count = 10;
 										</div>
 									</div>
 								</div>
-								<div class="tutor-py-16">
+								<div id="sectionCoupons" class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-coupons" type="checkbox" name="job_requirements[]" value="coupons" class="tutor-form-check-input lp-migration-singlebox-checkbox">
 										<div class="tutor-mt-2">
@@ -148,7 +148,7 @@ $items_count = 10;
 										</div>
 									</div>
 								</div>
-								<div class="tutor-py-16">
+								<div id="sectionSubscriptions" class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-subscriptions" type="checkbox" name="job_requirements[]" value="subscriptions" class="tutor-form-check-input lp-migration-singlebox-checkbox">
 										<div class="tutor-mt-2">
@@ -239,12 +239,12 @@ $items_count = 10;
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
 				<?php esc_html_e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-40">
 				<?php esc_html_e( 'Migration from WoCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
+			<!-- <a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
 				<?php esc_html_e( 'Go to courses', 'tutor-lms-migration-tool' ); ?>
-			</a>
+			</a> -->
 		</div>
 	</div>
 </div>

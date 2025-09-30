@@ -62,7 +62,7 @@ class MigrationHandler {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return wp_json response
+	 * @return void wp_json response
 	 */
 	public function ajax_handle_migration() {
 		if ( ! tutor_utils()->is_nonce_verified() ) {
@@ -87,7 +87,7 @@ class MigrationHandler {
 		if ( $active_job ) {
 			try {
 				$job_data = $this->job_handler->process_job( $active_job, $job_data );
-				if ( 100 >= $job_data['progress'] ) {
+				if ( $job_data['progress'] >= 100 ) {
 					$job_data['status']   = self::STATUS_SUCCESS;
 					$job_data['progress'] = 100;
 
