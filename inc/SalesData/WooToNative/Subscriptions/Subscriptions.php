@@ -141,6 +141,17 @@ class Subscriptions implements MigrationTemplate {
 	}
 
 	/**
+	 * Get wc subscription status list for migration.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	private function get_wc_subscription_status_list() {
+		return array( 'pending', 'active', 'on-hold', 'cancelled', 'expired' );
+	}
+
+	/**
 	 * Get total number of subscriptions
 	 *
 	 * @since 2.4.0
@@ -148,7 +159,11 @@ class Subscriptions implements MigrationTemplate {
 	 * @return int
 	 */
 	public function get_total_items_count(): int {
-		$subscription_ids = wcs_get_subscriptions_for_product( Helper::get_wc_plan_ids(), 'ids' );
+		$subscription_ids = wcs_get_subscriptions_for_product(
+			Helper::get_wc_plan_ids(),
+			'ids',
+			array( 'subscription_status' => $this->get_wc_subscription_status_list() )
+		);
 		return count( $subscription_ids );
 	}
 
@@ -160,18 +175,16 @@ class Subscriptions implements MigrationTemplate {
 	 * @param int $limit  Number of subscriptions to fetch from source.
 	 * @param int $offset Number of subscriptions to skip from source.
 	 *
-	 * @return array
+	 * @return array list of WC_Subscription
 	 */
 	public function get_items( int $limit = 5, int $offset = 0 ): array {
-		$wc_plans = Helper::get_wc_plans();
-		$ids      = array_map( fn( $plan) => $plan->get_id(), $wc_plans );
-
 		$subscriptions = wcs_get_subscriptions_for_product(
-			$ids,
+			Helper::get_wc_plan_ids(),
 			'subscription',
 			array(
-				'limit'  => $limit,
-				'offset' => $offset,
+				'limit'               => $limit,
+				'offset'              => $offset,
+				'subscription_status' => $this->get_wc_subscription_status_list(),
 			)
 		);
 
