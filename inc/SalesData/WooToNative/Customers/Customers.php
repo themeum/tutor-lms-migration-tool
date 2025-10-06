@@ -98,7 +98,7 @@ class Customers implements MigrationTemplate {
 	 */
 	public function extract( $customer = null ): self {
 		try {
-			$this->current_customer = (object) $customer;
+			$this->current_customer = $customer;
 			return $this;
 		} catch ( \Throwable $th ) {
 			throw $th;
@@ -119,7 +119,6 @@ class Customers implements MigrationTemplate {
 	public function get_woocommerce_customers( $limit = 5, $offset = 1 ) {
 		try {
 			$args      = array(
-				'status'     => array( 'completed', 'processing', 'on-hold' ),
 				'limit'      => $limit,
 				'paged'      => $offset,
 				'return'     => 'ids',
@@ -174,29 +173,29 @@ class Customers implements MigrationTemplate {
 			if ( $is_hpos_enabled ) {
 				// HPOS query.
 				$query = "
-				SELECT DISTINCT c.customer_id, c.user_id, c.email, c.first_name, c.last_name
-				FROM {$wpdb->prefix}wc_customer_lookup AS c
-				INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
-					ON c.customer_id = s.customer_id
-				INNER JOIN {$wpdb->prefix}wc_orders_meta AS om 
-					ON om.order_id = s.order_id
-				WHERE om.meta_key = %s
-			";
+					SELECT COUNT(*)
+					FROM {$wpdb->prefix}wc_customer_lookup AS c
+					INNER JOIN {$wpdb->prefix}wc_order_stats AS s
+						ON c.customer_id = s.customer_id
+					INNER JOIN {$wpdb->prefix}wc_orders_meta AS om 
+						ON om.order_id = s.order_id
+					WHERE om.meta_key = %s
+				";
 			} else {
 				// Legacy postmeta query.
 				$query = "
-				SELECT DISTINCT c.customer_id, c.user_id, c.email, c.first_name, c.last_name
-				FROM {$wpdb->prefix}wc_customer_lookup AS c
-				INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
-					ON c.customer_id = s.customer_id
-				INNER JOIN {$wpdb->postmeta} AS pm 
-					ON pm.post_id = s.order_id
-				WHERE pm.meta_key = %s
-			";
+					SELECT COUNT(*)
+					FROM {$wpdb->prefix}wc_customer_lookup AS c
+					INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
+						ON c.customer_id = s.customer_id
+					INNER JOIN {$wpdb->postmeta} AS pm 
+						ON pm.post_id = s.order_id
+					WHERE pm.meta_key = %s
+				";
 			}
 
-			$customers = $wpdb->get_results( $wpdb->prepare( $query, '_is_tutor_order_for_course' ) ); //phpcs:ignore
-			return count( $customers );
+			$customer_count = (int) $wpdb->get_var( $wpdb->prepare( $query, '_is_tutor_order_for_course' ) ); //phpcs:ignore
+			return $customer_count;
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
@@ -259,7 +258,7 @@ class Customers implements MigrationTemplate {
 			);
 			if ( ! empty( $is_customer_exist ) ) {
 				// Update existing customer billing info.
-				$order_meta_inserted = QueryHelper::update(
+				$order_meta_updated = QueryHelper::update(
 					$wpdb->prefix . $this->tutor_customers_table,
 					$this->customer_billing_data,
 					array(
@@ -267,15 +266,15 @@ class Customers implements MigrationTemplate {
 						'user_id' => $this->customer_billing_data['user_id'],
 					)
 				);
-				if ( ! $order_meta_inserted ) {
-					throw new Exception( 'Customer migration failed!' );
+				if ( ! $order_meta_updated ) {
+					throw new Exception( __( 'Customer migration failed!', 'tutor-lms-migration-tool' ) );
 				}
 				return true;
 			}
 			// Insert data in tutor_customers table.
 			$order_meta_inserted = QueryHelper::insert( $wpdb->prefix . $this->tutor_customers_table, $this->customer_billing_data );
 			if ( ! $order_meta_inserted ) {
-				throw new Exception( 'Customer migration failed!' );
+				throw new Exception( __( 'Customer migration failed!', 'tutor-lms-migration-tool' ) );
 			}
 			return true;
 		} catch ( \Throwable $th ) {
