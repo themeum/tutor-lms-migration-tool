@@ -10,10 +10,10 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
-use Themeum\TutorLMSMigrationTool\SalesDataTypes;
-use Tutor\Helpers\HttpHelper;
 use TUTOR\Input;
+use Tutor\Helpers\HttpHelper;
 use Tutor\Traits\JsonResponse;
+use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -62,7 +62,7 @@ class MigrationHandler {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @return wp_json response
+	 * @return void wp_json response
 	 */
 	public function ajax_handle_migration() {
 		if ( ! tutor_utils()->is_nonce_verified() ) {
@@ -87,7 +87,7 @@ class MigrationHandler {
 		if ( $active_job ) {
 			try {
 				$job_data = $this->job_handler->process_job( $active_job, $job_data );
-				if ( 100 >= $job_data['progress'] ) {
+				if ( $job_data['progress'] >= 100 ) {
 					$job_data['status']   = self::STATUS_SUCCESS;
 					$job_data['progress'] = 100;
 
@@ -115,8 +115,8 @@ class MigrationHandler {
 	public function get_migration_data_types() {
 		return array(
 			SalesDataTypes::ORDERS,
-			// SalesDataTypes::COUPONS,
-			// SalesDataTypes::SUBSCRIPTIONS,
+			SalesDataTypes::COUPONS,
+			SalesDataTypes::SUBSCRIPTIONS,
 		);
 	}
 
