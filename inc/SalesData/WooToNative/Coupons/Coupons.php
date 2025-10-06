@@ -79,7 +79,9 @@ class Coupons implements MigrationTemplate {
 			'post_status' => 'any',
 		);
 
-		return get_posts( $args );
+		$wc_coupon_posts = get_posts( $args );
+
+		return array_map( fn( \WP_Post $post ): WC_Coupon => new WC_Coupon( $post->ID ), $wc_coupon_posts );
 	}
 
 
@@ -105,7 +107,7 @@ class Coupons implements MigrationTemplate {
 	 */
 	public function extract( $coupon ): MigrationTemplate {
 
-		$this->wc_coupon_data = new WC_Coupon( $coupon->ID );
+		$this->wc_coupon_data = $coupon;
 
 		return $this;
 	}
