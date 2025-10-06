@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
+use WP_Post;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
@@ -68,7 +69,7 @@ class JobHandler {
 					$data_obj->extract( $item )->transform()->migrate();
 
 					// Keep track.
-					$processed_items++;
+					++$processed_items;
 					$active_job['succeed'][] = $item->get_id();
 				} catch ( \Throwable $th ) {
 					$job_data['error_log'][] = $th->getMessage();
@@ -191,7 +192,7 @@ class JobHandler {
 		$completed_job = 0;
 		foreach ( $requirements as $requirement ) {
 			if ( $requirement['is_done'] ) {
-				$completed_job++;
+				++$completed_job;
 			}
 		}
 
