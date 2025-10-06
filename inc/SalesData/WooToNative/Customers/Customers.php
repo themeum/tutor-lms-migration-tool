@@ -1,4 +1,4 @@
-<?php //phpcs:ignore
+<?php
 /**
  * Concrete class to handle customer data migration
  *
@@ -24,6 +24,7 @@ defined( 'ABSPATH' ) || exit;
  */
 #[AllowDynamicProperties]
 class Customers implements MigrationTemplate {
+
 
 	/**
 	 * Tutor Orders Meta table
@@ -84,6 +85,21 @@ class Customers implements MigrationTemplate {
 	public function get_total_items_count(): int {
 		$this->total_customer_count = $this->get_woocommerce_customers_count();
 		return $this->total_customer_count;
+	}
+
+	/**
+	 * Get item id
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param mixed $item Item that we want to get id from. Item param may
+	 * vary based on the source & extraction logics.
+	 *
+	 * @return int
+	 */
+	public function get_item_id( $item ): int {
+		$item_id = $item->id ?? null;
+		return $item_id;
 	}
 
 	/**
@@ -177,7 +193,7 @@ class Customers implements MigrationTemplate {
 					FROM {$wpdb->prefix}wc_customer_lookup AS c
 					INNER JOIN {$wpdb->prefix}wc_order_stats AS s
 						ON c.customer_id = s.customer_id
-					INNER JOIN {$wpdb->prefix}wc_orders_meta AS om 
+					INNER JOIN {$wpdb->prefix}wc_orders_meta AS om
 						ON om.order_id = s.order_id
 					WHERE om.meta_key = %s
 				";
@@ -186,15 +202,15 @@ class Customers implements MigrationTemplate {
 				$query = "
 					SELECT COUNT(*)
 					FROM {$wpdb->prefix}wc_customer_lookup AS c
-					INNER JOIN {$wpdb->prefix}wc_order_stats AS s 
+					INNER JOIN {$wpdb->prefix}wc_order_stats AS s
 						ON c.customer_id = s.customer_id
-					INNER JOIN {$wpdb->postmeta} AS pm 
+					INNER JOIN {$wpdb->postmeta} AS pm
 						ON pm.post_id = s.order_id
 					WHERE pm.meta_key = %s
 				";
 			}
 
-			$customer_count = (int) $wpdb->get_var( $wpdb->prepare( $query, '_is_tutor_order_for_course' ) ); //phpcs:ignore
+            $customer_count = (int) $wpdb->get_var($wpdb->prepare($query, '_is_tutor_order_for_course')); //phpcs:ignore
 			return $customer_count;
 		} catch ( \Throwable $th ) {
 			throw $th;
