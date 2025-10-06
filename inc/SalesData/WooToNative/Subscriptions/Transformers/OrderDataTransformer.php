@@ -127,6 +127,31 @@ class OrderDataTransformer implements DataTransformer {
 	}
 
 	/**
+	 * Prepare meta item.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WC_Order $order wc order object.
+	 * @param string   $meta_key meta key.
+	 * @param mixed    $meta_value meta value.
+	 *
+	 * @return array
+	 */
+	private function prepare_meta_item( $order, $meta_key, $meta_value ) {
+		$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+		$updated_at_gmt = $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
+
+		return array(
+			'meta_key'       => $meta_key,
+			'meta_value'     => $meta_value,
+			'created_at_gmt' => $created_at_gmt,
+			'updated_at_gmt' => $updated_at_gmt,
+			'created_by'     => $order->get_customer_id(),
+			'updated_by'     => $order->get_customer_id(),
+		);
+	}
+
+	/**
 	 * Prepare meta data for order
 	 *
 	 * @param WC_Order $order wc order object.
@@ -149,26 +174,9 @@ class OrderDataTransformer implements DataTransformer {
 			'billing_city'       => $order->get_billing_city(),
 		);
 
-		$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
-		$updated_at_gmt = $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
-
 		$meta_data = array(
-			array(
-				'meta_key'       => OrderModel::META_KEY_BILLING_ADDRESS,
-				'meta_value'     => wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ),
-				'created_at_gmt' => $created_at_gmt,
-				'updated_at_gmt' => $updated_at_gmt,
-				'created_by'     => $order->get_customer_id(),
-				'updated_by'     => $order->get_customer_id(),
-			),
-			array(
-				'meta_key'       => OrderModel::META_PLAN_INFO,
-				'meta_value'     => $tutor_plan,
-				'created_at_gmt' => $created_at_gmt,
-				'updated_at_gmt' => $updated_at_gmt,
-				'created_by'     => $order->get_customer_id(),
-				'updated_by'     => $order->get_customer_id(),
-			),
+			$this->prepare_meta_item( $order, OrderModel::META_KEY_BILLING_ADDRESS, wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ) ),
+			$this->prepare_meta_item( $order, OrderModel::META_PLAN_INFO, $tutor_plan ),
 		);
 
 		return $meta_data;
