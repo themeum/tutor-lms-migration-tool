@@ -44,7 +44,7 @@ class SubscriptionDataTransformer implements DataTransformer {
 			'auto_renew'            => $subscription->is_manual() ? 0 : 1,
 			'is_trial_enabled'      => empty( $trial_end_date_gmt ) || $is_trial_used ? 0 : 1,
 			'is_trial_used'         => $is_trial_used,
-			'trial_end_date_gmt'    => $trial_end_date_gmt,
+			'trial_end_date_gmt'    => empty( $trial_end_date_gmt ) ? null : $trial_end_date_gmt,
 			'start_date_gmt'        => $subscription->get_date( 'start', 'gmt' ),
 			'end_date_gmt'          => $end_date_gmt,
 			'next_payment_date_gmt' => $end_date_gmt,
