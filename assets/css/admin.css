@@ -751,9 +751,8 @@
 .backup-now-subtile {
     color: #5b616f;
 }
-
-.tutor-nav:not(.tutor-nav-pills):not(.tutor-nav-tabs) .tutor-nav-link.is-active {
-    border-bottom-color: #e0e2ea;
+.tutor-migration-tab > .tutor-nav:not(.tutor-nav-pills):not(.tutor-nav-tabs) .tutor-nav-link.is-active {
+    border-bottom-color: #F4F6F9;
     border-width: 3px 3px 3px 4px;
     background: #f4f6f9;
     border-radius: 6px 6px 0px 0px;

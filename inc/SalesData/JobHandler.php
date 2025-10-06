@@ -69,10 +69,10 @@ class JobHandler {
 
 					// Keep track.
 					$processed_items++;
-					$active_job['succeed'][] = $item->get_id();
+					$active_job['succeed'][] = $data_obj->get_item_id( $item );
 				} catch ( \Throwable $th ) {
 					$job_data['error_log'][] = $th->getMessage();
-					$active_job['failed'][]  = $item->get_id();
+					$active_job['failed'][]  = $data_obj->get_item_id( $item );
 				}
 			}
 
@@ -191,7 +191,7 @@ class JobHandler {
 		$completed_job = 0;
 		foreach ( $requirements as $requirement ) {
 			if ( $requirement['is_done'] ) {
-				$completed_job++;
+				++$completed_job;
 			}
 		}
 

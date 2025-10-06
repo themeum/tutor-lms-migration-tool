@@ -10,10 +10,10 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
-use Themeum\TutorLMSMigrationTool\SalesDataTypes;
-use Tutor\Helpers\HttpHelper;
 use TUTOR\Input;
+use Tutor\Helpers\HttpHelper;
 use Tutor\Traits\JsonResponse;
+use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -115,8 +115,8 @@ class MigrationHandler {
 	public function get_migration_data_types() {
 		return array(
 			SalesDataTypes::ORDERS,
-			// SalesDataTypes::COUPONS,
-			// SalesDataTypes::SUBSCRIPTIONS,
+			SalesDataTypes::COUPONS,
+			SalesDataTypes::SUBSCRIPTIONS,
 		);
 	}
 
