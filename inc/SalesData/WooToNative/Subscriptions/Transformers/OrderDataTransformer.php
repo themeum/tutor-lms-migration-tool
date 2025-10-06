@@ -161,7 +161,7 @@ class OrderDataTransformer implements DataTransformer {
 	 */
 	public function prepare_meta_data( $order, $tutor_plan ) {
 		$billing_data = array(
-			'id'                 => $order->get_customer_id(),
+			'id'                 => $order->get_user_id(),
 			'user_id'            => $order->get_user_id(),
 			'billing_first_name' => $order->get_billing_first_name(),
 			'billing_last_name'  => $order->get_billing_last_name(),
