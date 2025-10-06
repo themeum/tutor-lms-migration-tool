@@ -204,6 +204,19 @@ class Subscriptions implements MigrationTemplate {
 	}
 
 	/**
+	 * Get item id
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WC_Subscription $subscription subscription object.
+	 *
+	 * @return int
+	 */
+	public function get_item_id( $subscription ): int {
+		return $subscription->get_id();
+	}
+
+	/**
 	 * Extract subscription data
 	 *
 	 * @since 2.4.0
