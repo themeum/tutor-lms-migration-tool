@@ -119,7 +119,7 @@ class OrderDataTransformer implements DataTransformer {
 				'updated_at_gmt'   => $updated_at_gmt,
 
 				'items'            => $items,
-				'meta_data'        => $this->prepare_meta_data( $order ),
+				'meta_data'        => $this->prepare_meta_data( $order, $plan ),
 			);
 		}
 
@@ -129,11 +129,12 @@ class OrderDataTransformer implements DataTransformer {
 	/**
 	 * Prepare meta data for order
 	 *
-	 * @param WC_Order $order wc order object..
+	 * @param WC_Order $order wc order object.
+	 * @param object   $tutor_plan tutor subscription plan.
 	 *
 	 * @return array
 	 */
-	public function prepare_meta_data( $order ) {
+	public function prepare_meta_data( $order, $tutor_plan ) {
 		$billing_data = array(
 			'id'                 => $order->get_customer_id(),
 			'user_id'            => $order->get_user_id(),
@@ -155,6 +156,14 @@ class OrderDataTransformer implements DataTransformer {
 			array(
 				'meta_key'       => OrderModel::META_KEY_BILLING_ADDRESS,
 				'meta_value'     => wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ),
+				'created_at_gmt' => $created_at_gmt,
+				'updated_at_gmt' => $updated_at_gmt,
+				'created_by'     => $order->get_customer_id(),
+				'updated_by'     => $order->get_customer_id(),
+			),
+			array(
+				'meta_key'       => OrderModel::META_PLAN_INFO,
+				'meta_value'     => $tutor_plan,
 				'created_at_gmt' => $created_at_gmt,
 				'updated_at_gmt' => $updated_at_gmt,
 				'created_by'     => $order->get_customer_id(),
