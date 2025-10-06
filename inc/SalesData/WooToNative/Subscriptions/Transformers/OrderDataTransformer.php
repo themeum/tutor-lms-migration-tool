@@ -72,6 +72,7 @@ class OrderDataTransformer implements DataTransformer {
 			$discount = $order->get_total_discount();
 			$earnings = $total - ( $refunded + $fees );
 
+			$user_id        = $order->get_user_id();
 			$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
 			$updated_at_gmt = $order->get_date_modified() ? $order->get_date_modified()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
 
@@ -85,7 +86,7 @@ class OrderDataTransformer implements DataTransformer {
 				'order_type'       => $order_type,
 				'parent_id'        => $parent_id,
 				'transaction_id'   => $order->get_transaction_id(),
-				'user_id'          => $order->get_customer_id(),
+				'user_id'          => $user_id,
 				'order_status'     => $order->get_status(),
 				'payment_status'   => $payment_status,
 				'subtotal_price'   => $order->get_subtotal(),
@@ -112,8 +113,8 @@ class OrderDataTransformer implements DataTransformer {
 				'payment_payloads' => '',
 				'note'             => $order->get_customer_note(),
 
-				'created_by'       => $order->get_customer_id(),
-				'updated_by'       => $order->get_customer_id(),
+				'created_by'       => $user_id,
+				'updated_by'       => $user_id,
 				'created_at_gmt'   => $created_at_gmt,
 				'updated_at_gmt'   => $updated_at_gmt,
 
