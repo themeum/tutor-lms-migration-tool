@@ -64,4 +64,17 @@ interface MigrationTemplate {
 	 * @return bool
 	 */
 	public function migrate(): bool;
+
+	/**
+	 * Get item id
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param mixed $item Item that we want to get id from. Item param may
+	 * vary based on the source & extraction logics.
+	 *
+	 * @return int
+	 */
+	public function get_item_id( $item ): int;
+
 }
