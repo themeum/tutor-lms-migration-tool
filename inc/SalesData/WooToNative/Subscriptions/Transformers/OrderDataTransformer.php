@@ -176,7 +176,7 @@ class OrderDataTransformer implements DataTransformer {
 
 		$meta_data = array(
 			$this->prepare_meta_item( $order, OrderModel::META_KEY_BILLING_ADDRESS, wp_json_encode( $billing_data, JSON_UNESCAPED_UNICODE ) ),
-			$this->prepare_meta_item( $order, OrderModel::META_PLAN_INFO, $tutor_plan ),
+			$this->prepare_meta_item( $order, OrderModel::META_PLAN_INFO, maybe_serialize( $tutor_plan ) ),
 		);
 
 		return $meta_data;
