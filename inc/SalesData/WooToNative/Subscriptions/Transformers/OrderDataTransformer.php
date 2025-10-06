@@ -179,6 +179,16 @@ class OrderDataTransformer implements DataTransformer {
 			$this->prepare_meta_item( $order, OrderModel::META_PLAN_INFO, maybe_serialize( $tutor_plan ) ),
 		);
 
+		$order_type = wcs_order_contains_renewal( $order ) ? OrderModel::TYPE_RENEWAL : OrderModel::TYPE_SUBSCRIPTION;
+		if ( OrderModel::TYPE_SUBSCRIPTION === $order_type ) {
+			if ( $tutor_plan->enrollment_fee > 0 ) {
+				$meta_data[] = $this->prepare_meta_item( $order, OrderModel::META_ENROLLMENT_FEE, $tutor_plan->enrollment_fee );
+			}
+			if ( $tutor_plan->trial_value > 0 ) {
+				$meta_data[] = $this->prepare_meta_item( $order, OrderModel::META_IS_PLAN_TRIAL_ORDER, true );
+			}
+		}
+
 		return $meta_data;
 	}
 }
