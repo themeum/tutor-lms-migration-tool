@@ -191,7 +191,7 @@ class JobHandler {
 		$completed_job = 0;
 		foreach ( $requirements as $requirement ) {
 			if ( $requirement['is_done'] ) {
-				$completed_job++;
+				++$completed_job;
 			}
 		}
 
