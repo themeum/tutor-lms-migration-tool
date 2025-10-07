@@ -71,7 +71,7 @@ class Customers implements MigrationTemplate {
 	 * @return array
 	 * @throws \Throwable Return throws.
 	 */
-	public function get_items( int $limit = 5, int $offset = 1 ): array {
+	public function get_items( int $limit = 5, int $offset = 0 ): array {
 		return $this->get_woocommerce_customers( $limit, $offset );
 	}
 
@@ -210,7 +210,7 @@ class Customers implements MigrationTemplate {
 				";
 			}
 
-            $customer_count = (int) $wpdb->get_var($wpdb->prepare($query, '_is_tutor_order_for_course')); //phpcs:ignore
+            $customer_count = (int) $wpdb->get_var( $wpdb->prepare( $query, '_is_tutor_order_for_course' ) ); //phpcs:ignore
 			return $customer_count;
 		} catch ( \Throwable $th ) {
 			throw $th;
