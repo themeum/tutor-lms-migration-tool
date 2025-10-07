@@ -389,7 +389,7 @@ class Orders implements MigrationTemplate {
 			// Store meta.
 			$meta_data = $this->prepare_order_meta( $order_id );
 			if ( $meta_data ) {
-				QueryHelper::insert_multiple_rows( 'tutor_order_items', $meta_data, false, false );
+				QueryHelper::insert_multiple_rows( 'tutor_ordermeta', $meta_data, false, false );
 			}
 
 			// Store order items.
@@ -402,7 +402,12 @@ class Orders implements MigrationTemplate {
 			$this->migrate_customer();
 
 			// Migrate earnings.
-			$this->migrate_earnings();
+			$order_id_map = (object) array(
+				'old_order_id' => $this->wc_order->get_id(),
+				'new_order_id' => $order_id,
+			);
+
+			$this->migrate_earnings( $order_id_map );
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}

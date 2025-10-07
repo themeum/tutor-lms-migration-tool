@@ -8,10 +8,11 @@
  * @since 2.4.0
  */
 
+use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
+
 defined( 'ABSPATH' ) || exit;
 
 $items_count = 10;
-
 ?>
 <div class="tutor-migration-page">
 
@@ -96,6 +97,7 @@ $items_count = 10;
 									</label>
 								</div>
 								<!-- Subscriptions -->
+								<?php if ( MigrationHandler::is_active_wc_subscription() ) : ?>
 								<div id="sectionSubscriptions">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
@@ -113,6 +115,7 @@ $items_count = 10;
 										</div>
 									</label>
 								</div>
+								<?php endif; ?>
 							</div>
 						</div>
 					</div>
@@ -148,6 +151,7 @@ $items_count = 10;
 										</div>
 									</div>
 								</div>
+								<?php if ( MigrationHandler::is_active_wc_subscription() ) : ?>
 								<div id="sectionSubscriptions" class="tutor-py-16">
 									<div class="tutor-form-check lp-migration-singlebox wc-migration-singlebox">
 										<input id="woo-subscriptions" type="checkbox" name="job_requirements[]" value="subscriptions" class="tutor-form-check-input lp-migration-singlebox-checkbox">
@@ -161,6 +165,7 @@ $items_count = 10;
 										</div>
 									</div>
 								</div>
+								<?php endif; ?>
 							</div>
 						</div>
 

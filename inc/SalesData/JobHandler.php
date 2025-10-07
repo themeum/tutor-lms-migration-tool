@@ -69,13 +69,12 @@ class JobHandler {
 			foreach ( $items as $item ) {
 				try {
 					$data_obj->extract( $item )->transform()->migrate();
-
-					// Keep track.
-					$processed_items++;
 					$active_job['succeed'][] = $data_obj->get_item_id( $item );
 				} catch ( \Throwable $th ) {
 					$job_data['error_log'][] = $th->getMessage();
 					$active_job['failed'][]  = $data_obj->get_item_id( $item );
+				} finally {
+					$processed_items++;
 				}
 			}
 
@@ -112,7 +111,7 @@ class JobHandler {
 	 */
 	public function update_job_data( array $job_data ) {
 		$job_id = $job_data['job_id'];
-		update_option( self::JOB_OPT_NAME . $job_id, wp_json_encode( $job_data ) );
+		update_option( self::JOB_OPT_NAME . $job_id, wp_json_encode( $job_data ), false );
 	}
 
 	/**

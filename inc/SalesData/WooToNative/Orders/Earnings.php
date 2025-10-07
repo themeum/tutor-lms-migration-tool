@@ -73,30 +73,24 @@ class Earnings {
 		$this->old_order_id = (int) $order->old_order_id;
 		$this->new_order_id = (int) $order->new_order_id;
 
-		try {
-			$this->tutor_wc_order_earnings = QueryHelper::get_row(
-				$this->tutor_earning_table,
-				array(
-					'order_id'     => $this->old_order_id,
-					'process_by'   => 'woocommerce',
-					'order_status' => array(
-						'IN',
-						tutor_utils()->get_earnings_completed_statuses(),
-					),
+		$this->tutor_wc_order_earnings = QueryHelper::get_row(
+			$this->tutor_earning_table,
+			array(
+				'order_id'     => $this->old_order_id,
+				'process_by'   => 'woocommerce',
+				'order_status' => array(
+					'IN',
+					tutor_utils()->get_earnings_completed_statuses(),
 				),
-				'created_at'
-			);
-		} catch ( \Exception $e ) {
-			throw $e;
-		}
+			),
+			'created_at'
+		);
 	}
 
 	/**
 	 * Convert WooCommerce Earnings to Tutor Earnings.
 	 *
 	 * @since 2.4.0
-	 *
-	 * @throws \Exception If earning data not found.
 	 *
 	 * @return void
 	 */
@@ -108,8 +102,6 @@ class Earnings {
 			);
 
 			$this->tutor_transformed_order_earnings = $transformed_earnings;
-		} else {
-			throw new \Exception( esc_html__( 'Earnings not found for order', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
 		}
 	}
 
@@ -133,16 +125,16 @@ class Earnings {
 			throw $e;
 		}
 
+		if ( ! $this->tutor_transformed_order_earnings ) {
+			return false;
+		}
+
 		// Update earnings data.
 		$result = QueryHelper::update(
 			$this->tutor_earning_table,
 			$this->tutor_transformed_order_earnings,
 			array( 'earning_id' => $this->tutor_wc_order_earnings->earning_id ),
 		);
-
-		if ( ! $result ) {
-            throw new \Exception( esc_html__( 'Error updating earning data.', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
-		}
 
 		return $result;
 	}

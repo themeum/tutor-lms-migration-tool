@@ -122,11 +122,22 @@ class MigrationHandler {
 			SalesDataTypes::COUPONS,
 		);
 
-		if ( is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' ) ) {
+		if ( self::is_active_wc_subscription() ) {
 			$types[] = SalesDataTypes::SUBSCRIPTIONS;
 		}
 
 		return $types;
+	}
+
+	/**
+	 * Check if WooCommerce Subscriptions plugin is active
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return bool
+	 */
+	public static function is_active_wc_subscription(): bool {
+		return is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' );
 	}
 
 }
