@@ -82,17 +82,24 @@ class MigrationHandler {
 			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-lms-migration-tool' ) );
 		}
 
-		$job_data   = $this->job_handler->get_migration_job( $requirements, $job_id );
-		$active_job = $this->job_handler->get_active_job_type( $job_data );
-		if ( $active_job ) {
+		$job_data        = $this->job_handler->get_migration_job( $requirements, $job_id );
+		$active_job_type = $this->job_handler->get_active_job_type( $job_data );
+		if ( $active_job_type ) {
 			try {
-				$job_data = $this->job_handler->process_job( $active_job, $job_data );
+				// Action hook.
+				do_action( "tlmt_before_processing_{$active_job_type}_job", $job_data );
+
+				$job_data = $this->job_handler->process_job( $active_job_type, $job_data );
 				if ( $job_data['progress'] >= 100 ) {
 					$job_data['status']   = self::STATUS_SUCCESS;
 					$job_data['progress'] = 100;
 
 					$this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 				}
+
+				// Action hook.
+				do_action( "tlmt_after_processing_{$active_job_type}_job", $job_data );
+
 				$this->json_response( __( 'Migration in progress', 'tutor-lms-migration-tool' ), $job_data );
 			} catch ( \Throwable $th ) {
 				$this->json_response( __( 'Migration failed', 'tutor-lms-migration-tool' ), $job_data, HttpHelper::STATUS_INTERNAL_SERVER_ERROR );
@@ -101,6 +108,9 @@ class MigrationHandler {
 
 		$job_data['status']   = self::STATUS_SUCCESS;
 		$job_data['progress'] = 100;
+
+		// Action hook.
+		do_action( 'tlmt_after_job_complete', $job_data );
 
 		$this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 	}
