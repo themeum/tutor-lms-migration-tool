@@ -369,4 +369,16 @@ class Coupons implements MigrationTemplate {
 			$result['results']
 		);
 	}
+
+	/**
+	 * Retrieve the unique ID of a given item.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param object $item The item object.
+	 * @return int The numeric ID of the item.
+	 */
+	public function get_item_id( $item ): int {
+		return (int) $item->get_id();
+	}
 }
