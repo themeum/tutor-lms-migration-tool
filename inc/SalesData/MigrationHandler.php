@@ -86,9 +86,6 @@ class MigrationHandler {
 		$active_job_type = $this->job_handler->get_active_job_type( $job_data );
 		if ( $active_job_type ) {
 			try {
-				// Action hook.
-				do_action( "tlmt_before_processing_{$active_job_type}_job", $job_data );
-
 				$job_data = $this->job_handler->process_job( $active_job_type, $job_data );
 				if ( $job_data['progress'] >= 100 ) {
 					$job_data['status']   = self::STATUS_SUCCESS;
@@ -96,9 +93,6 @@ class MigrationHandler {
 
 					$this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 				}
-
-				// Action hook.
-				do_action( "tlmt_after_processing_{$active_job_type}_job", $job_data );
 
 				$this->json_response( __( 'Migration in progress', 'tutor-lms-migration-tool' ), $job_data );
 			} catch ( \Throwable $th ) {

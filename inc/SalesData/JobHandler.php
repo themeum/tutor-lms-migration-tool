@@ -62,6 +62,9 @@ class JobHandler {
 			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
 			$items    = $data_obj->get_items( $limit, $processed_items );
 
+			// Action hook.
+			do_action( "tlmt_before_processing_{$active_job_type}_job", $job_data );
+
 			// Migrate each item.
 			foreach ( $items as $item ) {
 				try {
@@ -81,6 +84,9 @@ class JobHandler {
 			if ( $processed_items >= $total_items ) {
 				$active_job['is_done'] = true;
 			}
+
+			// Action hook.
+			do_action( "tlmt_after_processing_{$active_job_type}_job", $job_data );
 
 			// Update job data.
 			$requirement[ $active_job_type ] = $active_job;

@@ -12,9 +12,12 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
+use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 use Tutor\Helpers\QueryHelper;
 use Tutor\Models\OrderModel;
+use WC_Customer;
 use WC_Order;
 use WC_Order_Query;
 
@@ -394,6 +397,12 @@ class Orders implements MigrationTemplate {
 			if ( $order_items ) {
 				QueryHelper::insert_multiple_rows( 'tutor_order_items', $order_items, false, false );
 			}
+
+			// Migrate customer.
+			$this->migrate_customer();
+
+			// Migrate earnings.
+			$this->migrate_earnings();
 		} catch ( \Throwable $th ) {
 			throw $th;
 		}
@@ -456,5 +465,36 @@ class Orders implements MigrationTemplate {
 	 */
 	public function get_item_id( $item ): int {
 		return (int) $item->get_id();
+	}
+
+	/**
+	 * Migrate earnings
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return void
+	 */
+	private function migrate_earnings() {
+		$earning = new Earnings();
+		$earning->migrate( $this->wc_order );
+	}
+
+	/**
+	 * Migrate customer
+	 *
+	 * @since 2.4.0
+	 *
+	 * @throws \Throwable If error occurs while migrating customer.
+	 *
+	 * @return void
+	 */
+	private function migrate_customer() {
+		try {
+			$wc_customer  = new WC_Customer( $this->order_customer_id );
+			$customer_obj = tlmt_get_sales_data_object( SalesDataTypes::CUSTOMERS, MigrationTypes::WC_TO_NATIVE );
+			$customer_obj->extract( $wc_customer )->transform()->migrate();
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
 	}
 }
