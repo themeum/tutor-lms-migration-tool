@@ -246,8 +246,6 @@ class Subscriptions implements MigrationTemplate {
 			self::ORDERS       => $this->order_data_transformer->transform( $this->subscription ),
 		);
 
-		$this->log_data( $this->transformed_data );
-
 		return $this;
 	}
 
