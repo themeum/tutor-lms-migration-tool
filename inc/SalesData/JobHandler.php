@@ -111,6 +111,12 @@ class JobHandler {
 	 */
 	public function update_job_data( array $job_data ) {
 		$job_id = $job_data['job_id'];
+
+		if ( $job_data['progress'] >= 100 ) {
+			$job_data['status']   = MigrationHandler::STATUS_COMPLETED;
+			$job_data['progress'] = 100;
+		}
+
 		update_option( self::JOB_OPT_NAME . $job_id, wp_json_encode( $job_data ), false );
 	}
 

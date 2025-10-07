@@ -35,7 +35,7 @@ class MigrationHandler {
 	 */
 	const STATUS_PENDING     = 'pending';
 	const STATUS_IN_PROGRESS = 'in_progress';
-	const STATUS_SUCCESS     = 'success';
+	const STATUS_COMPLETED   = 'completed';
 	const STATUS_FAILED      = 'failed';
 
 	/**
@@ -88,8 +88,8 @@ class MigrationHandler {
 			try {
 				$job_data = $this->job_handler->process_job( $active_job_type, $job_data );
 				if ( $job_data['progress'] >= 100 ) {
-					$job_data['status']   = self::STATUS_SUCCESS;
-					$job_data['progress'] = 100;
+					// Action hook.
+					do_action( 'tlmt_after_job_complete', $job_data );
 
 					$this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 				}
@@ -99,14 +99,6 @@ class MigrationHandler {
 				$this->json_response( __( 'Migration failed', 'tutor-lms-migration-tool' ), $job_data, HttpHelper::STATUS_INTERNAL_SERVER_ERROR );
 			}
 		}
-
-		$job_data['status']   = self::STATUS_SUCCESS;
-		$job_data['progress'] = 100;
-
-		// Action hook.
-		do_action( 'tlmt_after_job_complete', $job_data );
-
-		$this->json_response( __( 'Migration completed successfully', 'tutor-lms-migration-tool' ), $job_data );
 	}
 
 	/**
