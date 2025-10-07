@@ -117,11 +117,16 @@ class MigrationHandler {
 	 * @return array
 	 */
 	public function get_migration_data_types() {
-		return array(
+		$types = array(
 			SalesDataTypes::ORDERS,
 			SalesDataTypes::COUPONS,
-			SalesDataTypes::SUBSCRIPTIONS,
 		);
+
+		if ( is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' ) ) {
+			$types[] = SalesDataTypes::SUBSCRIPTIONS;
+		}
+
+		return $types;
 	}
 
 }
