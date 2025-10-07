@@ -112,6 +112,8 @@ class Subscriptions implements MigrationTemplate {
 		$this->order_data_transformer        = new OrderDataTransformer();
 		$this->subscription_data_transformer = new SubscriptionDataTransformer();
 		$this->enrollment_data_transformer   = new EnrollmentDataTransformer();
+
+		add_action( 'tlmt_before_processing_subscriptions_job', array( $this, 'migrate_plans' ) );
 	}
 
 	/**
