@@ -11,7 +11,7 @@
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers;
 
 use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Helper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 
 /**
  * Class SubscriptionDataTransformer

@@ -13,6 +13,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions;
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Themeum\TutorLMSMigrationTool\MigrationMapper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\EnrollmentDataTransformer;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\OrderDataTransformer;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers\PlanDataTransformer;

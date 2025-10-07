@@ -12,7 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Tran
 
 use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
 use Themeum\TutorLMSMigrationTool\MigrationMapper;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Helper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\PlanModel;
