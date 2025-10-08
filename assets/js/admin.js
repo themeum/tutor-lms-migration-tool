@@ -440,17 +440,22 @@ jQuery(document).ready(function ($) {
     function replaceWooCheckboxesWithSpinners() {
         storeWooCheckboxState();
 
-        const $checkboxes = $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]');
-        $checkboxes.each(function () {
+        const $checkedCheckboxes = $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]:checked');
+        $checkedCheckboxes.each(function () {
             const inputId = $(this).attr('id');
             $(this).replaceWith(
                 `<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`
             );
         });
+        const $uncheckedCheckboxes = $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]:not(:checked)');
+        $uncheckedCheckboxes.each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
     }
 
     function revertWooCheckboxes() {
         $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('span.j-spinner').remove();
+        $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]:not(:checked):is([disabled])').remove();
 
         for (const config of WOO_CONFIG.CHECKBOX_CONFIGS) {
             const checkboxHtml = `
