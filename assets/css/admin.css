@@ -751,7 +751,8 @@
 .backup-now-subtile {
     color: #5b616f;
 }
-.tutor-migration-tab > .tutor-nav:not(.tutor-nav-pills):not(.tutor-nav-tabs) .tutor-nav-link.is-active {
+
+.tutor-migration-tab>.tutor-nav:not(.tutor-nav-pills):not(.tutor-nav-tabs) .tutor-nav-link.is-active {
     border-bottom-color: #F4F6F9;
     border-width: 3px 3px 3px 4px;
     background: #f4f6f9;
@@ -803,6 +804,19 @@
 
 span.tutor-icon-brand-lifter:before {
     content: '\e962';
+}
+
+.tutor-wc-migration-history-row {
+    .tutor-btn {
+        opacity: 0;
+        float: right;
+        transition: opacity 0.2s ease;
+    }
+
+    &:hover .tutor-btn,
+    .tutor-btn.is-loading {
+        opacity: 1;
+    }
 }
 
 @media (max-width: 991px) {
