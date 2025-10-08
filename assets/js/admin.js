@@ -599,6 +599,41 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    // Delete history
+    $(document).on('click', '.tutor-wc-history-delete-btn', function (event) {
+        event.preventDefault();
+
+        const $btn = $(this);
+        const optionId = $btn.data('wc-option-id');
+        if (!optionId) return;
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'tlmt_delete_sales_data_history',
+                option_id: optionId,
+            },
+            beforeSend: function () {
+                $btn.addClass('is-loading');
+                $btn.prop('disabled', true);
+                $btn.text('');
+            },
+            success: function (data) {
+                if (data.status_code === 200) {
+                    $btn.closest('tr').remove();
+                } else {
+                    $btn.removeClass('is-loading').prop('disabled', false).text('Delete');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to delete history', { status, error, response: xhr.responseText });
+                $btn.removeClass('is-loading').prop('disabled', false).text('Delete');
+            },
+        });
+    });
+
+
     // Initialize WooCommerce migration
     toggleWooMigrateBtn();
 
