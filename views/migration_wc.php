@@ -63,7 +63,7 @@ $migration_history = Helper::get_wc_migration_history();
 						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
 								<!-- Orders -->
-								<div id="sectionOrders" class="tutor-pb-16">
+								<div id="sectionOrders">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox ">
@@ -83,7 +83,7 @@ $migration_history = Helper::get_wc_migration_history();
 								</div>
 
 								<!-- Coupons -->
-								<div id="sectionCoupons">
+								<div id="sectionCoupons" class="tutor-pt-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
@@ -102,7 +102,7 @@ $migration_history = Helper::get_wc_migration_history();
 								</div>
 								<!-- Subscriptions -->
 								<?php if ( MigrationHandler::is_active_wc_subscription() ) : ?>
-								<div id="sectionSubscriptions">
+								<div id="sectionSubscriptions" class="tutor-pt-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
