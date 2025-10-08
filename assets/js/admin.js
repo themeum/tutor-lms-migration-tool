@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     'use strict';
-    const {__} = wp.i18n;
+    const { __ } = wp.i18n;
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -61,14 +61,13 @@ jQuery(document).ready(function ($) {
 
         var $that = $(this);
         var $formData = $(this).serialize() + '&action=' + $that.attr('action');
-     
 
         let final_types = 'lp';
         if ($that.attr('action') == 'ld_migrate_all_data_to_tutor') {
             final_types = 'ld';
             migration_vendor = 'ld';
         }
-        if($that.attr('action') == 'lif_migrate_all_data_to_tutor') {
+        if ($that.attr('action') == 'lif_migrate_all_data_to_tutor') {
             final_types = 'lif';
             migration_vendor = 'lif';
         }
@@ -171,16 +170,16 @@ jQuery(document).ready(function ($) {
                     clearTimeout(countReviewsProgress);
                     clearTimeout(checkProgress);
                     clearTimeout(countProgress);
-                    $.post(ajaxurl, { 
-                        migration_type : 'Imported',
-                        migration_vendor : migration_vendor,
+                    $.post(ajaxurl, {
+                        migration_type: 'Imported',
+                        migration_vendor: migration_vendor,
                         action: 'insert_tutor_migration_data'
                     });
                 }
 
                 const res = data.data;
-                const { total_course_count = 0, failed = []} = res || {};
-                
+                const { total_course_count = 0, failed = [] } = res || {};
+
                 if (Number(total_course_count) > 0) {
                     if (failed.length > 0) {
                         $('.lp-success-modal').addClass('active');
@@ -188,7 +187,7 @@ jQuery(document).ready(function ($) {
                         $('.lp-success-modal').addClass('active');
                     }
                 } else {
-                     $('.lp-error-modal').addClass('active');
+                    $('.lp-error-modal').addClass('active');
                 }
             },
             complete: function () {
@@ -220,6 +219,7 @@ jQuery(document).ready(function ($) {
     function removeModal(removeItem) {
         removeItem.removeClass('active');
     }
+
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
@@ -227,10 +227,11 @@ jQuery(document).ready(function ($) {
             migrationModal.addClass('active');
         }
     });
-    
+
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
+        $('#wc-sales-data-migration-form').submit();
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -271,14 +272,14 @@ jQuery(document).ready(function ($) {
     var tutorManualMigrateForm = $('#tutor-manual-migrate-form');
     var manualMigrateNowBtn = $('#manual-migrate-now-btn');
 
-    $(document).on('click', '#tutor-migration-browse-file-link a', function(event) {
+    $(document).on('click', '#tutor-migration-browse-file-link a', function (event) {
         event.preventDefault();
         $('#tutor-migration-browse-file').click();
     });
     var dropZone = $('.tutor-migration-drag-drop-zone');
-    $(document).on('change', '#tutor-migration-browse-file', function(event){
+    $(document).on('change', '#tutor-migration-browse-file', function (event) {
         var inputEl = $('#tutor-migration-browse-file');
-        if(this.files[0]) {
+        if (this.files[0]) {
             manualMigrateNowBtn.removeAttr('disabled');
             getFilesAndUpdateDOM(this.files[0], inputEl);
         } else {
@@ -288,39 +289,39 @@ jQuery(document).ready(function ($) {
 
     var getFilesAndUpdateDOM = (files, inputEl) => {
         if (files) {
-        	inputEl.files = files;
-        	dropZone.addClass('file-attached');
-        	dropZone.find('.file-info').html(`File attached - ${files.name}`);
+            inputEl.files = files;
+            dropZone.addClass('file-attached');
+            dropZone.find('.file-info').html(`File attached - ${files.name}`);
         } else {
-        	dropZone.removeClass('file-attached');
-        	dropZone.find('.file-info').html('');
+            dropZone.removeClass('file-attached');
+            dropZone.find('.file-info').html('');
         }
     };
 
-    $(document).on('click', '.backup-now-btn', function(event) {
+    $(document).on('click', '.backup-now-btn', function (event) {
         event.preventDefault();
         let button = $(this);
         let form = button.closest('form#tutor_migration_export_form');
-    
-        $.post(ajaxurl, { 
-            migration_type : 'Exported',
-            migration_vendor : form.children("#tutor_migration_vendor").val(),
+
+        $.post(ajaxurl, {
+            migration_type: 'Exported',
+            migration_vendor: form.children("#tutor_migration_vendor").val(),
             action: 'insert_tutor_migration_data'
         });
         form.submit();
     })
 
-    $(document).on('click', '#manual-migrate-now-btn', function(event) {
+    $(document).on('click', '#manual-migrate-now-btn', function (event) {
         let button = $(this);
         var fileType = $('input[name="tutor_import_file"]')[0].files[0].type;
-        if(fileType != 'text/xml') {
+        if (fileType != 'text/xml') {
             alert('Not supported file. Upload xml file here!');
             return;
         }
         var action_name = $('#tutor-manual-migrate-form input[name="tutor_action"]').val();
         let tutor_nonce = $("#tutor-manual-migrate-form input[name='_tutor_nonce']").val();
-        let http_referer= $("#tutor-manual-migrate-form input[name='_wp_http_referer']").val();
-        
+        let http_referer = $("#tutor-manual-migrate-form input[name='_wp_http_referer']").val();
+
         var formData = new FormData();
         formData.append("tutor_import_file", $('input[name="tutor_import_file"]')[0].files[0]);
         formData.append("action", action_name);
@@ -339,9 +340,9 @@ jQuery(document).ready(function ($) {
                 console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
-                    $.post(ajaxurl, { 
-                        migration_type : 'Imported',
-                        migration_vendor : $('#tutor_migration_vendor').val(),
+                    $.post(ajaxurl, {
+                        migration_type: 'Imported',
+                        migration_vendor: $('#tutor_migration_vendor').val(),
                         action: 'insert_tutor_migration_data'
                     });
                     manualMigrateNowBtn.attr('disabled', 'disabled');
@@ -355,6 +356,254 @@ jQuery(document).ready(function ($) {
         });
     });
 
+
+    /**
+     * WooCommerce Migration Block
+     * 
+     * @author Themeum <support@themeum.com>
+     * @link https://themeum.com
+     * @since 2.4.0
+     */
+
+    // WooCommerce Migration Configuration
+    const WOO_CONFIG = {
+        TABS: {
+            CUSTOM: 'tutor-wc-custom-migrate-tab',
+            AUTO: 'tutor-wc-auto-migrate-tab'
+        },
+        SELECTORS: {
+            migrationPage: '.tutor-migration-page',
+            migrateBtn: '.migrate-now-btn',
+            navLink: '.tutor-nav-link',
+            activeNavLink: '.tutor-nav-link.is-active',
+            form: '#wc-sales-data-migration-form'
+        },
+        SECTION_MAP: {
+            orders: "#sectionOrders .j-spinner",
+            coupons: "#sectionCoupons .j-spinner",
+            subscriptions: "#sectionSubscriptions .j-spinner"
+        },
+        CHECKBOX_CONFIGS: [
+            { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
+            { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
+            { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
+        ]
+    };
+
+    const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
+    const $wooMigrateBtn = $wooMigrationPage.find(WOO_CONFIG.SELECTORS.migrateBtn);
+    const $wooCheckboxes = $wooMigrationPage.find(`#${WOO_CONFIG.TABS.CUSTOM} input[type="checkbox"]`);
+
+    // Store original checkbox state
+    let wooOriginalCheckboxes = [];
+
+    function getWooActiveTab() {
+        return $wooMigrationPage.find(WOO_CONFIG.SELECTORS.activeNavLink).data('tutorNavTarget');
+    }
+
+    function toggleWooMigrateBtn() {
+        setTimeout(function () {
+            const isCustomTab = getWooActiveTab() === WOO_CONFIG.TABS.CUSTOM;
+            const shouldDisable = isCustomTab && !$wooCheckboxes.is(':checked');
+            $wooMigrateBtn.prop('disabled', shouldDisable);
+        }, 0);
+    }
+
+    function toggleWooSpinners(tab, mode) {
+        $(`#${tab}`).find('span.j-spinner').each(function () {
+            const $spinner = $(this);
+            $spinner.removeClass('tmtl_spin tmtl_done');
+
+            if (mode === 'spin') {
+                $spinner.addClass('tmtl_spin');
+            } else if (mode === 'done') {
+                $spinner.addClass('tmtl_done');
+            }
+        });
+    }
+
+    function storeWooCheckboxState() {
+        const $checkboxes = $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]');
+        wooOriginalCheckboxes = [];
+
+        $checkboxes.each(function () {
+            const $checkbox = $(this);
+            wooOriginalCheckboxes.push({
+                id: $checkbox.attr('id'),
+                name: $checkbox.attr('name'),
+                value: $checkbox.attr('value'),
+                class: $checkbox.attr('class'),
+                checked: $checkbox.is(':checked')
+            });
+        });
+    }
+
+    function replaceWooCheckboxesWithSpinners() {
+        storeWooCheckboxState();
+
+        const $checkboxes = $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('input[type="checkbox"]');
+        $checkboxes.each(function () {
+            const inputId = $(this).attr('id');
+            $(this).replaceWith(
+                `<span id="spinner-${inputId}" class="j-spinner tmtl_spin" data-original-id="${inputId}"></span>`
+            );
+        });
+    }
+
+    function revertWooCheckboxes() {
+        $(`#${WOO_CONFIG.TABS.CUSTOM}`).find('span.j-spinner').remove();
+
+        for (const config of WOO_CONFIG.CHECKBOX_CONFIGS) {
+            const checkboxHtml = `
+            <input 
+                id="${config.id}" 
+                type="checkbox" 
+                name="${config.name}" 
+                value="${config.value}" 
+                class="tutor-form-check-input lp-migration-singlebox-checkbox"
+            >`;
+
+            $(`label[for="${config.id}"]`)
+                .closest('.tutor-form-check')
+                .prepend(checkboxHtml);
+        };
+
+        toggleWooMigrateBtn();
+    }
+
+    function updateWooProgressSpinners(response) {
+        if (!response.requirements) return;
+
+        const activeTab = getWooActiveTab();
+
+        for (const [key, requirement] of Object.entries(response.requirements)) {
+            const $spinner = $(`#${activeTab} ${WOO_CONFIG.SECTION_MAP[key]}`);
+
+            if (!$spinner.length) {
+                return;
+            }
+
+            $spinner.toggleClass('tmtl_spin', !requirement.is_done)
+                .toggleClass('tmtl_done', requirement.is_done);
+        };
+    }
+
+    function pollWooMigrationProgress(jobId) {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'tlmt_migrate_sales_data',
+                job_id: jobId
+            },
+            success: function (data) {
+                const activeTab = getWooActiveTab();
+                const response = data.data;
+
+                if (!response || !response.progress) {
+                    console.error("Invalid WooCommerce migration progress response", response);
+                    return;
+                }
+
+                updateWooProgressSpinners(response);
+
+                const progress = parseInt(response.progress, 10);
+
+                if (progress < 100) {
+                    pollWooMigrationProgress(jobId);
+                } else {
+                    $('.lp-success-modal').addClass('active');
+                    toggleWooSpinners(getWooActiveTab(), 'stop');
+                    if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+                        revertWooCheckboxes();
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("WooCommerce migration polling failed", { status, error, response: xhr.responseText });
+                throw new Error("WooCommerce migration polling failed");
+            }
+        });
+    }
+
+    function handleWooMigrationStart() {
+        $wooMigrateBtn.attr('disabled', 'disabled');
+
+        if (getWooActiveTab() === WOO_CONFIG.TABS.CUSTOM) {
+            replaceWooCheckboxesWithSpinners();
+        } else {
+            toggleWooSpinners(WOO_CONFIG.TABS.AUTO, 'spin');
+        }
+    }
+
+    function handleWooMigrationError() {
+        $('.lp-error-modal').addClass('active');
+        const activeTab = getWooActiveTab();
+        toggleWooSpinners(activeTab, 'stop');
+
+        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+            revertWooCheckboxes();
+        }
+    }
+
+    function prepareWooFormData(form) {
+        const formData = new FormData(form);
+        formData.append('action', 'tlmt_migrate_sales_data');
+        formData.append('job_id', 0);
+
+        if (getWooActiveTab() !== WOO_CONFIG.TABS.CUSTOM) {
+            formData.delete('job_requirements[]');
+            formData.append('job_requirements[]', '');
+        }
+
+        return formData;
+    }
+
+    // WooCommerce Migration Event Handlers
+    $wooMigrationPage.find(WOO_CONFIG.SELECTORS.navLink).on('click', function (e) {
+        e.preventDefault();
+        toggleWooMigrateBtn();
+    });
+
+    $wooCheckboxes.on('change', toggleWooMigrateBtn);
+
+    $(document).on('submit', WOO_CONFIG.SELECTORS.form, function (event) {
+        event.preventDefault();
+
+        const formData = prepareWooFormData(this);
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: handleWooMigrationStart,
+            success: function (data) {
+                const activeTab = getWooActiveTab();
+                const response = data.data;
+                if (response && response.job_id && response.progress < 100) {
+                    pollWooMigrationProgress(response.job_id);
+                    return;
+                }
+
+                toggleWooSpinners(activeTab, 'stop');
+                $('.lp-success-modal').addClass('active');
+                if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+                    revertWooCheckboxes();
+                }
+
+            },
+            error: handleWooMigrationError,
+            complete: function () {
+                $wooMigrateBtn.removeAttr('disabled');
+            }
+        });
+    });
+
+    // Initialize WooCommerce migration
+    toggleWooMigrateBtn();
+
 }); /* ./ jQuery */
 
 
@@ -362,42 +611,42 @@ jQuery(document).ready(function ($) {
 const dropZoneInputs = document.querySelectorAll('.tutor-migration-drag-drop-zone input[type=file]');
 
 dropZoneInputs.forEach((inputEl) => {
-	const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
-	['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
-		if (dragEvent === 'dragover') {
-			dropZone.addEventListener(dragEvent, (e) => {
-				e.preventDefault();
-				dropZone.classList.add('dragover');
-			});
-		} else {
-			dropZone.addEventListener(dragEvent, (e) => {
-				dropZone.classList.remove('dragover');
-			});
-		}
-	});
+    const dropZone = inputEl.closest('.tutor-migration-drag-drop-zone');
+    ['dragover', 'dragleave', 'dragend'].forEach((dragEvent) => {
+        if (dragEvent === 'dragover') {
+            dropZone.addEventListener(dragEvent, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        } else {
+            dropZone.addEventListener(dragEvent, (e) => {
+                dropZone.classList.remove('dragover');
+            });
+        }
+    });
 
-	dropZone.addEventListener('drop', (e) => {
-		e.preventDefault();
-		const files = e.dataTransfer.files;
-		getFilesAndUpdateDOM(files, inputEl, dropZone);
-		dropZone.classList.remove('dragover');
-	});
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        getFilesAndUpdateDOM(files, inputEl, dropZone);
+        dropZone.classList.remove('dragover');
+    });
 
-	// inputEl.addEventListener('change', (e) => {
+    // inputEl.addEventListener('change', (e) => {
     //     const files = e.target.files;
-	// 	getFilesAndUpdateDOM(files, inputEl, dropZone);
-	// });
-	
+    // 	getFilesAndUpdateDOM(files, inputEl, dropZone);
+    // });
+
 });
 
 const getFilesAndUpdateDOM = (files, inputEl, dropZone) => {
-	if (files.length) {
-		inputEl.files = files;
-		dropZone.classList.add('file-attached');
-		dropZone.querySelector('.file-info').innerHTML = `File attached - ${files[0].name}`;
+    if (files.length) {
+        inputEl.files = files;
+        dropZone.classList.add('file-attached');
+        dropZone.querySelector('.file-info').innerHTML = `File attached - ${files[0].name}`;
         document.querySelector('#manual-migrate-now-btn').removeAttribute('disabled');
-	} else {
-		dropZone.classList.remove('file-attached');
-		dropZone.querySelector('.file-info').innerHTML = '';
-	}
+    } else {
+        dropZone.classList.remove('file-attached');
+        dropZone.querySelector('.file-info').innerHTML = '';
+    }
 };

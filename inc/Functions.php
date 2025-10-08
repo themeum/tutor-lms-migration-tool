@@ -15,6 +15,7 @@ use Themeum\TutorLMSMigrationTool\Factories\PostFactory;
 use Themeum\TutorLMSMigrationTool\Factories\PostMetaFactory;
 use Themeum\TutorLMSMigrationTool\Factories\ProductFactory;
 use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
+use Themeum\TutorLMSMigrationTool\Factories\SalesDataFactory;
 
 if ( ! function_exists( 'tlmt_has_tutor_pro' ) ) {
 	/**
@@ -368,5 +369,27 @@ if ( ! function_exists( 'tlmt_get_minute_by_timestamp' ) ) {
 		}
 
 		return floor( $time / 60 );
+	}
+}
+
+if ( ! function_exists( 'tlmt_get_sales_data_object' ) ) {
+	/**
+	 * Get readable formatted time using a timestamp
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $data_type Data type like: orders, subscriptions, etc.
+	 * @param string $migration_type Migration type like: woocommerce_to_native.
+	 *
+	 * @throws \Throwable Throw invalid argument exception if
+	 * data or migration type is not supported.
+	 * @return MigrationTemplate object
+	 */
+	function tlmt_get_sales_data_object( $data_type, $migration_type ) {
+		try {
+			return SalesDataFactory::create( $data_type, $migration_type );
+		} catch ( \Throwable $th ) {
+			throw $th;
+		}
 	}
 }
