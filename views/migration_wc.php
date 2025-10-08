@@ -9,14 +9,13 @@
  */
 
 use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-$utils = new Utils();
-
 $items_count       = 10;
 $monetized_by      = get_tutor_option( 'monetize_by' );
-$migration_history = $utils->get_wc_migration_history();
+$migration_history = Helper::get_wc_migration_history();
 
 ?>
 <div class="tutor-migration-page">
@@ -63,7 +62,7 @@ $migration_history = $utils->get_wc_migration_history();
 					<div id="tutor-wc-auto-migrate-tab" class="tutor-tab-item is-active">
 						<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
 							<div class="lp-migration-checkbox">
-								<!-- Courses -->
+								<!-- Orders -->
 								<div id="sectionOrders" class="tutor-pb-16">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
@@ -83,8 +82,8 @@ $migration_history = $utils->get_wc_migration_history();
 									</label>
 								</div>
 
-								<!-- Reviews -->
-								<div id="sectionCoupons" class="tutor-pb-16">
+								<!-- Coupons -->
+								<div id="sectionCoupons">
 									<label>
 										<div class="lp-migration-singlebox wc-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
@@ -199,50 +198,52 @@ $migration_history = $utils->get_wc_migration_history();
 	</div>
 
 	<!-- Migration History -->
-	<?php if ( count( $migration_history ) ) : ?>
-			<div class="tutor-migration-history">
-				<div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
-					History
-				</div>
-				<div class="tutor-table-responsive">
-					<table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
-						<thead>
-							<tr>
-								<th style="padding-left: 38px;">
-									<?php esc_html_e( 'Title', 'tutor-lms-migration-tool' ); ?>
-								</th>
-								<th style="padding-left: 38px;">
-									<?php esc_html_e( 'Date', 'tutor-lms-migration-tool' ); ?>
-								</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $migration_history as $migration_history ) : ?>
-								<tr class="tutor-wc-migration-history-row">
-									<td>
-										<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
-											<?php echo esc_html( $migration_history['title'] ); ?>
-										</div>
-									</td>
-									<td>
-										<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
-											<?php echo esc_html( $migration_history['started_at'] ); ?>
-										</div>
-									</td>
-									<td>
-										<div class="tutor-btn tutor-btn-outline-primary tutor-btn-sm tutor-mr-4 tutor-wc-history-delete-btn" data-wc-option-id="<?php echo esc_attr( $migration_history['id'] ); ?>">
-											<?php esc_html_e( 'Delete', 'tutor-lms-migration-tool' ); ?>
-										</div>
-									</td>
-								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
-				</div>
-			</div>
+	<div class="tutor-migration-history <?php echo count( $migration_history ) ? '' : 'tutor-d-none'; ?>">
+		<div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
+			<?php esc_html_e( 'History', 'tutor-lms-migration-tool' ); ?>
 		</div>
-	<?php endif; ?>
+		<div class="tutor-table-responsive">
+			<table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
+				<thead>
+					<tr>
+						<th style="padding-left: 38px;"><?php esc_html_e( 'Title', 'tutor-lms-migration-tool' ); ?></th>
+						<th style="padding-left: 38px;"><?php esc_html_e( 'Date', 'tutor-lms-migration-tool' ); ?></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( count( $migration_history ) ) : ?>
+						<?php foreach ( $migration_history as $migration_history_item ) : ?>
+							<tr class="tutor-wc-migration-history-row">
+								<td>
+									<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+										<?php echo esc_html( $migration_history_item['title'] ); ?>
+									</div>
+								</td>
+								<td>
+									<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+										<?php echo esc_html( $migration_history_item['started_at'] ); ?>
+									</div>
+								</td>
+								<td>
+									<div class="tutor-btn tutor-btn-outline-primary tutor-btn-sm tutor-mr-4 tutor-wc-history-delete-btn"
+										data-wc-option-id="<?php echo esc_attr( $migration_history_item['id'] ); ?>">
+										<?php esc_html_e( 'Delete', 'tutor-lms-migration-tool' ); ?>
+									</div>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<tr class="tutor-no-history">
+							<td colspan="3" class="tutor-text-center tutor-py-16">
+								<?php esc_html_e( 'No migration history found.', 'tutor-lms-migration-tool' ); ?>
+							</td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
 </div>
 
 <!-- Modal: Confirmation -->
