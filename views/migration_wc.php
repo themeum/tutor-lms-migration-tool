@@ -12,8 +12,11 @@ use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
 
 defined( 'ABSPATH' ) || exit;
 
-$items_count  = 10;
-$monetized_by = get_tutor_option( 'monetize_by' );
+$utils = new Utils();
+
+$items_count       = 10;
+$monetized_by      = get_tutor_option( 'monetize_by' );
+$migration_history = $utils->get_wc_migration_history();
 
 ?>
 <div class="tutor-migration-page">
@@ -194,6 +197,52 @@ $monetized_by = get_tutor_option( 'monetize_by' );
 			</div>
 		</div>
 	</div>
+
+	<!-- Migration History -->
+	<?php if ( count( $migration_history ) ) : ?>
+			<div class="tutor-migration-history">
+				<div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
+					History
+				</div>
+				<div class="tutor-table-responsive">
+					<table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
+						<thead>
+							<tr>
+								<th style="padding-left: 38px;">
+									<?php esc_html_e( 'Title', 'tutor-lms-migration-tool' ); ?>
+								</th>
+								<th style="padding-left: 38px;">
+									<?php esc_html_e( 'Date', 'tutor-lms-migration-tool' ); ?>
+								</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $migration_history as $migration_history ) : ?>
+								<tr class="tutor-wc-migration-history-row">
+									<td>
+										<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+											<?php echo esc_html( $migration_history['title'] ); ?>
+										</div>
+									</td>
+									<td>
+										<div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+											<?php echo esc_html( $migration_history['started_at'] ); ?>
+										</div>
+									</td>
+									<td>
+										<div class="tutor-btn tutor-btn-outline-primary tutor-btn-sm tutor-mr-4 tutor-wc-history-delete-btn" data-wc-option-id="<?php echo esc_attr( $migration_history['id'] ); ?>">
+											<?php esc_html_e( 'Delete', 'tutor-lms-migration-tool' ); ?>
+										</div>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
 </div>
 
 <!-- Modal: Confirmation -->
@@ -249,7 +298,7 @@ $monetized_by = get_tutor_option( 'monetize_by' );
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-40">
 				<?php esc_html_e( 'Migration from WoCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<?php if ( $monetized_by !== 'tutor' ) : ?>
+			<?php if ( 'tutor' !== $monetized_by ) : ?>
 				<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor_settings&tab_page=monetization" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mb-20">
 					<?php esc_html_e( 'Enable Native Monetization', 'tutor-lms-migration-tool' ); ?>
 				</a>
@@ -270,12 +319,9 @@ $monetized_by = get_tutor_option( 'monetize_by' );
 			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
 				<?php esc_html_e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-20">
 				<?php esc_html_e( 'Oops... The migration from WoCommerce to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<a href="#" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				<?php esc_html_e( 'Try Again', 'tutor-lms-migration-tool' ); ?>
-			</a>
 		</div>
 	</div>
 </div>
