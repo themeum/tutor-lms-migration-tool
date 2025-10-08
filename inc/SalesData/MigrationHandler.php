@@ -14,6 +14,7 @@ use TUTOR\Input;
 use Tutor\Helpers\HttpHelper;
 use Tutor\Traits\JsonResponse;
 use Themeum\TutorLMSMigrationTool\SalesDataTypes;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -54,6 +55,7 @@ class MigrationHandler {
 	 */
 	public function __construct() {
 		add_action( 'wp_ajax_tlmt_migrate_sales_data', array( $this, 'ajax_handle_migration' ) );
+		add_action( 'wp_ajax_tmlt_get_sales_data_history', array( $this, 'ajax_get_sales_data_history' ) );
 		add_action( 'wp_ajax_tlmt_delete_sales_data_history', array( $this, 'ajax_delete_sales_data_history' ) );
 		$this->job_handler = new JobHandler();
 	}
@@ -131,6 +133,24 @@ class MigrationHandler {
 	 */
 	public static function is_active_wc_subscription(): bool {
 		return is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' );
+	}
+
+	/**
+	 * Get sales data history
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return void wp_json response
+	 */
+	public function ajax_get_sales_data_history() {
+		if ( ! tutor_utils()->is_nonce_verified() ) {
+			$this->response_bad_request( __( 'Invalid nonce', 'tutor-lms-migration-tool' ) );
+		}
+
+		tutor_utils()->check_current_user_capability();
+
+		$history = Helper::get_wc_migration_history();
+		$this->json_response( __( 'Sales data history retrieved successfully', 'tutor-lms-migration-tool' ), $history );
 	}
 
 	/**
