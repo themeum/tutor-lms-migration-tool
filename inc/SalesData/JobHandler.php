@@ -273,6 +273,6 @@ class JobHandler {
 	 * @return mixed
 	 */
 	public function get_job_data( $job_id ) {
-		return get_option( self::JOB_OPT_NAME . $job_id, null );
+		return json_decode( get_option( self::JOB_OPT_NAME . $job_id, null ), true );
 	}
 }
