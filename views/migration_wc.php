@@ -12,7 +12,9 @@ use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
 
 defined( 'ABSPATH' ) || exit;
 
-$items_count = 10;
+$items_count  = 10;
+$monetized_by = get_tutor_option( 'monetize_by' );
+
 ?>
 <div class="tutor-migration-page">
 
@@ -247,9 +249,11 @@ $items_count = 10;
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-40">
 				<?php esc_html_e( 'Migration from WoCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
 			</div>
-			<!-- <a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				<?php esc_html_e( 'Go to courses', 'tutor-lms-migration-tool' ); ?>
-			</a> -->
+			<?php if ( $monetized_by !== 'tutor' ) : ?>
+				<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor_settings&tab_page=monetization" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mb-20">
+					<?php esc_html_e( 'Enable Native Monetization', 'tutor-lms-migration-tool' ); ?>
+				</a>
+			<?php endif; ?>
 		</div>
 	</div>
 </div>
