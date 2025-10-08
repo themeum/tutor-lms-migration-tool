@@ -74,8 +74,10 @@ class MigrationHandler {
 
 		tutor_utils()->check_current_user_capability();
 
-		$job_id       = Input::post( 'job_id' );
-		$requirements = $this->get_migration_data_types();
+		$job_id           = Input::post( 'job_id' );
+		$job_requirements = Input::post( 'job_requirements', array(), Input::TYPE_ARRAY );
+		$requirements     = empty( array_filter( $job_requirements ) ) ? $this->get_migration_data_types() : $job_requirements;
+
 		if ( ! $requirements ) {
 			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-lms-migration-tool' ) );
 		}
