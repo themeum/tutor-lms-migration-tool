@@ -806,6 +806,12 @@ span.tutor-icon-brand-lifter:before {
     content: '\e962';
 }
 
+.tutor-migration-tab .tutor-nav-link.disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+	pointer-events: none; 
+}
+
 .tutor-wc-migration-history-row {
     .tutor-btn {
         opacity: 0;
