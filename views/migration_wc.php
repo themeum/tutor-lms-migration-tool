@@ -257,7 +257,7 @@ $migration_history = Helper::get_wc_migration_history();
 				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
 					<?php
 						// translators: %s: Line break tag (<br>).
-						printf( esc_html__( 'Are you sure you want to migrate from %s LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ), '<br>' );
+						printf( esc_html__( 'Are you sure you want to migrate from %s WooCommerce to Tutor LMS?', 'tutor-lms-migration-tool' ), '<br>' );
 					?>
 				</div>
 				<div class="tutor-d-flex">
