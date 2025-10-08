@@ -477,11 +477,13 @@ class Orders implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @param mixed $order_id_map Map of old & new order id.
+	 *
 	 * @return void
 	 */
-	private function migrate_earnings() {
+	private function migrate_earnings( $order_id_map ) {
 		$earning = new Earnings();
-		$earning->migrate( $this->wc_order );
+		$earning->migrate( $order_id_map );
 	}
 
 	/**

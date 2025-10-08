@@ -56,7 +56,14 @@ class JobHandler {
 			$limit           = 10;
 
 			if ( ! $total_items ) {
-				return;
+				$active_job['is_done'] = true;
+
+				$requirements[ $active_job_type ] = $active_job;
+				$job_data['requirements']         = $requirements;
+				$job_data['progress']             = $this->get_job_progress( $job_data );
+
+				$this->update_job_data( $job_data );
+				return $job_data;
 			}
 
 			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
@@ -88,9 +95,9 @@ class JobHandler {
 			do_action( "tlmt_after_processing_{$active_job_type}_job", $job_data );
 
 			// Update job data.
-			$requirement[ $active_job_type ] = $active_job;
-			$job_data['requirements']        = $requirement;
-			$job_data['progress']            = $this->get_job_progress( $job_data );
+			$requirements[ $active_job_type ] = $active_job;
+			$job_data['requirements']         = $requirements;
+			$job_data['progress']             = $this->get_job_progress( $job_data );
 
 			$this->update_job_data( $job_data );
 			return $job_data;

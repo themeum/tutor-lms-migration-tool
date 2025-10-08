@@ -5,7 +5,7 @@ Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -125,6 +125,12 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.4.0 - 08 October, 2025 =
+
+New: Orders data migration from WooCommerce to Tutor Native including enrollments, customer, earnings.
+New: Subscription data migration WooCommerce to Tutor Native including enrollments, customer, earnings.
+New: Coupon data migration from WooCommerce to Tutor Native.
 
 = 2.3.1 - 17 July, 2025 =
 
