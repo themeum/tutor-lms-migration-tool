@@ -133,7 +133,7 @@ $items_count = 10;
 												<?php esc_html_e( 'Orders', 'tutor-lms-migration-tool' ); ?>
 											</label>
 											<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-mt-8">
-												<?php esc_html_e( 'Order history, fulfillment data.' ); ?>
+												<?php esc_html_e( 'Order history, fulfillment data.', 'tutor-lms-migration-tool' ); ?>
 											</div>
 										</div>
 									</div>
