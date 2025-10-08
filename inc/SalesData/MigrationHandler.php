@@ -54,6 +54,7 @@ class MigrationHandler {
 	 */
 	public function __construct() {
 		add_action( 'wp_ajax_tlmt_migrate_sales_data', array( $this, 'ajax_handle_migration' ) );
+		add_action( 'wp_ajax_tlmt_delete_sales_data_history', array( $this, 'ajax_delete_sales_data_history' ) );
 		$this->job_handler = new JobHandler();
 	}
 
@@ -132,4 +133,61 @@ class MigrationHandler {
 		return is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' );
 	}
 
+	/**
+	 * Delete sales data history
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return void wp_json response
+	 */
+	public function ajax_delete_sales_data_history() {
+		if ( ! tutor_utils()->is_nonce_verified() ) {
+			$this->response_bad_request( __( 'Invalid nonce', 'tutor-lms-migration-tool' ) );
+		}
+
+		$option_id = Input::post( 'option_id', 0, Input::TYPE_INT );
+
+		if ( ! $option_id ) {
+			$this->response_bad_request( __( 'Option ID is required to delete history', 'tutor-lms-migration-tool' ) );
+		}
+
+		try {
+			$this->delete_sales_data_history( $option_id );
+		} catch ( \InvalidArgumentException $e ) {
+			$this->response_bad_request( $e->getMessage() );
+		} catch ( \Exception $e ) {
+			$this->response_bad_request( $e->getMessage() );
+		}
+
+		$this->json_response( __( 'History deleted successfully!', 'tutor-lms-migration-tool' ) );
+	}
+
+	/**
+	 * Delete sales data history
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param string $option_id option id.
+	 *
+	 * @return bool|\WP_Error
+	 */
+	public function delete_sales_data_history( string $option_id ) {
+		global $wpdb;
+
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM $wpdb->options
+				WHERE option_id = %d
+				AND option_name LIKE %s",
+				$option_id,
+				'tutor_migration_%'
+			)
+		);
+
+		if ( false === $deleted ) {
+			return new \WP_Error( 'db_error', __( 'Database error occurred while deleting history', 'tutor-lms-migration-tool' ) );
+		}
+
+		return true;
+	}
 }
