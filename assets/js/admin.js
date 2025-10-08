@@ -568,7 +568,9 @@ jQuery(document).ready(function ($) {
 
         if (getWooActiveTab() !== WOO_CONFIG.TABS.CUSTOM) {
             formData.delete('job_requirements[]');
-            formData.append('job_requirements[]', '');
+            formData.append('job_requirements[]', 'orders');
+            formData.append('job_requirements[]', 'coupons');
+            formData.append('job_requirements[]', 'subscriptions');
         }
 
         return formData;
