@@ -500,7 +500,7 @@ jQuery(document).ready(function ($) {
                 const activeTab = getWooActiveTab();
                 const response = data.data;
 
-                if (!response || !response.progress) {
+                if (!response) {
                     console.error("Invalid WooCommerce migration progress response", response);
                     return;
                 }
@@ -517,6 +517,7 @@ jQuery(document).ready(function ($) {
                     if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
                         revertWooCheckboxes();
                     }
+                    $wooMigrateBtn.removeAttr('disabled');
                 }
             },
             error: function (xhr, status, error) {
@@ -595,9 +596,6 @@ jQuery(document).ready(function ($) {
 
             },
             error: handleWooMigrationError,
-            complete: function () {
-                $wooMigrateBtn.removeAttr('disabled');
-            }
         });
     });
 
