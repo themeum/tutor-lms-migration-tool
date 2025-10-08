@@ -14,6 +14,7 @@ use Tutor\Models\CouponModel;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\SubscriptionModel;
 use WC_Order;
+use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -165,7 +166,7 @@ class Helper {
 	 * @return array
 	 */
 	public static function get_wc_plan_ids() {
-		return array_map( fn( $plan) => $plan->get_id(), self::get_wc_plans() );
+		return array_map( fn( $plan ) => $plan->get_id(), self::get_wc_plans() );
 	}
 
 	/**
@@ -204,5 +205,88 @@ class Helper {
 		);
 
 		return $map[ $status ] ?? SubscriptionModel::STATUS_PENDING;
+	}
+
+	/**
+	 * Generate progress message
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $options_value Options value.
+	 *
+	 * @return string
+	 */
+	private static function generate_progress_message( array $options_value ): string {
+		$message_parts = array();
+
+		foreach ( $options_value['requirements'] as $key => $requirement ) {
+			if ( isset( $requirement['succeed'] ) && is_array( $requirement['succeed'] ) ) {
+				$succeed_count = count( $requirement['succeed'] );
+
+				$capitalized_key = ucfirst( strtolower( $key ) );
+
+				if ( $succeed_count > 0 ) {
+					$message_parts[] = "{$capitalized_key} ({$succeed_count})";
+				}
+			}
+		}
+
+		return implode( ', ', $message_parts );
+	}
+
+	/**
+	 * Get WC migration history
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	public static function get_wc_migration_history(): array {
+		global $wpdb;
+		$data = array();
+
+		$fetch = QueryHelper::get_all(
+			$wpdb->options,
+			array(
+				'option_name LIKE %s AND option_value NOT LIKE %s' => array(
+					'RAW',
+					array(
+						'tutor_migration_%',
+						'%"job_progress";i:0%',
+					),
+				),
+			),
+			'option_id',
+			10
+		);
+
+		if ( ! $fetch ) {
+			return $data;
+		}
+
+		foreach ( $fetch as $item ) {
+			if ( ! isset( $item->option_name ) || ! isset( $item->option_value ) ) {
+				continue;
+			}
+
+			$options_value = json_decode( $item->option_value, true );
+
+			if ( ! is_array( $options_value ) ) {
+				continue;
+			}
+
+			$title = self::generate_progress_message( $options_value );
+
+			$converted_item = array(
+				'status'     => $options_value['status'] ?? '',
+				'id'         => (int) ( $item->option_id ?? 0 ),
+				'started_at' => ! empty( $options_value['started_at'] ) ? tutor_i18n_get_formated_date( $options_value['started_at'] ) : '',
+				'title'      => $title,
+			);
+
+			$data[] = $converted_item;
+		}
+
+		return $data;
 	}
 }

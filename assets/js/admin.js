@@ -337,7 +337,6 @@ jQuery(document).ready(function ($) {
                 manualMigrateNowBtn.attr('disabled', 'disabled');
             },
             success: function (res) {
-                console.log(res);
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
                     $.post(ajaxurl, {
@@ -500,7 +499,7 @@ jQuery(document).ready(function ($) {
                 const activeTab = getWooActiveTab();
                 const response = data.data;
 
-                if (!response || !response.progress) {
+                if (!response) {
                     console.error("Invalid WooCommerce migration progress response", response);
                     return;
                 }
@@ -517,6 +516,11 @@ jQuery(document).ready(function ($) {
                     if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
                         revertWooCheckboxes();
                     }
+                    $wooMigrateBtn.removeAttr('disabled');
+                    window.onbeforeunload = null;
+                    $('.tutor-migration-tab .tutor-nav-link')
+                        .removeClass('disabled');
+                    getWooMigrationHistory();
                 }
             },
             error: function (xhr, status, error) {
@@ -528,12 +532,18 @@ jQuery(document).ready(function ($) {
 
     function handleWooMigrationStart() {
         $wooMigrateBtn.attr('disabled', 'disabled');
+        $('.tutor-migration-tab .tutor-nav-link')
+            .addClass('disabled');
 
         if (getWooActiveTab() === WOO_CONFIG.TABS.CUSTOM) {
             replaceWooCheckboxesWithSpinners();
         } else {
             toggleWooSpinners(WOO_CONFIG.TABS.AUTO, 'spin');
         }
+
+        window.onbeforeunload = function () {
+            return 'Migration is in progress. Are you sure you want to leave?';
+        };
     }
 
     function handleWooMigrationError() {
@@ -557,6 +567,58 @@ jQuery(document).ready(function ($) {
         }
 
         return formData;
+    }
+
+    function getWooMigrationHistory() {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'tmlt_get_sales_data_history',
+            },
+            success: function (data) {
+                const history = data.data;
+                const $migrationHistory = $('.tutor-migration-history');
+
+                if (!history.length) {
+                    $migrationHistory.addClass('tutor-d-none');
+                    return;
+                }
+
+                $migrationHistory.removeClass('tutor-d-none');
+
+                const $tbody = $('.tutor-migration-history tbody')
+                $tbody.empty();
+
+                history.forEach((item) => {
+                    const $row = $(`
+                        <tr class="tutor-wc-migration-history-row">
+                            <td>
+                                <div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+                                    ${item.title}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tutor-migration-history-time tutor-fs-7 tutor-pl-24 tutor-fw-normal">
+                                    ${item.started_at}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tutor-btn tutor-btn-outline-primary tutor-btn-sm tutor-mr-4 tutor-wc-history-delete-btn"
+                                    data-wc-option-id="${item.id}">
+                                    Delete
+                                </div>
+                            </td>
+                        </tr>
+                    `);
+                    $tbody.append($row);
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Failed to get WooCommerce migration history", { status, error, response: xhr.responseText });
+                throw new Error("Failed to get WooCommerce migration history");
+            }
+        });
     }
 
     // WooCommerce Migration Event Handlers
@@ -595,11 +657,44 @@ jQuery(document).ready(function ($) {
 
             },
             error: handleWooMigrationError,
-            complete: function () {
-                $wooMigrateBtn.removeAttr('disabled');
-            }
         });
     });
+
+    // Delete history
+    $(document).on('click', '.tutor-wc-history-delete-btn', function (event) {
+        event.preventDefault();
+
+        const $btn = $(this);
+        const optionId = $btn.data('wc-option-id');
+        if (!optionId) return;
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'tlmt_delete_sales_data_history',
+                option_id: optionId,
+            },
+            beforeSend: function () {
+                $btn.addClass('is-loading');
+                $btn.prop('disabled', true);
+                $btn.text('');
+            },
+            success: function (data) {
+                if (data.status_code === 200) {
+                    $btn.closest('tr').remove();
+                } else {
+                    $btn.removeClass('is-loading').prop('disabled', false).text('Delete');
+                }
+                getWooMigrationHistory();
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to delete history', { status, error, response: xhr.responseText });
+                $btn.removeClass('is-loading').prop('disabled', false).text('Delete');
+            },
+        });
+    });
+
 
     // Initialize WooCommerce migration
     toggleWooMigrateBtn();
