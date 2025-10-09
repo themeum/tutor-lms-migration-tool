@@ -1,6 +1,6 @@
 <?php
 /**
- * Concrete class to handle earning data migration
+ * Class to handle earning data migration
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -32,16 +32,9 @@ class Earnings {
 	/**
 	 * Tutor WooCommerce Order Earnings.
 	 *
-	 * @var mixed
-	 */
-	private $tutor_wc_order_earnings = null;
-
-	/**
-	 * Transformed Tutor Order Earnings List.
-	 *
 	 * @var array
 	 */
-	private $tutor_transformed_order_earnings = array();
+	private $tutor_wc_order_earnings_id = array();
 
 	/**
 	 * Old Order ID.
@@ -73,36 +66,25 @@ class Earnings {
 		$this->old_order_id = (int) $order->old_order_id;
 		$this->new_order_id = (int) $order->new_order_id;
 
-		$this->tutor_wc_order_earnings = QueryHelper::get_row(
+		$this->tutor_wc_order_earnings_id = QueryHelper::query(
 			$this->tutor_earning_table,
 			array(
-				'order_id'     => $this->old_order_id,
-				'process_by'   => 'woocommerce',
-				'order_status' => array(
-					'IN',
-					tutor_utils()->get_earnings_completed_statuses(),
+				'select' => 'earning_id',
+				'where'  => array(
+					'order_id'     => $this->old_order_id,
+					'process_by'   => 'woocommerce',
+					'order_status' => array(
+						'IN',
+						tutor_utils()->get_earnings_completed_statuses(),
+					),
 				),
 			),
-			'created_at'
 		);
-	}
 
-	/**
-	 * Convert WooCommerce Earnings to Tutor Earnings.
-	 *
-	 * @since 2.4.0
-	 *
-	 * @return void
-	 */
-	private function transform() {
-		if ( $this->tutor_wc_order_earnings ) {
-			$transformed_earnings = array(
-				'order_id'   => $this->new_order_id,
-				'process_by' => 'tutor',
-			);
-
-			$this->tutor_transformed_order_earnings = $transformed_earnings;
-		}
+		$this->tutor_wc_order_earnings_id = array_column(
+			$this->tutor_wc_order_earnings_id,
+			'earning_id'
+		);
 	}
 
 	/**
@@ -120,20 +102,27 @@ class Earnings {
 		// Extract the data.
 		try {
 			$this->extract( $order );
-			$this->transform();
 		} catch ( \Exception $e ) {
 			throw $e;
 		}
 
-		if ( ! $this->tutor_transformed_order_earnings ) {
+		if ( ! $this->tutor_wc_order_earnings_id ) {
 			return false;
 		}
 
+		$transformed_earnings = array(
+			'order_id'   => $this->new_order_id,
+			'process_by' => 'tutor',
+		);
+
+		$earning_ids = QueryHelper::prepare_in_clause( $this->tutor_wc_order_earnings_id );
+
 		// Update earnings data.
-		$result = QueryHelper::update(
+		$result = QueryHelper::update_where_in(
 			$this->tutor_earning_table,
-			$this->tutor_transformed_order_earnings,
-			array( 'earning_id' => $this->tutor_wc_order_earnings->earning_id ),
+			$transformed_earnings,
+			$earning_ids,
+			'earning_id'
 		);
 
 		return $result;
