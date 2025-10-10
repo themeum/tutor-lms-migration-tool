@@ -59,17 +59,19 @@ class Earnings {
 	 */
 	private function filter_subscription_products() {
 
-		if ( count( $this->tutor_wc_order_earnings_id ) ) {
-			foreach ( $this->tutor_wc_order_earnings_id as $key => $val ) {
-				$product_id      = get_post_meta( $key, '_tutor_course_product_id', true ) ?? 0;
-				$is_subscription = wc_get_product( $product_id ) && in_array(
-					wc_get_product( $product_id )->get_type(),
-					array( 'subscription', 'variable-subscription' )
-				);
+		if ( ! count( $this->tutor_wc_order_earnings_id ) ) {
+			return;
+		}
 
-				if ( $is_subscription ) {
-					unset( $this->tutor_wc_order_earnings_id[ $key ] );
-				}
+		foreach ( $this->tutor_wc_order_earnings_id as $key => $val ) {
+			$product_id      = get_post_meta( $key, '_tutor_course_product_id', true ) ?? 0;
+			$is_subscription = wc_get_product( $product_id ) && in_array(
+				wc_get_product( $product_id )->get_type(),
+				array( 'subscription', 'variable-subscription' )
+			);
+
+			if ( $is_subscription ) {
+				unset( $this->tutor_wc_order_earnings_id[ $key ] );
 			}
 		}
 	}
