@@ -159,7 +159,7 @@ class Helper {
 		$subscriptions = wcs_get_subscriptions_for_order( $order );
 
 		// If there is only one item and it is a subscription item.
-		if ( count( $items ) === 1 && count( $subscriptions ) === 1 ) {
+		if ( 1 === count( $items ) && 1 === count( $subscriptions ) ) {
 			return true;
 		}
 
