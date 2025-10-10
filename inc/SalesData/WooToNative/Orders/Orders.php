@@ -254,6 +254,9 @@ class Orders implements MigrationTemplate {
 	 * @return void
 	 */
 	public function transform_order_data( WC_Order $order ) {
+		if ( Helper::has_subscriptions( $order ) ) {
+			return;
+		}
 		$data = array(
 			'parent_id'        => $order->get_parent_id(),
 			'transaction_id'   => $order->get_transaction_id(),
@@ -338,6 +341,11 @@ class Orders implements MigrationTemplate {
 			$product = $item->get_product();
 
 			if ( ! $product ) {
+				continue;
+			}
+
+			// Check if subscription item
+			if ( $product && Helper::check_wc_subscription_product( $product ) ) {
 				continue;
 			}
 

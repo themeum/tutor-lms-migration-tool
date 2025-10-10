@@ -140,6 +140,68 @@ class Helper {
 		return $map[ $wc_discount_type ] ?? CouponModel::DISCOUNT_TYPE_PERCENTAGE;
 	}
 
+
+	/**
+	 * Check if WooCommerce order has subscription.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param \WC_Order $order the WC_Order object.
+	 *
+	 * @return bool
+	 */
+	public static function has_subscriptions( $order ) {
+		if ( ! class_exists( 'WC_Subscriptions' ) ) {
+			return false;
+		}
+
+		$items         = $order->get_items();
+		$subscriptions = wcs_get_subscriptions_for_order( $order );
+
+		// If there is only one item and it is a subscription item.
+		if ( count( $items ) === 1 && count( $subscriptions ) === 1 ) {
+			return true;
+		}
+
+		foreach ( $items as $item ) {
+			$product = $item->get_product();
+			if ( ! self::check_wc_subscription_product( $product ) ) {
+				continue;
+			}
+
+			// Remove subscription item from order and recalculate total.
+			$order->remove_item( $item->get_id() );
+			$order->calculate_totals();
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if wc subscription product type.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param \WC_Product $product the wc product.
+	 *
+	 * @return bool
+	 */
+	public static function check_wc_subscription_product( $product ) {
+		return in_array( $product->get_type(), self::get_wc_subscription_types() );
+	}
+
+
+	/**
+	 * Get wc subscription types.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	public static function get_wc_subscription_types() {
+		return array( 'subscription', 'variable-subscription' );
+	}
+
 	/**
 	 * Get all WC plans that are linked to Tutor
 	 *

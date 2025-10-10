@@ -11,6 +11,7 @@
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 
 use AllowDynamicProperties;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -65,9 +66,8 @@ class Earnings {
 
 		foreach ( $this->tutor_wc_order_earnings_id as $key => $val ) {
 			$product_id      = get_post_meta( $key, '_tutor_course_product_id', true ) ?? 0;
-			$is_subscription = wc_get_product( $product_id ) && in_array(
-				wc_get_product( $product_id )->get_type(),
-				array( 'subscription', 'variable-subscription' )
+			$is_subscription = wc_get_product( $product_id ) && Helper::check_wc_subscription_product(
+				wc_get_product( $product_id )
 			);
 
 			if ( $is_subscription ) {
