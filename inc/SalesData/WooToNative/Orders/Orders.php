@@ -254,8 +254,11 @@ class Orders implements MigrationTemplate {
 	 * @return void
 	 */
 	public function transform_order_data( WC_Order $order ) {
-		if ( Helper::has_subscriptions( $order ) ) {
-			return;
+		$tax_type   = get_option( 'woocommerce_prices_include_tax' ) === 'yes' ? 'inclusive' : 'exclusive';
+		$tax_amount = $order->get_total_tax();
+		$tax_rate   = 0;
+		foreach ( $order->get_items( 'tax' ) as $tax_item ) {
+			$tax_rate = $tax_item->get_rate_percent();
 		}
 		$data = array(
 			'parent_id'        => $order->get_parent_id(),
@@ -266,9 +269,9 @@ class Orders implements MigrationTemplate {
 			'payment_status'   => Helper::get_order_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
-			'tax_type'         => 'VAT',
-			'tax_rate'         => '',
-			'tax_amount'       => $order->get_total_tax(),
+			'tax_type'         => $tax_type,
+			'tax_rate'         => $tax_rate,
+			'tax_amount'       => $tax_amount,
 			'total_price'      => $order->get_total(),
 			'net_payment'      => $order->get_total() - $order->get_total_refunded(),
 			'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
@@ -288,7 +291,7 @@ class Orders implements MigrationTemplate {
 			'updated_by'       => $order->get_user_id(),
 		);
 
-		$this->transformed_order_data = $data;
+		$this->transformed_order_data = Helper::has_subscriptions( $data, $order );
 	}
 
 	/**

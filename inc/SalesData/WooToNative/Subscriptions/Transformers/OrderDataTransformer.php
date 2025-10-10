@@ -53,7 +53,6 @@ class OrderDataTransformer implements DataTransformer {
 			$order_type     = wcs_order_contains_renewal( $order ) ? OrderModel::TYPE_RENEWAL : OrderModel::TYPE_SUBSCRIPTION;
 			$parent_id      = 0;
 			$payment_status = 'completed' === $order->get_status() ? OrderModel::PAYMENT_PAID : OrderModel::PAYMENT_UNPAID;
-			$tax_amount     = $order->get_total_tax();
 
 			$tutor_plan_id = $plans_map[ $wc_plan_id ];
 			$plan          = $plan_model->get_plan( $tutor_plan_id );
@@ -66,11 +65,28 @@ class OrderDataTransformer implements DataTransformer {
 				),
 			);
 
-			$total    = $order->get_total();
-			$refunded = $order->get_total_refunded();
-			$fees     = $order->get_total_fees();
-			$discount = $order->get_total_discount();
-			$earnings = $total - ( $refunded + $fees );
+			// Keep only subscription items and recalculate.
+			if ( $order_type === OrderModel::TYPE_SUBSCRIPTION ) {
+				$wc_order_items = $order->get_items();
+
+				foreach ( $wc_order_items as $item ) {
+					$product = $item->get_product();
+					if ( $wc_plan_id === $product->get_id() ) {
+						continue;
+					}
+
+					$order->remove_item( $item->get_id() );
+				}
+
+				$order->calculate_totals();
+			}
+
+			$tax_amount = $order->get_total_tax();
+			$total      = $order->get_total();
+			$refunded   = $order->get_total_refunded();
+			$fees       = $order->get_total_fees();
+			$discount   = $order->get_total_discount();
+			$earnings   = $total - ( $refunded + $fees );
 
 			$user_id        = $order->get_user_id();
 			$created_at_gmt = $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s' );
