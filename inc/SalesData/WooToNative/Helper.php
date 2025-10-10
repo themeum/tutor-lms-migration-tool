@@ -159,10 +159,12 @@ class Helper {
 		$items         = $order->get_items();
 		$subscriptions = wcs_get_subscriptions_for_order( $order );
 
-		// If there is only one item and it is a subscription item.
-		if ( count( $items ) === 1 && count( $subscriptions ) === 1 ) {
+		// If the total items and subscription items are equal.
+		if ( count( $items ) === count( $subscriptions ) ) {
 			return array();
 		}
+
+		$removed_items = array();
 
 		foreach ( $items as $item ) {
 			$product = $item->get_product();
@@ -172,23 +174,29 @@ class Helper {
 
 			// Remove subscription item from order and recalculate total.
 			$order->remove_item( $item->get_id() );
-			$order->calculate_totals();
+			$removed_items[] = $item;
+		}
 
-			// Update prices for tutor orders after recalculation.
-			$tutor_order_data['total_price']     = $order->get_total();
-			$tutor_order_data['subtotal_price']  = $order->get_subtotal();
-			$tutor_order_data['pre_tax_price']   = $order->get_subtotal();
-			$tutor_order_data['tax_amount']      = $order->get_total_tax();
-			$tutor_order_data['net_payment']     = $order->get_total() - $order->get_total_refunded();
-			$tutor_order_data['coupon_amount']   = $order->get_discount_total();
-			$tutor_order_data['discount_amount'] = $order->get_discount_total();
-			$tutor_order_data['fees']            = $order->get_total_fees();
-			$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
-			$tutor_order_data['refund_amount']   = $order->get_total_refunded();
+		$order->calculate_totals();
 
-			// Add back the subscription item to handle it by subscription class.
-			$order->add_item( $item );
-			$order->save();
+		// Update prices for tutor orders after recalculation.
+		$tutor_order_data['total_price']     = $order->get_total();
+		$tutor_order_data['subtotal_price']  = $order->get_subtotal();
+		$tutor_order_data['pre_tax_price']   = $order->get_subtotal();
+		$tutor_order_data['tax_amount']      = $order->get_total_tax();
+		$tutor_order_data['net_payment']     = $order->get_total() - $order->get_total_refunded();
+		$tutor_order_data['coupon_amount']   = $order->get_discount_total();
+		$tutor_order_data['discount_amount'] = $order->get_discount_total();
+		$tutor_order_data['fees']            = $order->get_total_fees();
+		$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
+		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
+
+		// Add back the subscription item to handle it by subscription class.
+		if ( count( $removed_items ) ) {
+			foreach ( $removed_items as $item ) {
+				$order->add_item( $item );
+				$order->save();
+			}
 		}
 
 		return $tutor_order_data;

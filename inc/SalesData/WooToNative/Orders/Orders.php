@@ -359,8 +359,8 @@ class Orders implements MigrationTemplate {
 
 			$this->order_course_id = $course->post_id;
 
-			$regular_price  = $item->get_subtotal();
-			$sale_price     = $item->get_total();
+			$regular_price  = $product->get_regular_price();
+			$sale_price     = $product->get_sale_price();
 			$discount_price = null;
 
 			if ( $sale_price > 0 && $sale_price < $regular_price ) {
