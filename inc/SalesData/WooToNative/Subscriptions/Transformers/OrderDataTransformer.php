@@ -36,11 +36,13 @@ class OrderDataTransformer implements DataTransformer {
 		$plan_model = new PlanModel();
 		$mapper     = new MigrationMapper( Subscriptions::MAP_KEY );
 
-		$tax_type   = get_option( 'woocommerce_prices_include_tax' ) === 'yes' ? 'inclusive' : 'exclusive';
-		$order_ids  = $subscription->get_related_orders( 'ids', array( 'parent', 'renewal' ) );
-		$order_ids  = array_reverse( $order_ids ); // To get orders like subscription, renewal, renewal so on.
-		$orders     = array_map( 'wc_get_order', $order_ids );
-		$wc_plan_id = Helper::get_wc_product_id_by_subscription( $subscription );
+		$tax_type          = get_option( 'woocommerce_prices_include_tax' ) === 'yes' ? 'inclusive' : 'exclusive';
+		$order_ids         = $subscription->get_related_orders( 'ids', array( 'parent', 'renewal' ) );
+		$order_ids         = array_reverse( $order_ids ); // To get orders like subscription, renewal, renewal so on.
+		$orders            = array_map( 'wc_get_order', $order_ids );
+		$wc_plan_id        = Helper::get_wc_product_id_by_subscription( $subscription );
+		$removed_items     = array();
+		$completed_item_id = 0;
 
 		/**
 		 * Order
@@ -69,13 +71,15 @@ class OrderDataTransformer implements DataTransformer {
 			if ( $order_type === OrderModel::TYPE_SUBSCRIPTION ) {
 				$wc_order_items = $order->get_items();
 
-				foreach ( $wc_order_items as $item ) {
+				foreach ( $wc_order_items as $key => $item ) {
 					$product = $item->get_product();
 					if ( $wc_plan_id === $product->get_id() ) {
+						$completed_item_id = $item->get_id();
 						continue;
 					}
 
 					$order->remove_item( $item->get_id() );
+					$removed_items[] = $item;
 				}
 
 				$order->calculate_totals();
@@ -137,6 +141,21 @@ class OrderDataTransformer implements DataTransformer {
 				'items'            => $items,
 				'meta_data'        => $this->prepare_meta_data( $order, $plan ),
 			);
+
+			if ( count( $removed_items ) ) {
+				// Remove the current processed subscription item.
+				$order->remove_item( $completed_item_id );
+
+				// Keep the items that are subscription based after it was removed.
+				foreach ( $removed_items as $removed_item ) {
+					$product = $removed_item->get_product();
+					if ( Helper::check_wc_subscription_product( $product ) ) {
+						$order->add_item( $removed_item );
+					}
+				}
+
+				$order->save();
+			}
 		}
 
 		return $order_data;

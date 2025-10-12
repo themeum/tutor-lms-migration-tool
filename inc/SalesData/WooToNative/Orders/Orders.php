@@ -266,7 +266,7 @@ class Orders implements MigrationTemplate {
 			'user_id'          => $order->get_user_id(),
 			'order_type'       => 'single_order',
 			'order_status'     => Helper::get_order_status( $order ),
-			'payment_status'   => Helper::get_order_status( $order ),
+			'payment_status'   => Helper::get_payment_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
 			'tax_type'         => $tax_type,
@@ -388,6 +388,9 @@ class Orders implements MigrationTemplate {
 	 * @return bool true|false
 	 */
 	public function migrate(): bool {
+		if ( ! tutor_utils()->count( $this->transformed_order_data ) ) {
+			return true;
+		}
 		try {
 			$order_id = $this->tutor_order_model->create_order( $this->transformed_order_data );
 

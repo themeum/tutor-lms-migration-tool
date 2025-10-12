@@ -224,7 +224,7 @@ class Helper {
 	 * @return array
 	 */
 	public static function get_wc_subscription_types() {
-		return array( 'subscription', 'variable-subscription' );
+		return array( 'subscription', 'variable-subscription', 'subscription_variation' );
 	}
 
 	/**
@@ -238,7 +238,7 @@ class Helper {
 		$products = tutor_utils()->get_linked_product_ids();
 		$args     = array(
 			'limit'   => -1,
-			'type'    => array( 'subscription', 'variable-subscription', 'subscription_variation' ),
+			'type'    => self::get_wc_subscription_types(),
 			'include' => $products,
 		);
 
