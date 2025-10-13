@@ -330,6 +330,10 @@ class Helper {
 			}
 		}
 
+		if ( empty( $message_parts ) ) {
+			return __( 'No data migrated', 'tutor-lms-migration-tool' );
+		}
+
 		return implode( ', ', $message_parts );
 	}
 
