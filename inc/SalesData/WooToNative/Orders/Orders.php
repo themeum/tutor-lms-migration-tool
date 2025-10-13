@@ -254,18 +254,24 @@ class Orders implements MigrationTemplate {
 	 * @return void
 	 */
 	public function transform_order_data( WC_Order $order ) {
+		$tax_type   = get_option( 'woocommerce_prices_include_tax' ) === 'yes' ? 'inclusive' : 'exclusive';
+		$tax_amount = $order->get_total_tax();
+		$tax_rate   = 0;
+		foreach ( $order->get_items( 'tax' ) as $tax_item ) {
+			$tax_rate = $tax_item->get_rate_percent();
+		}
 		$data = array(
 			'parent_id'        => $order->get_parent_id(),
 			'transaction_id'   => $order->get_transaction_id(),
 			'user_id'          => $order->get_user_id(),
 			'order_type'       => 'single_order',
 			'order_status'     => Helper::get_order_status( $order ),
-			'payment_status'   => Helper::get_order_status( $order ),
+			'payment_status'   => Helper::get_payment_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
-			'tax_type'         => 'VAT',
-			'tax_rate'         => '',
-			'tax_amount'       => $order->get_total_tax(),
+			'tax_type'         => $tax_type,
+			'tax_rate'         => $tax_rate,
+			'tax_amount'       => $tax_amount,
 			'total_price'      => $order->get_total(),
 			'net_payment'      => $order->get_total() - $order->get_total_refunded(),
 			'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
@@ -285,7 +291,7 @@ class Orders implements MigrationTemplate {
 			'updated_by'       => $order->get_user_id(),
 		);
 
-		$this->transformed_order_data = $data;
+		$this->transformed_order_data = Helper::filter_subscription_order_item( $data, $order );
 	}
 
 	/**
@@ -341,6 +347,11 @@ class Orders implements MigrationTemplate {
 				continue;
 			}
 
+			// Check if subscription item
+			if ( $product && Helper::check_wc_subscription_product( $product ) ) {
+				continue;
+			}
+
 			$course = tutor_utils()->product_belongs_with_course( $product->get_id() );
 			if ( ! $course ) {
 				continue;
@@ -348,8 +359,8 @@ class Orders implements MigrationTemplate {
 
 			$this->order_course_id = $course->post_id;
 
-			$regular_price  = $item->get_subtotal();
-			$sale_price     = $item->get_total();
+			$regular_price  = $product->get_regular_price();
+			$sale_price     = $product->get_sale_price();
 			$discount_price = null;
 
 			if ( $sale_price > 0 && $sale_price < $regular_price ) {
@@ -377,6 +388,9 @@ class Orders implements MigrationTemplate {
 	 * @return bool true|false
 	 */
 	public function migrate(): bool {
+		if ( ! tutor_utils()->count( $this->transformed_order_data ) ) {
+			return true;
+		}
 		try {
 			$order_id = $this->tutor_order_model->create_order( $this->transformed_order_data );
 
@@ -477,11 +491,13 @@ class Orders implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @param mixed $order_id_map Map of old & new order id.
+	 *
 	 * @return void
 	 */
-	private function migrate_earnings() {
+	private function migrate_earnings( $order_id_map ) {
 		$earning = new Earnings();
-		$earning->migrate( $this->wc_order );
+		$earning->migrate( $order_id_map );
 	}
 
 	/**

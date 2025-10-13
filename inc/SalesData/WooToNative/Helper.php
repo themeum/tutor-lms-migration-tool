@@ -140,6 +140,93 @@ class Helper {
 		return $map[ $wc_discount_type ] ?? CouponModel::DISCOUNT_TYPE_PERCENTAGE;
 	}
 
+
+	/**
+	 * Filter tutor order to removed subscription items.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array     $tutor_order_data the tutor order data array.
+	 * @param \WC_Order $order the WC_Order object.
+	 *
+	 * @return array
+	 */
+	public static function filter_subscription_order_item( $tutor_order_data, $order ) {
+		if ( ! class_exists( 'WC_Subscriptions' ) ) {
+			return array();
+		}
+
+		$items         = $order->get_items();
+		$subscriptions = wcs_get_subscriptions_for_order( $order );
+
+		// If the total items and subscription items are equal.
+		if ( count( $items ) === count( $subscriptions ) ) {
+			return array();
+		}
+
+		$removed_items = array();
+
+		foreach ( $items as $item ) {
+			$product = $item->get_product();
+			if ( ! self::check_wc_subscription_product( $product ) ) {
+				continue;
+			}
+
+			// Remove subscription item from order and recalculate total.
+			$order->remove_item( $item->get_id() );
+			$removed_items[] = $item;
+		}
+
+		$order->calculate_totals();
+
+		// Update prices for tutor orders after recalculation.
+		$tutor_order_data['total_price']     = $order->get_total();
+		$tutor_order_data['subtotal_price']  = $order->get_subtotal();
+		$tutor_order_data['pre_tax_price']   = $order->get_subtotal();
+		$tutor_order_data['tax_amount']      = $order->get_total_tax();
+		$tutor_order_data['net_payment']     = $order->get_total() - $order->get_total_refunded();
+		$tutor_order_data['coupon_amount']   = $order->get_discount_total();
+		$tutor_order_data['discount_amount'] = $order->get_discount_total();
+		$tutor_order_data['fees']            = $order->get_total_fees();
+		$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
+		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
+
+		// Add back the subscription item to handle it by subscription class.
+		if ( count( $removed_items ) ) {
+			foreach ( $removed_items as $item ) {
+				$order->add_item( $item );
+				$order->save();
+			}
+		}
+
+		return $tutor_order_data;
+	}
+
+	/**
+	 * Check if wc subscription product type.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param \WC_Product $product the wc product.
+	 *
+	 * @return bool
+	 */
+	public static function check_wc_subscription_product( $product ) {
+		return in_array( $product->get_type(), self::get_wc_subscription_types() );
+	}
+
+
+	/**
+	 * Get wc subscription types.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array
+	 */
+	public static function get_wc_subscription_types() {
+		return array( 'subscription', 'variable-subscription', 'subscription_variation' );
+	}
+
 	/**
 	 * Get all WC plans that are linked to Tutor
 	 *
@@ -151,7 +238,7 @@ class Helper {
 		$products = tutor_utils()->get_linked_product_ids();
 		$args     = array(
 			'limit'   => -1,
-			'type'    => array( 'subscription', 'variable-subscription', 'subscription_variation' ),
+			'type'    => self::get_wc_subscription_types(),
 			'include' => $products,
 		);
 

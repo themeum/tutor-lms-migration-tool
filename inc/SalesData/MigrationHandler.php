@@ -74,18 +74,23 @@ class MigrationHandler {
 
 		tutor_utils()->check_current_user_capability();
 
-		$job_id       = Input::post( 'job_id' );
-		$requirements = $this->get_migration_data_types();
-		if ( ! $requirements ) {
-			$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-lms-migration-tool' ) );
+		$job_data = null;
+		$job_id   = Input::post( 'job_id' );
+		if ( $job_id ) {
+			$job_data = $this->job_handler->get_job_data( $job_id );
+		} else {
+			$requirements = Input::post( 'job_requirements', array(), Input::TYPE_ARRAY );
+			if ( ! $requirements ) {
+				$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-lms-migration-tool' ) );
+			}
+
+			$job_data = $this->job_handler->get_migration_job( $requirements, $job_id );
 		}
 
-		$requirements = is_array( $requirements ) ? $requirements : json_decode( $requirements, true );
-		if ( json_last_error() ) {
-			$this->response_bad_request( __( 'Invalid job requirements', 'tutor-lms-migration-tool' ) );
+		if ( ! $job_data || empty( $job_data['requirements'] ) ) {
+			$this->response_bad_request( __( 'Invalid job data', 'tutor-lms-migration-tool' ) );
 		}
 
-		$job_data        = $this->job_handler->get_migration_job( $requirements, $job_id );
 		$active_job_type = $this->job_handler->get_active_job_type( $job_data );
 		if ( $active_job_type ) {
 			try {
