@@ -357,6 +357,19 @@ jQuery(document).ready(function ($) {
 
 
     /**
+     * 
+     * @param {string} addonBaseName 
+     * @returns boolean
+     */
+
+    function isAddonEnabled(addonBaseName) {
+        return !!window._tutorobject?.addons_data?.find(
+            (addon) => addon.base_name === addonBaseName && addon.is_enabled
+        );
+    }
+
+
+    /**
      * WooCommerce Migration Block
      * 
      * @author Themeum <support@themeum.com>
@@ -386,7 +399,8 @@ jQuery(document).ready(function ($) {
             { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
             { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
-        ]
+        ],
+        WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions'
     };
 
     const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
@@ -555,6 +569,9 @@ jQuery(document).ready(function ($) {
         $('.lp-error-modal').addClass('active');
         const activeTab = getWooActiveTab();
         toggleWooSpinners(activeTab, 'stop');
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        window.onbeforeunload = null;
 
         if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
             revertWooCheckboxes();
@@ -570,7 +587,9 @@ jQuery(document).ready(function ($) {
             formData.delete('job_requirements[]');
             formData.append('job_requirements[]', 'orders');
             formData.append('job_requirements[]', 'coupons');
-            formData.append('job_requirements[]', 'subscriptions');
+            if (isAddonEnabled(WOO_CONFIG.WOO_SUBSCRIPTIONS_ADDON_BASE_NAME)) {
+                formData.append('job_requirements[]', 'subscriptions');
+            }
         }
 
         return formData;
