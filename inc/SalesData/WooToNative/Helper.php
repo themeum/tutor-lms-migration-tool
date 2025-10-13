@@ -11,9 +11,9 @@
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative;
 
 use Tutor\Models\CouponModel;
+use Exception;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\SubscriptionModel;
-use WC_Order;
 use Tutor\Helpers\QueryHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -125,6 +125,9 @@ class Helper {
 	 * @since 2.4.0
 	 *
 	 * @param \WC_Coupon $wc_coupon WooCommerce coupon object.
+	 *
+	 * @throws Exception If the coupon type is not supported by tutor.
+	 *
 	 * @return string Tutor discount type for WooCommerce Coupon.
 	 */
 	public static function get_coupon_discount_type( $wc_coupon ): string {
@@ -137,7 +140,11 @@ class Helper {
 			'fixed_product' => CouponModel::DISCOUNT_TYPE_FLAT,
 		);
 
-		return $map[ $wc_discount_type ] ?? CouponModel::DISCOUNT_TYPE_PERCENTAGE;
+		if ( ! isset( $map[ $wc_discount_type ] ) ) {
+			throw new Exception( sprintf('Unsupported Discount Type (%s) For Tutor', $wc_discount_type) ); //phpcs:ignore
+		}
+
+		return $map[ $wc_discount_type ];
 	}
 
 	/**

@@ -12,12 +12,12 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Coupons;
 
 use AllowDynamicProperties;
 use Tutor\Helpers\QueryHelper;
-
 use Tutor\Models\CourseModel;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Tutor\Models\CouponModel;
 use WC_Coupon;
+use WP_Query;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -93,7 +93,16 @@ class Coupons implements MigrationTemplate {
 	 * @return int Total coupon count.
 	 */
 	public function get_total_items_count(): int {
-		return CourseModel::count( 'all', self::WC_COUPON_POST_TYPE );
+
+		$query = new WP_Query(
+			array(
+				'fields'      => 'ids',
+				'post_type'   => self::WC_COUPON_POST_TYPE,
+				'post_status' => 'any',
+			)
+		);
+
+		return (int) $query->found_posts;
 	}
 
 	/**
