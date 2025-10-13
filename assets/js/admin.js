@@ -506,6 +506,20 @@ jQuery(document).ready(function ($) {
         };
     }
 
+    function handleWooMigrationSuccess() {
+        const activeTab = getWooActiveTab();
+        $('.lp-success-modal').addClass('active');
+        $wooMigrateBtn.removeAttr('disabled');
+        window.onbeforeunload = null;
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        toggleWooSpinners(activeTab, 'stop');
+        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+            revertWooCheckboxes();
+        }
+        getWooMigrationHistory();
+    }
+
     function pollWooMigrationProgress(jobId) {
         $.ajax({
             url: ajaxurl,
@@ -530,16 +544,7 @@ jQuery(document).ready(function ($) {
                 if (progress < 100) {
                     pollWooMigrationProgress(jobId);
                 } else {
-                    $('.lp-success-modal').addClass('active');
-                    toggleWooSpinners(getWooActiveTab(), 'stop');
-                    if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-                        revertWooCheckboxes();
-                    }
-                    $wooMigrateBtn.removeAttr('disabled');
-                    window.onbeforeunload = null;
-                    $('.tutor-migration-tab .tutor-nav-link')
-                        .removeClass('disabled');
-                    getWooMigrationHistory();
+                    handleWooMigrationSuccess();
                 }
             },
             error: function (xhr, status, error) {
@@ -675,12 +680,7 @@ jQuery(document).ready(function ($) {
                     return;
                 }
 
-                toggleWooSpinners(activeTab, 'stop');
-                $('.lp-success-modal').addClass('active');
-                if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-                    revertWooCheckboxes();
-                }
-
+                handleWooMigrationSuccess();
             },
             error: handleWooMigrationError,
         });
