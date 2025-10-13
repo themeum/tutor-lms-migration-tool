@@ -357,6 +357,19 @@ jQuery(document).ready(function ($) {
 
 
     /**
+     * 
+     * @param {string} addonBaseName 
+     * @returns boolean
+     */
+
+    function isAddonEnabled(addonBaseName) {
+        return !!window._tutorobject?.addons_data?.find(
+            (addon) => addon.base_name === addonBaseName && addon.is_enabled
+        );
+    }
+
+
+    /**
      * WooCommerce Migration Block
      * 
      * @author Themeum <support@themeum.com>
@@ -386,7 +399,8 @@ jQuery(document).ready(function ($) {
             { id: 'woo-orders', name: 'job_requirements[]', value: 'orders' },
             { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
-        ]
+        ],
+        WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions'
     };
 
     const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
@@ -492,6 +506,20 @@ jQuery(document).ready(function ($) {
         };
     }
 
+    function handleWooMigrationSuccess() {
+        const activeTab = getWooActiveTab();
+        $('.lp-success-modal').addClass('active');
+        $wooMigrateBtn.removeAttr('disabled');
+        window.onbeforeunload = null;
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        toggleWooSpinners(activeTab, 'stop');
+        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+            revertWooCheckboxes();
+        }
+        getWooMigrationHistory();
+    }
+
     function pollWooMigrationProgress(jobId) {
         $.ajax({
             url: ajaxurl,
@@ -516,16 +544,7 @@ jQuery(document).ready(function ($) {
                 if (progress < 100) {
                     pollWooMigrationProgress(jobId);
                 } else {
-                    $('.lp-success-modal').addClass('active');
-                    toggleWooSpinners(getWooActiveTab(), 'stop');
-                    if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-                        revertWooCheckboxes();
-                    }
-                    $wooMigrateBtn.removeAttr('disabled');
-                    window.onbeforeunload = null;
-                    $('.tutor-migration-tab .tutor-nav-link')
-                        .removeClass('disabled');
-                    getWooMigrationHistory();
+                    handleWooMigrationSuccess();
                 }
             },
             error: function (xhr, status, error) {
@@ -555,6 +574,9 @@ jQuery(document).ready(function ($) {
         $('.lp-error-modal').addClass('active');
         const activeTab = getWooActiveTab();
         toggleWooSpinners(activeTab, 'stop');
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        window.onbeforeunload = null;
 
         if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
             revertWooCheckboxes();
@@ -570,7 +592,9 @@ jQuery(document).ready(function ($) {
             formData.delete('job_requirements[]');
             formData.append('job_requirements[]', 'orders');
             formData.append('job_requirements[]', 'coupons');
-            formData.append('job_requirements[]', 'subscriptions');
+            if (isAddonEnabled(WOO_CONFIG.WOO_SUBSCRIPTIONS_ADDON_BASE_NAME)) {
+                formData.append('job_requirements[]', 'subscriptions');
+            }
         }
 
         return formData;
@@ -656,12 +680,7 @@ jQuery(document).ready(function ($) {
                     return;
                 }
 
-                toggleWooSpinners(activeTab, 'stop');
-                $('.lp-success-modal').addClass('active');
-                if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-                    revertWooCheckboxes();
-                }
-
+                handleWooMigrationSuccess();
             },
             error: handleWooMigrationError,
         });

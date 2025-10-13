@@ -316,6 +316,12 @@ class Subscriptions implements MigrationTemplate {
 			$enrollments = $this->transformed_data[ self::ENROLLMENTS ];
 			if ( tutor_utils()->count( $enrollments ) && $tutor_subscription_id ) {
 				foreach ( $enrollments as $enrollment ) {
+					$wc_order_id = (int) get_post_meta( $enrollment->post_id, '_tutor_enrolled_by_order_id', true );
+					if ( $wc_order_id ) {
+						$tutor_order_id = $orders_map[ $wc_order_id ];
+						update_post_meta( $enrollment->post_id, '_tutor_enrolled_by_order_id', $tutor_order_id );
+					}
+
 					$this->subscription_model->mark_as_subscription_enrollment( $enrollment->post_id, $tutor_subscription_id );
 				}
 			}
