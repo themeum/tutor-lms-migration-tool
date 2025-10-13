@@ -68,7 +68,7 @@ class OrderDataTransformer implements DataTransformer {
 			);
 
 			// Keep only subscription items and recalculate.
-			if ( $order_type === OrderModel::TYPE_SUBSCRIPTION ) {
+			if ( OrderModel::TYPE_SUBSCRIPTION === $order_type ) {
 				$wc_order_items = $order->get_items();
 
 				foreach ( $wc_order_items as $key => $item ) {
