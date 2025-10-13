@@ -150,7 +150,7 @@ class Orders implements MigrationTemplate {
 					'shop_order_refund',
 				),
 				'orderby'    => 'date',
-				'order'      => 'DESC',
+				'order'      => 'ASC',
 				'return'     => 'objects',
 				'meta_query' => array(
 					array(
