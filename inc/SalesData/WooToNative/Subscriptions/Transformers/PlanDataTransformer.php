@@ -44,7 +44,28 @@ class PlanDataTransformer implements DataTransformer {
 			$signup_fee         = (float) get_post_meta( $id, '_subscription_sign_up_fee', true );
 			$recurring_value    = (int) get_post_meta( $id, '_subscription_period_interval', true );
 			$recurring_interval = get_post_meta( $id, '_subscription_period', true );
-			$recurring_limit    = (int) get_post_meta( $id, '_subscription_length', true );
+
+			/**
+			 * The WC recurring length determines how long a subscription lasts
+			 * (in days, weeks, or months).
+			 *
+			 * In Tutor, the recurring limit defines how many times it will renew after initial subscription.
+			 *
+			 * For example, if the WC recurring length is set to 1, the Tutor plan
+			 * will not renew after the initial subscription period expires.
+			 */
+			$recurring_limit     = 0;
+			$subscription_length = (int) get_post_meta( $id, '_subscription_length', true );
+			if ( 0 === $subscription_length ) {
+				// Until canceled.
+				$recurring_limit = 0;
+			} elseif ( 1 === $subscription_length ) {
+				// No renewals after initial subscription.
+				$recurring_limit = -1;
+			} else {
+				// Renew N - 1 times.
+				$recurring_limit = $recurring_limit - 1;
+			}
 
 			$trial_value    = (int) get_post_meta( $id, '_subscription_trial_length', true );
 			$trial_interval = get_post_meta( $id, '_subscription_trial_period', true );
