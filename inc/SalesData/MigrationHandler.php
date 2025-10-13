@@ -137,7 +137,7 @@ class MigrationHandler {
 	 * @return bool
 	 */
 	public static function is_active_wc_subscription(): bool {
-		return is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' );
+		return is_plugin_active( 'woocommerce-subscriptions/woocommerce-subscriptions.php' ) && tutor_utils()->is_addon_enabled( 'wc-subscriptions' );
 	}
 
 	/**
