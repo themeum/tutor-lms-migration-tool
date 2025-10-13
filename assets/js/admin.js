@@ -400,7 +400,15 @@ jQuery(document).ready(function ($) {
             { id: 'woo-coupons', name: 'job_requirements[]', value: 'coupons' },
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
         ],
-        WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions'
+        WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions',
+        WOO_REPORT_ITEMS: {
+            SUCCESS: '[data-woo-migration-report-item="success"]',
+            FAILED: '[data-woo-migration-report-item="failed"]',
+        },
+        WOO_REPORT_DESCRIPTIONS: {
+            SUCCESS: '[data-woo-migration-report="success"]',
+            FAILED: '[data-woo-migration-report="failed"]',
+        }
     };
 
     const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
@@ -506,7 +514,37 @@ jQuery(document).ready(function ($) {
         };
     }
 
-    function handleWooMigrationSuccess() {
+    /**
+     * Generate progress message
+     *
+     * @since 2.4.0
+     * @param {Object} optionsValue - Migration options data.
+     * @param {'succeed' | 'failed'} type - Type of progress to report.
+     * @return {string}
+     */
+    function generateProgressMessage(optionsValue, type = 'succeed') {
+        if (!optionsValue?.requirements || typeof optionsValue.requirements !== 'object') {
+            return '';
+        }
+
+        const messageParts = [];
+
+        for (const [key, requirement] of Object.entries(optionsValue.requirements)) {
+            if (Array.isArray(requirement[type])) {
+                const count = requirement[type].length;
+                const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+
+                if (count > 0) {
+                    messageParts.push(`${capitalizedKey} (${count})`);
+                }
+            }
+        }
+
+        return messageParts.join(', ');
+    }
+
+
+    function handleWooMigrationSuccess(response) {
         const activeTab = getWooActiveTab();
         $('.lp-success-modal').addClass('active');
         $wooMigrateBtn.removeAttr('disabled');
@@ -517,6 +555,21 @@ jQuery(document).ready(function ($) {
         if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
             revertWooCheckboxes();
         }
+
+        const succeedReport = generateProgressMessage(response, 'succeed');
+        const failedReport = generateProgressMessage(response, 'failed');
+
+        $(WOO_CONFIG.WOO_REPORT_ITEMS.SUCCESS).toggle(succeedReport.length > 0);
+        $(WOO_CONFIG.WOO_REPORT_ITEMS.FAILED).toggle(failedReport.length > 0);
+
+        if (succeedReport) {
+            $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.SUCCESS).text(succeedReport);
+        }
+
+        if (failedReport) {
+            $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.FAILED).text(failedReport);
+        }
+
         getWooMigrationHistory();
     }
 
@@ -544,7 +597,7 @@ jQuery(document).ready(function ($) {
                 if (progress < 100) {
                     pollWooMigrationProgress(jobId);
                 } else {
-                    handleWooMigrationSuccess();
+                    handleWooMigrationSuccess(response);
                 }
             },
             error: function (xhr, status, error) {
@@ -680,7 +733,7 @@ jQuery(document).ready(function ($) {
                     return;
                 }
 
-                handleWooMigrationSuccess();
+                handleWooMigrationSuccess(response);
             },
             error: handleWooMigrationError,
         });
