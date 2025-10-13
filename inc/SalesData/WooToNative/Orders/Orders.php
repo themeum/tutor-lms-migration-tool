@@ -291,7 +291,7 @@ class Orders implements MigrationTemplate {
 			'updated_by'       => $order->get_user_id(),
 		);
 
-		$this->transformed_order_data = Helper::has_subscriptions( $data, $order );
+		$this->transformed_order_data = Helper::filter_subscription_order_item( $data, $order );
 	}
 
 	/**

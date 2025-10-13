@@ -142,7 +142,7 @@ class Helper {
 
 
 	/**
-	 * Check if WooCommerce order has subscription.
+	 * Filter tutor order to removed subscription items.
 	 *
 	 * @since 2.4.0
 	 *
@@ -151,7 +151,7 @@ class Helper {
 	 *
 	 * @return array
 	 */
-	public static function has_subscriptions( $tutor_order_data, $order ) {
+	public static function filter_subscription_order_item( $tutor_order_data, $order ) {
 		if ( ! class_exists( 'WC_Subscriptions' ) ) {
 			return array();
 		}
