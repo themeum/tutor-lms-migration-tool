@@ -166,6 +166,11 @@ class Helper {
 
 		$removed_items = array();
 
+		/**
+		 * WC order item.
+		 *
+		 * @var WC_Order_Item $item order item.
+		 */
 		foreach ( $items as $item ) {
 			$product = $item->get_product();
 			if ( ! self::check_wc_subscription_product( $product ) ) {
