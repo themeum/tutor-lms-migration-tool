@@ -107,8 +107,8 @@ class OrderDataTransformer implements DataTransformer {
 				'parent_id'        => $parent_id,
 				'transaction_id'   => $order->get_transaction_id(),
 				'user_id'          => $user_id,
-				'order_status'     => $order->get_status(),
-				'payment_status'   => $payment_status,
+				'order_status'     => Helper::get_order_status( $order ),
+				'payment_status'   => Helper::get_payment_status( $order ),
 				'subtotal_price'   => $order->get_subtotal(),
 				'pre_tax_price'    => $order->get_subtotal(),
 
