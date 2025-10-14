@@ -1,3 +1,5 @@
+const { __ } = wp.i18n;
+
 jQuery(document).ready(function ($) {
     'use strict';
     const { __ } = wp.i18n;
@@ -401,6 +403,8 @@ jQuery(document).ready(function ($) {
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
         ],
         WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions',
+        WOO_MIGRATION_SUCCESS_TITLE: '[data-woo-migration-success-title]',
+        WOO_MIGRATION_SUCCESS_DESC: '[data-woo-migration-success-desc]',
         WOO_REPORT_ITEMS: {
             SUCCESS: '[data-woo-migration-report-item="success"]',
             FAILED: '[data-woo-migration-report-item="failed"]',
@@ -580,9 +584,25 @@ jQuery(document).ready(function ($) {
         const activeTab = getWooActiveTab();
         if (succeedReport.length > 0) {
             $('.lp-success-modal').addClass('active');
+            $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_TITLE).text(
+                __('Migration Successful!', 'tutor-lms-migration-tool')
+            );
+            $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_DESC).text(
+                __('Your data has been successfully migrated from WooCommerce to Tutor LMS eCommerce.', 'tutor-lms-migration-tool')
+            );
         } else {
             $('.lp-error-modal').addClass('active');
         }
+
+        if (succeedReport.length > 0 && failedReport.length > 0) {
+            $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_TITLE).text(
+                __('Migration Complete with Errors', 'tutor-lms-migration-tool')
+            );
+            $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_DESC).text(
+                __('The migration process has finished, but some items could not be imported. ', 'tutor-lms-migration-tool')
+            );
+        }
+
         $wooMigrateBtn.removeAttr('disabled');
         window.onbeforeunload = null;
         $('.tutor-migration-tab .tutor-nav-link')
