@@ -217,12 +217,17 @@ class Orders implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @throws \Exception If WC order is invalid.
+	 *
 	 * @param int|object $order Order id or object.
 	 *
 	 * @return MigrationTemplate
 	 */
 	public function extract( $order ): MigrationTemplate {
-		$order                   = is_int( $order ) ? wc_get_order( $order ) : $order;
+		$order = is_int( $order ) ? wc_get_order( $order ) : $order;
+		if ( ! $order->get_user_id() || ! $order->get_items() ) {
+			throw new \Exception( __( 'Invalid WooCommerce Order', 'tutor-lms-migration-tool' ) );
+		}
 		$this->wc_order          = $order;
 		$this->order_customer_id = $order->get_customer_id();
 
@@ -260,13 +265,12 @@ class Orders implements MigrationTemplate {
 		foreach ( $order->get_items( 'tax' ) as $tax_item ) {
 			$tax_rate = $tax_item->get_rate_percent();
 		}
-		$order_status = ! $order->get_user_id() ? OrderModel::ORDER_CANCELLED : Helper::get_order_status( $order );
-		$data         = array(
+		$data = array(
 			'parent_id'        => $order->get_parent_id(),
 			'transaction_id'   => $order->get_transaction_id(),
 			'user_id'          => $order->get_user_id() ?? 0,
 			'order_type'       => 'single_order',
-			'order_status'     => $order_status,
+			'order_status'     => Helper::get_order_status( $order ),
 			'payment_status'   => Helper::get_payment_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
