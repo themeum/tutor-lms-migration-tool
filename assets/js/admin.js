@@ -628,6 +628,19 @@ jQuery(document).ready(function ($) {
         getWooMigrationHistory();
     }
 
+    function handleWooMigrationError() {
+        $('.lp-error-modal').addClass('active');
+        const activeTab = getWooActiveTab();
+        toggleWooSpinners(activeTab, 'stop');
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        window.onbeforeunload = null;
+
+        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+            revertWooCheckboxes();
+        }
+    }
+
     function pollWooMigrationProgress(jobId) {
         $.ajax({
             url: ajaxurl,
@@ -657,6 +670,7 @@ jQuery(document).ready(function ($) {
             },
             error: function (xhr, status, error) {
                 console.error("WooCommerce migration polling failed", { status, error, response: xhr.responseText });
+                handleWooMigrationError();
                 throw new Error("WooCommerce migration polling failed");
             }
         });
@@ -676,19 +690,6 @@ jQuery(document).ready(function ($) {
         window.onbeforeunload = function () {
             return 'Migration is in progress. Are you sure you want to leave?';
         };
-    }
-
-    function handleWooMigrationError() {
-        $('.lp-error-modal').addClass('active');
-        const activeTab = getWooActiveTab();
-        toggleWooSpinners(activeTab, 'stop');
-        $('.tutor-migration-tab .tutor-nav-link')
-            .removeClass('disabled');
-        window.onbeforeunload = null;
-
-        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-            revertWooCheckboxes();
-        }
     }
 
     function prepareWooFormData(form) {
