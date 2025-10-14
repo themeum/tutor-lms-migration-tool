@@ -337,7 +337,7 @@ class Subscriptions implements MigrationTemplate {
 					'order_id'
 				);
 				// Change wc earning order status to tutor order status.
-				$updated_status = Helper::get_earning_order_status( $status->order_status );
+				$updated_status = Helper::get_order_status( $status->order_status );
 				QueryHelper::update(
 					'tutor_earnings',
 					array(

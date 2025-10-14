@@ -33,24 +33,25 @@ class Helper {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param object $wc_order WC_Order.
+	 * @param object $status the wc order or earning status.
 	 *
 	 * @return string Tutor native order status.
 	 */
-	public static function get_order_status( $wc_order ) {
-		$order_status = $wc_order->get_status();
-		$map          = array(
-			'pending'    => OrderModel::ORDER_INCOMPLETE,
-			'on-hold'    => OrderModel::ORDER_INCOMPLETE,
-			'processing' => OrderModel::ORDER_INCOMPLETE,
-			'completed'  => OrderModel::ORDER_COMPLETED,
-			'cancelled'  => OrderModel::ORDER_CANCELLED,
-			'failed'     => OrderModel::ORDER_CANCELLED,
-			'refunded'   => OrderModel::ORDER_CANCELLED,
-			'trash'      => OrderModel::ORDER_TRASH,
+	public static function get_order_status( $status ) {
+		$map = array(
+			'pending'      => OrderModel::ORDER_INCOMPLETE,
+			'on-hold'      => OrderModel::ORDER_INCOMPLETE,
+			'processing'   => OrderModel::ORDER_INCOMPLETE,
+			'wc-completed' => OrderModel::ORDER_COMPLETED,
+			'completed'    => OrderModel::ORDER_COMPLETED,
+			'complete'     => OrderModel::ORDER_COMPLETED,
+			'cancelled'    => OrderModel::ORDER_CANCELLED,
+			'failed'       => OrderModel::ORDER_CANCELLED,
+			'refunded'     => OrderModel::ORDER_CANCELLED,
+			'trash'        => OrderModel::ORDER_TRASH,
 		);
 
-		return $map[ $order_status ] ?? OrderModel::ORDER_INCOMPLETE;
+		return $map[ $status ] ?? OrderModel::ORDER_INCOMPLETE;
 	}
 
 	/**
@@ -267,31 +268,6 @@ class Helper {
 	 */
 	public static function check_wc_subscription_product( $product ) {
 		return in_array( $product->get_type(), self::get_wc_subscription_types() );
-	}
-
-	/**
-	 * Update woocommerce order earning status to tutor order earning status
-	 *
-	 * @since 2.4.0
-	 *
-	 * @param string $status the order status.
-	 *
-	 * @return string
-	 */
-	public static function get_earning_order_status( $status ) {
-		$map = array(
-			'pending'      => OrderModel::ORDER_INCOMPLETE,
-			'on-hold'      => OrderModel::ORDER_INCOMPLETE,
-			'processing'   => OrderModel::ORDER_INCOMPLETE,
-			'wc-completed' => OrderModel::ORDER_COMPLETED,
-			'completed'    => OrderModel::ORDER_COMPLETED,
-			'complete'     => OrderModel::ORDER_COMPLETED,
-			'cancelled'    => OrderModel::ORDER_CANCELLED,
-			'failed'       => OrderModel::ORDER_CANCELLED,
-			'refunded'     => OrderModel::ORDER_CANCELLED,
-			'trash'        => OrderModel::ORDER_TRASH,
-		);
-		return $map[ $status ];
 	}
 
 

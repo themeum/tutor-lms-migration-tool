@@ -112,7 +112,7 @@ class Earnings {
 					'order_id'     => $this->new_order_id,
 					'process_by'   => 'tutor',
 					'course_id'    => $earning->course_id,
-					'order_status' => Helper::get_earning_order_status( $earning->order_status ),
+					'order_status' => Helper::get_order_status( $earning->order_status ),
 				);
 			}
 		}
