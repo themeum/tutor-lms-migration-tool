@@ -39,16 +39,23 @@ class Helper {
 	 */
 	public static function get_order_status( $status ) {
 		$map = array(
-			'pending'      => OrderModel::ORDER_INCOMPLETE,
-			'on-hold'      => OrderModel::ORDER_INCOMPLETE,
-			'processing'   => OrderModel::ORDER_INCOMPLETE,
-			'wc-completed' => OrderModel::ORDER_COMPLETED,
-			'completed'    => OrderModel::ORDER_COMPLETED,
-			'complete'     => OrderModel::ORDER_COMPLETED,
-			'cancelled'    => OrderModel::ORDER_CANCELLED,
-			'failed'       => OrderModel::ORDER_CANCELLED,
-			'refunded'     => OrderModel::ORDER_CANCELLED,
-			'trash'        => OrderModel::ORDER_TRASH,
+			'pending'       => OrderModel::ORDER_INCOMPLETE,
+			'wc-pending'    => OrderModel::ORDER_INCOMPLETE,
+			'on-hold'       => OrderModel::ORDER_INCOMPLETE,
+			'wc-on-hold'    => OrderModel::ORDER_INCOMPLETE,
+			'processing'    => OrderModel::ORDER_INCOMPLETE,
+			'wc-processing' => OrderModel::ORDER_INCOMPLETE,
+			'wc-completed'  => OrderModel::ORDER_COMPLETED,
+			'completed'     => OrderModel::ORDER_COMPLETED,
+			'complete'      => OrderModel::ORDER_COMPLETED,
+			'cancelled'     => OrderModel::ORDER_CANCELLED,
+			'wc-cancelled'  => OrderModel::ORDER_CANCELLED,
+			'failed'        => OrderModel::ORDER_CANCELLED,
+			'wc-failed'     => OrderModel::ORDER_CANCELLED,
+			'refunded'      => OrderModel::ORDER_CANCELLED,
+			'wc-refunded'   => OrderModel::ORDER_CANCELLED,
+			'trash'         => OrderModel::ORDER_TRASH,
+			'wc-trash'      => OrderModel::ORDER_TRASH,
 		);
 
 		return $map[ $status ] ?? OrderModel::ORDER_INCOMPLETE;
