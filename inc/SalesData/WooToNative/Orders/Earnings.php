@@ -13,6 +13,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Tutor\Helpers\QueryHelper;
+use Tutor\Models\OrderModel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -64,8 +65,8 @@ class Earnings {
 			return;
 		}
 
-		foreach ( $this->tutor_wc_order_earnings_id as $key => $val ) {
-			$product_id      = get_post_meta( $key, '_tutor_course_product_id', true ) ?? 0;
+		foreach ( $this->tutor_wc_order_earnings_id as $key => $tutor_earnings ) {
+			$product_id      = get_post_meta( $tutor_earnings['course_id'], '_tutor_course_product_id', true ) ?? 0;
 			$is_subscription = wc_get_product( $product_id ) && Helper::check_wc_subscription_product(
 				wc_get_product( $product_id )
 			);
@@ -95,23 +96,28 @@ class Earnings {
 		$this->tutor_wc_order_earnings_id = QueryHelper::query(
 			$this->tutor_earning_table,
 			array(
-				'select' => array( 'earning_id', 'course_id' ),
+				'select' => array( 'earning_id', 'course_id', 'order_status' ),
 				'where'  => array(
-					'order_id'     => $this->old_order_id,
-					'process_by'   => 'woocommerce',
-					'order_status' => array(
-						'IN',
-						tutor_utils()->get_earnings_completed_statuses(),
-					),
+					'order_id'   => $this->old_order_id,
+					'process_by' => 'woocommerce',
 				),
 			),
 		);
 
-		$this->tutor_wc_order_earnings_id = array_column(
-			$this->tutor_wc_order_earnings_id,
-			'earning_id',
-			'course_id'
-		);
+		$earnings = array();
+
+		if ( count( $this->tutor_wc_order_earnings_id ) ) {
+			foreach ( $this->tutor_wc_order_earnings_id as $earning ) {
+				$earnings[ $earning->earning_id ] = array(
+					'order_id'     => $this->new_order_id,
+					'process_by'   => 'tutor',
+					'course_id'    => $earning->course_id,
+					'order_status' => Helper::get_earning_order_status( $earning->order_status ),
+				);
+			}
+		}
+
+		$this->tutor_wc_order_earnings_id = $earnings;
 	}
 
 	/**
@@ -123,9 +129,9 @@ class Earnings {
 	 *
 	 * @param object $order the order object.
 	 *
-	 * @return boolean
+	 * @return void
 	 */
-	public function migrate( $order ): bool {
+	public function migrate( $order ) {
 		// Extract the data.
 		try {
 			$this->extract( $order );
@@ -135,24 +141,16 @@ class Earnings {
 		}
 
 		if ( ! $this->tutor_wc_order_earnings_id ) {
-			return false;
+			return;
 		}
 
-		$transformed_earnings = array(
-			'order_id'   => $this->new_order_id,
-			'process_by' => 'tutor',
-		);
-
-		$earning_ids = QueryHelper::prepare_in_clause( $this->tutor_wc_order_earnings_id );
-
-		// Update earnings data.
-		$result = QueryHelper::update_where_in(
-			$this->tutor_earning_table,
-			$transformed_earnings,
-			$earning_ids,
-			'earning_id'
-		);
-
-		return $result;
+		foreach ( $this->tutor_wc_order_earnings_id as $earning_id => $tutor_earnings ) {
+			// Update Earning data.
+			QueryHelper::update(
+				$this->tutor_earning_table,
+				$tutor_earnings,
+				array( 'earning_id' => $earning_id )
+			);
+		}
 	}
 }

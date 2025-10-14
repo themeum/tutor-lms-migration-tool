@@ -148,6 +148,44 @@ class Helper {
 		return $map[ $wc_discount_type ];
 	}
 
+	/**
+	 * Filter Orders and Order Count from subscriptions.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array   $orders the array of orders.
+	 * @param boolean $return_count whether to return count.
+	 *
+	 * @return array|int
+	 */
+	public static function filter_order_subscription_count( $orders = array(), $return_count = false ) {
+		if ( count( $orders ) ) {
+			foreach ( $orders as $key => $order ) {
+				$order = is_int( $order ) ? wc_get_order( $order ) : $order;
+				$items = $order->get_items();
+
+				$subscriptions = 0;
+				if ( count( $items ) ) {
+					foreach ( $items as $item ) {
+						if ( self::check_wc_subscription_product(
+							$item->get_product()
+						) ) {
+							++$subscriptions;
+						} else {
+							continue;
+						}
+					}
+				}
+
+				if ( $subscriptions === count( $items ) ) {
+					unset( $orders[ $key ] );
+				}
+			}
+		}
+
+		return $return_count ? count( $orders ) : $orders;
+	}
+
 
 	/**
 	 * Filter tutor order to removed subscription items.
@@ -229,6 +267,31 @@ class Helper {
 	 */
 	public static function check_wc_subscription_product( $product ) {
 		return in_array( $product->get_type(), self::get_wc_subscription_types() );
+	}
+
+	/**
+	 * Update woocommerce order earning status to tutor order earning status
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param string $status the order status.
+	 *
+	 * @return string
+	 */
+	public static function get_earning_order_status( $status ) {
+		$map = array(
+			'pending'      => OrderModel::ORDER_INCOMPLETE,
+			'on-hold'      => OrderModel::ORDER_INCOMPLETE,
+			'processing'   => OrderModel::ORDER_INCOMPLETE,
+			'wc-completed' => OrderModel::ORDER_COMPLETED,
+			'completed'    => OrderModel::ORDER_COMPLETED,
+			'complete'     => OrderModel::ORDER_COMPLETED,
+			'cancelled'    => OrderModel::ORDER_CANCELLED,
+			'failed'       => OrderModel::ORDER_CANCELLED,
+			'refunded'     => OrderModel::ORDER_CANCELLED,
+			'trash'        => OrderModel::ORDER_TRASH,
+		);
+		return $map[ $status ];
 	}
 
 
