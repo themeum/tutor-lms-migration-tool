@@ -33,7 +33,7 @@ class Helper {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param object $status the wc order or earning status.
+	 * @param object $status the wc order status.
 	 *
 	 * @return string Tutor native order status.
 	 */
