@@ -12,8 +12,8 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Orders;
 
 use AllowDynamicProperties;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
+use TUTOR\Earnings as TutorEarnings;
 use Tutor\Helpers\QueryHelper;
-use Tutor\Models\OrderModel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,7 +36,7 @@ class Earnings {
 	 *
 	 * @var array
 	 */
-	private $tutor_wc_order_earnings_id = array();
+	private $wc_order_earnings_id = array();
 
 	/**
 	 * Old Order ID.
@@ -61,18 +61,18 @@ class Earnings {
 	 */
 	private function filter_subscription_products() {
 
-		if ( ! count( $this->tutor_wc_order_earnings_id ) ) {
+		if ( ! count( $this->wc_order_earnings_id ) ) {
 			return;
 		}
 
-		foreach ( $this->tutor_wc_order_earnings_id as $key => $tutor_earnings ) {
+		foreach ( $this->wc_order_earnings_id as $key => $tutor_earnings ) {
 			$product_id      = get_post_meta( $tutor_earnings['course_id'], '_tutor_course_product_id', true ) ?? 0;
 			$is_subscription = wc_get_product( $product_id ) && Helper::check_wc_subscription_product(
 				wc_get_product( $product_id )
 			);
 
 			if ( $is_subscription ) {
-				unset( $this->tutor_wc_order_earnings_id[ $key ] );
+				unset( $this->wc_order_earnings_id[ $key ] );
 			}
 		}
 	}
@@ -93,21 +93,21 @@ class Earnings {
 		$this->old_order_id = (int) $order->old_order_id;
 		$this->new_order_id = (int) $order->new_order_id;
 
-		$this->tutor_wc_order_earnings_id = QueryHelper::query(
+		$this->wc_order_earnings_id = QueryHelper::query(
 			$this->tutor_earning_table,
 			array(
 				'select' => array( 'earning_id', 'course_id', 'order_status' ),
 				'where'  => array(
 					'order_id'   => $this->old_order_id,
-					'process_by' => 'woocommerce',
+					'process_by' => TutorEarnings::PROCESS_BY_WOOCOMMERCE,
 				),
 			),
 		);
 
 		$earnings = array();
 
-		if ( count( $this->tutor_wc_order_earnings_id ) ) {
-			foreach ( $this->tutor_wc_order_earnings_id as $earning ) {
+		if ( count( $this->wc_order_earnings_id ) ) {
+			foreach ( $this->wc_order_earnings_id as $earning ) {
 				$earnings[ $earning->earning_id ] = array(
 					'order_id'     => $this->new_order_id,
 					'process_by'   => 'tutor',
@@ -117,7 +117,7 @@ class Earnings {
 			}
 		}
 
-		$this->tutor_wc_order_earnings_id = $earnings;
+		$this->wc_order_earnings_id = $earnings;
 	}
 
 	/**
@@ -140,11 +140,11 @@ class Earnings {
 			throw $e;
 		}
 
-		if ( ! $this->tutor_wc_order_earnings_id ) {
+		if ( ! $this->wc_order_earnings_id ) {
 			return;
 		}
 
-		foreach ( $this->tutor_wc_order_earnings_id as $earning_id => $tutor_earnings ) {
+		foreach ( $this->wc_order_earnings_id as $earning_id => $tutor_earnings ) {
 			// Update Earning data.
 			QueryHelper::update(
 				$this->tutor_earning_table,

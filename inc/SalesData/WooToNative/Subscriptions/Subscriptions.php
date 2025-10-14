@@ -328,7 +328,7 @@ class Subscriptions implements MigrationTemplate {
 
 			// Earning migration.
 			foreach ( $orders_map as $wc_order_id => $tutor_order_id ) {
-				$status = QueryHelper::get_row(
+				$wc_earning = QueryHelper::get_row(
 					'tutor_earnings',
 					array(
 						'order_id'   => $wc_order_id,
@@ -337,7 +337,7 @@ class Subscriptions implements MigrationTemplate {
 					'order_id'
 				);
 				// Change wc earning order status to tutor order status.
-				$updated_status = Helper::get_order_status( $status->order_status );
+				$updated_status = Helper::get_order_status( $wc_earning->order_status );
 				QueryHelper::update(
 					'tutor_earnings',
 					array(
