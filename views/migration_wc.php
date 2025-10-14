@@ -316,16 +316,27 @@ $migration_history = Helper::get_wc_migration_history();
 				</div>
 
 				<!-- Error Report -->
-				<div class="migration-complete-report-item" data-woo-migration-report-item="failed">
-					<div class="migration-complete-report-icon" data-icon="cross-circle">
-						<?php tutor_utils()->render_svg_icon( Icon::CROSS_CIRCLE, 28, 28 ); ?>
-					</div>
-					<div class="migration-complete-report-text">
-						<div>
-							<?php esc_html_e( 'Failed to Migrate:', 'tutor-lms-migration-tool' ); ?>
+				<div class="migration-complete-report-item-wrapper" data-woo-migration-report-item="failed">
+					<div class="migration-complete-report-item">
+						<div class="migration-complete-report-icon" data-icon="cross-circle">
+							<?php tutor_utils()->render_svg_icon( Icon::CROSS_CIRCLE, 28, 28 ); ?>
 						</div>
-						<div data-woo-migration-report="failed" class="migration-complete-report-text-description tutor-fs-7 tutor-fw-medium tutor-color-black"></div>
+						<div class="migration-complete-report-with-action">
+							<div class="migration-complete-report-text">
+								<div>
+									<?php esc_html_e( 'Failed to Migrate:', 'tutor-lms-migration-tool' ); ?>
+								</div>
+								<div data-woo-migration-report="failed" class="migration-complete-report-text-description tutor-fs-7 tutor-fw-medium tutor-color-black"></div>
+							</div>
+							<div data-report-details-toggle>
+								<?php tutor_utils()->render_svg_icon( Icon::CHEVRON_DOWN, 20, 20 ); ?>
+							</div>
+						</div>
 					</div>
+
+					<!-- Error Report Details -->
+					<div class="migration-complete-report-details tutor-d-none">
+					</div>					
 				</div>
 			</div>
 

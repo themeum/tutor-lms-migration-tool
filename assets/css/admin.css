@@ -820,6 +820,12 @@ span.tutor-icon-brand-lifter:before {
     gap: 20px;
     margin-bottom: 20px;
 
+    .migration-complete-report-item-wrapper {
+        border-radius: 6px;
+        background-color: #F6F8FD;
+        align-items: flex-start;
+    }
+
     .migration-complete-report-item {
         display: flex;
         flex-direction: row;
@@ -830,6 +836,13 @@ span.tutor-icon-brand-lifter:before {
         border-radius: 6px;
         background-color: #F6F8FD;
         width: 500px;
+
+        [data-report-details-toggle] {
+            cursor: pointer;
+            display: flex;
+            align-self: center;
+            justify-content: center;
+        }
 
         .migration-complete-report-icon {
             display: flex;
@@ -843,7 +856,6 @@ span.tutor-icon-brand-lifter:before {
                 color: #F7393B;
             }
         }
-
         .migration-complete-report-text {
             display: flex;
             flex-direction: column;
@@ -851,6 +863,48 @@ span.tutor-icon-brand-lifter:before {
             align-items: flex-start;
         }
     }
+
+    .migration-complete-report-with-action {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .migration-complete-report-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0px 16px 16px 16px;
+
+            .migration-complete-report-details-item {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                text-align: left;
+            }
+
+            .migration-complete-report-details-title {
+                color: #5b616f;
+                font-size: 12px;
+                font-weight: 500;
+            }
+
+            .migration-complete-report-details-ids {
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
+
+                .migration-complete-report-details-ids-item {
+                    color: #5b616f;
+                    font-size: 12px;
+                    font-weight: 500;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    background-color: white;
+                }
+            }
+        }
 }
 
 .tutor-wc-migration-history-row {

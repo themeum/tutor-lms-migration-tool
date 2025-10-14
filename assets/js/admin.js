@@ -408,7 +408,9 @@ jQuery(document).ready(function ($) {
         WOO_REPORT_DESCRIPTIONS: {
             SUCCESS: '[data-woo-migration-report="success"]',
             FAILED: '[data-woo-migration-report="failed"]',
-        }
+        },
+        WOO_REPORT_DETAILS: '.migration-complete-report-details',
+        WOO_REPORT_DETAILS_TOGGLE: '[data-report-details-toggle]',
     };
 
     const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
@@ -543,10 +545,44 @@ jQuery(document).ready(function ($) {
         return messageParts.join(', ');
     }
 
+    /**
+     * Generate Error Report Details
+     * @param {Object} optionsValue - Migration options data.
+     * 
+     * @return {string}
+     */
+    function generateErrorReportDetails(optionsValue) {
+        const reportDetails = [];
+        for (const [key, requirement] of Object.entries(optionsValue.requirements)) {
+            if (Array.isArray(requirement.failed)) {
+                if (requirement.failed.length === 0) continue;
+
+                const failedIds = requirement.failed.map((failedId) => `<div class="migration-complete-report-details-ids-item">${failedId}</div>`).join('');
+                reportDetails.push(`
+                    <div class="migration-complete-report-details-item">
+                        <div class="migration-complete-report-details-title">
+                            ${key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
+                        </div>
+                        <div class="migration-complete-report-details-ids">
+                            ${failedIds}
+                        </div>
+                    </div>
+                `);
+            }
+        }
+        return reportDetails.join('');
+    }
+
 
     function handleWooMigrationSuccess(response) {
+        const succeedReport = generateProgressMessage(response, 'succeed');
+        const failedReport = generateProgressMessage(response, 'failed');
         const activeTab = getWooActiveTab();
-        $('.lp-success-modal').addClass('active');
+        if (succeedReport.length > 0) {
+            $('.lp-success-modal').addClass('active');
+        } else {
+            $('.lp-error-modal').addClass('active');
+        }
         $wooMigrateBtn.removeAttr('disabled');
         window.onbeforeunload = null;
         $('.tutor-migration-tab .tutor-nav-link')
@@ -556,8 +592,6 @@ jQuery(document).ready(function ($) {
             revertWooCheckboxes();
         }
 
-        const succeedReport = generateProgressMessage(response, 'succeed');
-        const failedReport = generateProgressMessage(response, 'failed');
 
         $(WOO_CONFIG.WOO_REPORT_ITEMS.SUCCESS).toggle(succeedReport.length > 0);
         $(WOO_CONFIG.WOO_REPORT_ITEMS.FAILED).toggle(failedReport.length > 0);
@@ -567,7 +601,10 @@ jQuery(document).ready(function ($) {
         }
 
         if (failedReport) {
+
+            console.log(generateErrorReportDetails(response));
             $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.FAILED).text(failedReport);
+            $(WOO_CONFIG.WOO_REPORT_DETAILS).html(generateErrorReportDetails(response));
         }
 
         getWooMigrationHistory();
@@ -709,6 +746,11 @@ jQuery(document).ready(function ($) {
     $wooMigrationPage.find(WOO_CONFIG.SELECTORS.navLink).on('click', function (e) {
         e.preventDefault();
         toggleWooMigrateBtn();
+    });
+
+    $(WOO_CONFIG.WOO_REPORT_DETAILS_TOGGLE).on('click', function (e) {
+        e.preventDefault();
+        $(WOO_CONFIG.WOO_REPORT_DETAILS).toggleClass('tutor-d-none');
     });
 
     $wooCheckboxes.on('change', toggleWooMigrateBtn);
