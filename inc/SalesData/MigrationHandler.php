@@ -84,7 +84,10 @@ class MigrationHandler {
 				$this->response_bad_request( __( 'Invalid job id or requirements', 'tutor-lms-migration-tool' ) );
 			}
 
-			$job_data = $this->job_handler->get_migration_job( $requirements, $job_id );
+			$migration_job = $this->job_handler->get_migration_job( $requirements, $job_id );
+			$job_data      = $migration_job->schema;
+			$data_obj      = $migration_job->data_obj;
+
 		}
 
 		if ( ! $job_data || empty( $job_data['requirements'] ) ) {
@@ -94,7 +97,7 @@ class MigrationHandler {
 		$active_job_type = $this->job_handler->get_active_job_type( $job_data );
 		if ( $active_job_type ) {
 			try {
-				$job_data = $this->job_handler->process_job( $active_job_type, $job_data );
+				$job_data = $this->job_handler->process_job( $active_job_type, $job_data, $data_obj );
 				if ( $job_data['progress'] >= 100 ) {
 					// Action hook.
 					do_action( 'tlmt_after_job_complete', $job_data );
