@@ -12,6 +12,7 @@ namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative;
 
 use Tutor\Models\CouponModel;
 use Exception;
+use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\SubscriptionModel;
 use Tutor\Helpers\QueryHelper;
@@ -159,14 +160,10 @@ class Helper {
 	 * @return array
 	 */
 	public static function filter_subscription_order_item( $tutor_order_data, $order ) {
-		if ( ! class_exists( 'WC_Subscriptions' ) ) {
-			return array();
-		}
-
 		$items         = $order->get_items();
-		$subscriptions = wcs_get_subscriptions_for_order( $order );
+		$subscriptions = MigrationHandler::is_active_wc_subscription() ? wcs_get_subscriptions_for_order( $order ) : array();
 
-		// If the total items and subscription items are equal.
+		// If the total items and subscription items are equal then don't create order.
 		if ( count( $items ) === count( $subscriptions ) ) {
 			return array();
 		}
@@ -189,6 +186,15 @@ class Helper {
 			$removed_items[] = $item;
 		}
 
+		// If no item removed, that means no subscription items.
+		if ( ! count( $removed_items ) ) {
+			return $tutor_order_data;
+		}
+
+		if ( count( $removed_items ) === count( $items ) ) {
+			return array();
+		}
+
 		$order->calculate_totals();
 
 		// Update prices for tutor orders after recalculation.
@@ -204,11 +210,9 @@ class Helper {
 		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
 
 		// Add back the subscription item to handle it by subscription class.
-		if ( count( $removed_items ) ) {
-			foreach ( $removed_items as $item ) {
-				$order->add_item( $item );
-				$order->save();
-			}
+		foreach ( $removed_items as $item ) {
+			$order->add_item( $item );
+			$order->save();
 		}
 
 		return $tutor_order_data;
@@ -328,6 +332,10 @@ class Helper {
 					$message_parts[] = "{$capitalized_key} ({$succeed_count})";
 				}
 			}
+		}
+
+		if ( empty( $message_parts ) ) {
+			return __( 'No data migrated', 'tutor-lms-migration-tool' );
 		}
 
 		return implode( ', ', $message_parts );

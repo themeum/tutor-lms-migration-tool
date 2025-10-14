@@ -10,6 +10,7 @@
 
 use Themeum\TutorLMSMigrationTool\SalesData\MigrationHandler;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
+use TUTOR\Icon;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -297,8 +298,37 @@ $migration_history = Helper::get_wc_migration_history();
 				<?php esc_html_e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-40">
-				<?php esc_html_e( 'Migration from WoCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
+				<?php esc_html_e( 'Migration from WooCommerce to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?>
 			</div>
+
+			<div class="migration-complete-report">
+				<!-- Success Report -->
+				<div class="migration-complete-report-item" data-woo-migration-report-item="success">
+					<div class="migration-complete-report-icon" data-icon="check-filled-white">
+						<?php tutor_utils()->render_svg_icon( Icon::CHECK_FILLED_WHITE, 28, 28 ); ?>
+					</div>
+					<div class="migration-complete-report-text">
+						<div>
+							<?php esc_html_e( 'Successfully Migrated:', 'tutor-lms-migration-tool' ); ?>
+						</div>
+						<div data-woo-migration-report="success" class="migration-complete-report-text-description migration-complete-report-text-description tutor-fs-7 tutor-fw-medium tutor-color-black"></div>
+					</div>
+				</div>
+
+				<!-- Error Report -->
+				<div class="migration-complete-report-item" data-woo-migration-report-item="failed">
+					<div class="migration-complete-report-icon" data-icon="cross-circle">
+						<?php tutor_utils()->render_svg_icon( Icon::CROSS_CIRCLE, 28, 28 ); ?>
+					</div>
+					<div class="migration-complete-report-text">
+						<div>
+							<?php esc_html_e( 'Failed to Migrate:', 'tutor-lms-migration-tool' ); ?>
+						</div>
+						<div data-woo-migration-report="failed" class="migration-complete-report-text-description tutor-fs-7 tutor-fw-medium tutor-color-black"></div>
+					</div>
+				</div>
+			</div>
+
 			<?php if ( 'tutor' !== $monetized_by ) : ?>
 				<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor_settings&tab_page=monetization" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mb-20">
 					<?php esc_html_e( 'Enable Native Monetization', 'tutor-lms-migration-tool' ); ?>
@@ -321,7 +351,7 @@ $migration_history = Helper::get_wc_migration_history();
 				<?php esc_html_e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-20">
-				<?php esc_html_e( 'Oops... The migration from WoCommerce to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?>
+				<?php esc_html_e( 'Oops... The migration from WooCommerce to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?>
 			</div>
 		</div>
 	</div>

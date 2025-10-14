@@ -150,7 +150,7 @@ class Orders implements MigrationTemplate {
 					'shop_order_refund',
 				),
 				'orderby'    => 'date',
-				'order'      => 'DESC',
+				'order'      => 'ASC',
 				'return'     => 'objects',
 				'meta_query' => array(
 					array(
@@ -260,12 +260,13 @@ class Orders implements MigrationTemplate {
 		foreach ( $order->get_items( 'tax' ) as $tax_item ) {
 			$tax_rate = $tax_item->get_rate_percent();
 		}
-		$data = array(
+		$order_status = ! $order->get_user_id() ? OrderModel::ORDER_CANCELLED : Helper::get_order_status( $order );
+		$data         = array(
 			'parent_id'        => $order->get_parent_id(),
 			'transaction_id'   => $order->get_transaction_id(),
-			'user_id'          => $order->get_user_id(),
+			'user_id'          => $order->get_user_id() ?? 0,
 			'order_type'       => 'single_order',
-			'order_status'     => Helper::get_order_status( $order ),
+			'order_status'     => $order_status,
 			'payment_status'   => Helper::get_payment_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
@@ -286,9 +287,9 @@ class Orders implements MigrationTemplate {
 			'payment_payloads' => wp_json_encode( $order->get_data() ),
 			'note'             => $order->get_customer_note(),
 			'created_at_gmt'   => gmdate( 'Y-m-d H:i:s', strtotime( $order->get_date_created() ) ),
-			'created_by'       => $order->get_user_id(),
+			'created_by'       => $order->get_user_id() ?? 0,
 			'updated_at_gmt'   => gmdate( 'Y-m-d H:i:s', strtotime( $order->get_date_modified() ) ),
-			'updated_by'       => $order->get_user_id(),
+			'updated_by'       => $order->get_user_id() ?? 0,
 		);
 
 		$this->transformed_order_data = Helper::filter_subscription_order_item( $data, $order );
