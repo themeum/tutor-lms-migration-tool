@@ -303,7 +303,7 @@ $migration_history = Helper::get_wc_migration_history();
 
 			<div class="migration-complete-report">
 				<!-- Success Report -->
-				<div class="migration-complete-report-item" data-woo-migration-report-item="success">
+				<div class="migration-complete-report-item-wrapper migration-complete-report-item" data-woo-migration-report-item="success">
 					<div class="migration-complete-report-icon" data-icon="check-filled-white">
 						<?php tutor_utils()->render_svg_icon( Icon::CHECK_FILLED_WHITE, 28, 28 ); ?>
 					</div>

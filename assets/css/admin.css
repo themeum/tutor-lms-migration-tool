@@ -826,6 +826,10 @@ span.tutor-icon-brand-lifter:before {
         align-items: flex-start;
     }
 
+    .migration-complete-report-item-wrapper {
+        width: 500px;
+    }
+
     .migration-complete-report-item {
         display: flex;
         flex-direction: row;
@@ -835,7 +839,6 @@ span.tutor-icon-brand-lifter:before {
         padding: 12px 16px;
         border-radius: 6px;
         background-color: #F6F8FD;
-        width: 500px;
 
         [data-report-details-toggle] {
             cursor: pointer;
@@ -876,6 +879,8 @@ span.tutor-icon-brand-lifter:before {
             flex-direction: column;
             gap: 8px;
             padding: 0px 16px 16px 16px;
+            max-height: 300px;
+            overflow-y: auto;
 
             .migration-complete-report-details-item {
                 display: flex;
@@ -893,6 +898,7 @@ span.tutor-icon-brand-lifter:before {
             .migration-complete-report-details-ids {
                 display: flex;
                 flex-direction: row;
+                flex-wrap: wrap;
                 gap: 8px;
 
                 .migration-complete-report-details-ids-item {
