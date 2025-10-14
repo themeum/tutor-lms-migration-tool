@@ -601,8 +601,6 @@ jQuery(document).ready(function ($) {
         }
 
         if (failedReport) {
-
-            console.log(generateErrorReportDetails(response));
             $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.FAILED).text(failedReport);
             $(WOO_CONFIG.WOO_REPORT_DETAILS).html(generateErrorReportDetails(response));
         }
