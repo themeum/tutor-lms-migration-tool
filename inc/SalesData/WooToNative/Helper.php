@@ -255,6 +255,9 @@ class Helper {
 		$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
 		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
 
+		// Prevent creating multiple earnings when adding new order item.
+		remove_all_actions( 'woocommerce_new_order_item' );
+
 		// Add back the subscription item to handle it by subscription class.
 		foreach ( $removed_items as $item ) {
 			$order->add_item( $item );

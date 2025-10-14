@@ -145,6 +145,9 @@ class OrderDataTransformer implements DataTransformer {
 				// Remove the current processed subscription item.
 				$order->remove_item( $completed_item_id );
 
+				// Prevent creating multiple earnings when adding new order item.
+				remove_all_actions( 'woocommerce_new_order_item' );
+
 				// Keep the items that are subscription based after it was removed.
 				foreach ( $removed_items as $removed_item ) {
 					$product = $removed_item->get_product();
