@@ -33,24 +33,32 @@ class Helper {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param object $wc_order WC_Order.
+	 * @param object $status the wc order status.
 	 *
 	 * @return string Tutor native order status.
 	 */
-	public static function get_order_status( $wc_order ) {
-		$order_status = $wc_order->get_status();
-		$map          = array(
-			'pending'    => OrderModel::ORDER_INCOMPLETE,
-			'on-hold'    => OrderModel::ORDER_INCOMPLETE,
-			'processing' => OrderModel::ORDER_INCOMPLETE,
-			'completed'  => OrderModel::ORDER_COMPLETED,
-			'cancelled'  => OrderModel::ORDER_CANCELLED,
-			'failed'     => OrderModel::ORDER_CANCELLED,
-			'refunded'   => OrderModel::ORDER_CANCELLED,
-			'trash'      => OrderModel::ORDER_TRASH,
+	public static function get_order_status( $status ) {
+		$map = array(
+			'pending'       => OrderModel::ORDER_INCOMPLETE,
+			'wc-pending'    => OrderModel::ORDER_INCOMPLETE,
+			'on-hold'       => OrderModel::ORDER_INCOMPLETE,
+			'wc-on-hold'    => OrderModel::ORDER_INCOMPLETE,
+			'processing'    => OrderModel::ORDER_INCOMPLETE,
+			'wc-processing' => OrderModel::ORDER_INCOMPLETE,
+			'wc-completed'  => OrderModel::ORDER_COMPLETED,
+			'completed'     => OrderModel::ORDER_COMPLETED,
+			'complete'      => OrderModel::ORDER_COMPLETED,
+			'cancelled'     => OrderModel::ORDER_CANCELLED,
+			'wc-cancelled'  => OrderModel::ORDER_CANCELLED,
+			'failed'        => OrderModel::ORDER_CANCELLED,
+			'wc-failed'     => OrderModel::ORDER_CANCELLED,
+			'refunded'      => OrderModel::ORDER_CANCELLED,
+			'wc-refunded'   => OrderModel::ORDER_CANCELLED,
+			'trash'         => OrderModel::ORDER_TRASH,
+			'wc-trash'      => OrderModel::ORDER_TRASH,
 		);
 
-		return $map[ $order_status ] ?? OrderModel::ORDER_INCOMPLETE;
+		return $map[ $status ] ?? OrderModel::ORDER_INCOMPLETE;
 	}
 
 	/**
@@ -148,6 +156,44 @@ class Helper {
 		return $map[ $wc_discount_type ];
 	}
 
+	/**
+	 * Filter Orders and Order Count from subscriptions.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array   $orders the array of orders.
+	 * @param boolean $return_count whether to return count.
+	 *
+	 * @return array|int
+	 */
+	public static function filter_order_subscription_count( $orders = array(), $return_count = false ) {
+		if ( count( $orders ) ) {
+			foreach ( $orders as $key => $order ) {
+				$order = is_int( $order ) ? wc_get_order( $order ) : $order;
+				$items = $order->get_items();
+
+				$subscriptions = 0;
+				if ( count( $items ) ) {
+					foreach ( $items as $item ) {
+						if ( self::check_wc_subscription_product(
+							$item->get_product()
+						) ) {
+							++$subscriptions;
+						} else {
+							continue;
+						}
+					}
+				}
+
+				if ( $subscriptions === count( $items ) ) {
+					unset( $orders[ $key ] );
+				}
+			}
+		}
+
+		return $return_count ? count( $orders ) : $orders;
+	}
+
 
 	/**
 	 * Filter tutor order to removed subscription items.
@@ -208,6 +254,9 @@ class Helper {
 		$tutor_order_data['fees']            = $order->get_total_fees();
 		$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
 		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
+
+		// Prevent creating multiple earnings when adding new order item.
+		remove_all_actions( 'woocommerce_new_order_item' );
 
 		// Add back the subscription item to handle it by subscription class.
 		foreach ( $removed_items as $item ) {

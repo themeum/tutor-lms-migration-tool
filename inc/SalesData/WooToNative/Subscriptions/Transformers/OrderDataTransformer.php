@@ -106,7 +106,7 @@ class OrderDataTransformer implements DataTransformer {
 				'parent_id'        => $parent_id,
 				'transaction_id'   => $order->get_transaction_id(),
 				'user_id'          => $user_id,
-				'order_status'     => Helper::get_order_status( $order ),
+				'order_status'     => Helper::get_order_status( $order->get_status() ),
 				'payment_status'   => Helper::get_payment_status( $order ),
 				'subtotal_price'   => $order->get_subtotal(),
 				'pre_tax_price'    => $order->get_subtotal(),
@@ -144,6 +144,9 @@ class OrderDataTransformer implements DataTransformer {
 			if ( count( $removed_items ) ) {
 				// Remove the current processed subscription item.
 				$order->remove_item( $completed_item_id );
+
+				// Prevent creating multiple earnings when adding new order item.
+				remove_all_actions( 'woocommerce_new_order_item' );
 
 				// Keep the items that are subscription based after it was removed.
 				foreach ( $removed_items as $removed_item ) {
