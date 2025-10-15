@@ -36,7 +36,7 @@ class Earnings {
 	 *
 	 * @var array
 	 */
-	private $wc_order_earnings_id = array();
+	private $wc_order_earnings = array();
 
 	/**
 	 * Old Order ID.
@@ -61,18 +61,18 @@ class Earnings {
 	 */
 	private function filter_subscription_products() {
 
-		if ( ! count( $this->wc_order_earnings_id ) ) {
+		if ( ! count( $this->wc_order_earnings ) ) {
 			return;
 		}
 
-		foreach ( $this->wc_order_earnings_id as $key => $tutor_earnings ) {
+		foreach ( $this->wc_order_earnings as $key => $tutor_earnings ) {
 			$product_id      = get_post_meta( $tutor_earnings['course_id'], '_tutor_course_product_id', true ) ?? 0;
 			$is_subscription = wc_get_product( $product_id ) && Helper::check_wc_subscription_product(
 				wc_get_product( $product_id )
 			);
 
 			if ( $is_subscription ) {
-				unset( $this->wc_order_earnings_id[ $key ] );
+				unset( $this->wc_order_earnings[ $key ] );
 			}
 		}
 	}
@@ -93,7 +93,7 @@ class Earnings {
 		$this->old_order_id = (int) $order->old_order_id;
 		$this->new_order_id = (int) $order->new_order_id;
 
-		$this->wc_order_earnings_id = QueryHelper::query(
+		$this->wc_order_earnings = QueryHelper::query(
 			$this->tutor_earning_table,
 			array(
 				'select' => array( 'earning_id', 'course_id', 'order_status' ),
@@ -106,8 +106,8 @@ class Earnings {
 
 		$earnings = array();
 
-		if ( count( $this->wc_order_earnings_id ) ) {
-			foreach ( $this->wc_order_earnings_id as $earning ) {
+		if ( count( $this->wc_order_earnings ) ) {
+			foreach ( $this->wc_order_earnings as $earning ) {
 				$earnings[ $earning->earning_id ] = array(
 					'order_id'     => $this->new_order_id,
 					'process_by'   => 'tutor',
@@ -117,7 +117,7 @@ class Earnings {
 			}
 		}
 
-		$this->wc_order_earnings_id = $earnings;
+		$this->wc_order_earnings = $earnings;
 	}
 
 	/**
@@ -140,11 +140,11 @@ class Earnings {
 			throw $e;
 		}
 
-		if ( ! $this->wc_order_earnings_id ) {
+		if ( ! $this->wc_order_earnings ) {
 			return;
 		}
 
-		foreach ( $this->wc_order_earnings_id as $earning_id => $tutor_earnings ) {
+		foreach ( $this->wc_order_earnings as $earning_id => $tutor_earnings ) {
 			// Update Earning data.
 			QueryHelper::update(
 				$this->tutor_earning_table,
