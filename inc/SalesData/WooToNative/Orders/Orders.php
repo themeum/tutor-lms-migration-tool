@@ -161,7 +161,7 @@ class Orders implements MigrationTemplate {
 			)
 		);
 
-		return $orders->orders;
+		return Helper::filter_order_subscription_count( $orders->orders );
 	}
 
 	/**
@@ -190,7 +190,7 @@ class Orders implements MigrationTemplate {
 			)
 		);
 
-		return count( $total_query->get_orders() );
+		return Helper::filter_order_subscription_count( $total_query->get_orders(), true );
 	}
 
 	/**
@@ -274,7 +274,7 @@ class Orders implements MigrationTemplate {
 			'transaction_id'   => $order->get_transaction_id(),
 			'user_id'          => $order->get_user_id() ?? 0,
 			'order_type'       => 'single_order',
-			'order_status'     => Helper::get_order_status( $order ),
+			'order_status'     => Helper::get_order_status( $order->get_status() ),
 			'payment_status'   => Helper::get_payment_status( $order ),
 			'subtotal_price'   => $order->get_subtotal(),
 			'pre_tax_price'    => $order->get_subtotal(),
