@@ -261,7 +261,10 @@ class Orders implements MigrationTemplate {
 			$tax_rate = $tax_item->get_rate_percent();
 		}
 		$order_status = ! $order->get_user_id() ? OrderModel::ORDER_CANCELLED : Helper::get_order_status( $order );
-		$data         = array(
+		$wc_coupon    = $order->get_coupons();
+		$coupon       = ! empty( $wc_coupon ) ? reset( $wc_coupon ) : null;
+
+		$data = array(
 			'parent_id'        => $order->get_parent_id(),
 			'transaction_id'   => $order->get_transaction_id(),
 			'user_id'          => $order->get_user_id() ?? 0,
@@ -276,9 +279,9 @@ class Orders implements MigrationTemplate {
 			'total_price'      => $order->get_total(),
 			'net_payment'      => $order->get_total() - $order->get_total_refunded(),
 			'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
-			'coupon_amount'    => $order->get_discount_total(),
-			'discount_type'    => null,
-			'discount_amount'  => $order->get_discount_total(),
+			'coupon_amount'    => $coupon ? $order->get_discount_total() : 0.00,
+			'discount_type'    => $coupon ? Helper::get_coupon_discount_type( new \WC_Coupon( $coupon->get_code() ) ) : null,
+			'discount_amount'  => ! $coupon ? $order->get_discount_total() : 0.00,
 			'discount_reason'  => '',
 			'fees'             => $order->get_total_fees(),
 			'earnings'         => ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees(),
