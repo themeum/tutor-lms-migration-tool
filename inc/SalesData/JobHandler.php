@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData;
 
+use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
@@ -20,6 +21,15 @@ defined( 'ABSPATH' ) || exit;
  * @since 2.4.0
  */
 class JobHandler {
+
+	/**
+	 * Sales data object
+	 *
+	 * @since 2.4.0
+	 *
+	 * @var mixed
+	 */
+	private $data_obj;
 
 	/**
 	 * Job option name
@@ -42,12 +52,13 @@ class JobHandler {
 	 *
 	 * @throws \Throwable If failed to create sales data object.
 	 *
-	 * @param string $active_job_type Currently active job type like: orders, coupons, etc.
-	 * @param array  $job_data Job data array.
+	 * @param string            $active_job_type Currently active job type like: orders, coupons, etc.
+	 * @param array             $job_data Job data array.
+	 * @param MigrationTemplate $data_obj Data object.
 	 *
 	 * @return array updated job data.
 	 */
-	public function process_job( string $active_job_type, array $job_data ) {
+	public function process_job( string $active_job_type, array $job_data, MigrationTemplate $data_obj ) {
 		try {
 			$requirements    = $job_data['requirements'];
 			$active_job      = $requirements[ $active_job_type ];
@@ -66,11 +77,12 @@ class JobHandler {
 				return $job_data;
 			}
 
-			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
-			$items    = $data_obj->get_items( $limit, $processed_items );
+			$items = $data_obj->get_items( $limit, $processed_items );
 
-			// Action hook.
-			do_action( "tlmt_before_processing_{$active_job_type}_job", $job_data );
+			if ( empty( $job_data[ $active_job_type ]['succeed'] ) && empty( $job_data[ $active_job_type ]['failed'] ) ) {
+				// Action hook.
+				do_action( "tlmt_before_processing_{$active_job_type}_job", $job_data );
+			}
 
 			// Migrate each item.
 			foreach ( $items as $item ) {
@@ -138,9 +150,9 @@ class JobHandler {
 	 * @param array $requirements Migration requirements.
 	 * @param mixed $job_id Unique job id.
 	 *
-	 * @return array
+	 * @return object
 	 */
-	public function get_migration_job( array $requirements, $job_id = 0 ): array {
+	public function get_migration_job( array $requirements, $job_id = 0 ): object {
 		if ( $job_id ) {
 			$job_data = get_option( self::JOB_OPT_NAME . $job_id, null );
 			return json_decode( $job_data, true );
@@ -158,7 +170,8 @@ class JobHandler {
 		// Prepare the migration items.
 		foreach ( $job_requirements as $key => $requirement ) {
 			try {
-				$data_obj = tlmt_get_sales_data_object( $key, MigrationTypes::WC_TO_NATIVE );
+				$data_obj       = tlmt_get_sales_data_object( $key, MigrationTypes::WC_TO_NATIVE );
+				$this->data_obj = $data_obj;
 			} catch ( \Throwable $th ) {
 				throw $th;
 			}
@@ -168,7 +181,10 @@ class JobHandler {
 
 		$job_schema['requirements'] = $job_requirements;
 
-		return $job_schema;
+		return (object) array(
+			'schema'   => $job_schema,
+			'data_obj' => $this->data_obj,
+		);
 	}
 
 	/**

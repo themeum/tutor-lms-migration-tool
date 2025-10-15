@@ -1,3 +1,5 @@
+const { __ } = wp.i18n;
+
 jQuery(document).ready(function ($) {
     'use strict';
     const { __ } = wp.i18n;
@@ -401,6 +403,8 @@ jQuery(document).ready(function ($) {
             { id: 'woo-subscriptions', name: 'job_requirements[]', value: 'subscriptions' }
         ],
         WOO_SUBSCRIPTIONS_ADDON_BASE_NAME: 'wc-subscriptions',
+        WOO_MIGRATION_SUCCESS_TITLE: '[data-woo-migration-success-title]',
+        WOO_MIGRATION_SUCCESS_DESC: '[data-woo-migration-success-desc]',
         WOO_REPORT_ITEMS: {
             SUCCESS: '[data-woo-migration-report-item="success"]',
             FAILED: '[data-woo-migration-report-item="failed"]',
@@ -547,13 +551,14 @@ jQuery(document).ready(function ($) {
 
     /**
      * Generate Error Report Details
+     * 
      * @param {Object} optionsValue - Migration options data.
      * 
      * @return {string}
      */
     function generateErrorReportDetails(optionsValue) {
         const reportDetails = [];
-        for (const [key, requirement] of Object.entries(optionsValue.requirements)) {
+        for (const [key, requirement] of Object.entries(optionsValue?.requirements)) {
             if (Array.isArray(requirement.failed)) {
                 if (requirement.failed.length === 0) continue;
 
@@ -573,41 +578,59 @@ jQuery(document).ready(function ($) {
         return reportDetails.join('');
     }
 
-
     function handleWooMigrationSuccess(response) {
         const succeedReport = generateProgressMessage(response, 'succeed');
         const failedReport = generateProgressMessage(response, 'failed');
         const activeTab = getWooActiveTab();
-        if (succeedReport.length > 0) {
-            $('.lp-success-modal').addClass('active');
-        } else {
-            $('.lp-error-modal').addClass('active');
-        }
+
+        const hasSuccess = succeedReport.length > 0;
+        const hasFailed = failedReport.length > 0;
+
+        $(hasSuccess ? '.lp-success-modal' : '.lp-error-modal').addClass('active');
+
+        const [title, description] = hasSuccess && hasFailed
+            ? [__('Migration Complete with Errors', 'tutor-lms-migration-tool'), __('The migration process has finished, but some items could not be imported. ', 'tutor-lms-migration-tool')]
+            : [__('Migration Successful!', 'tutor-lms-migration-tool'), __('Your data has been successfully migrated from WooCommerce to Tutor LMS eCommerce.', 'tutor-lms-migration-tool')];
+
+        $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_TITLE).text(__(title, 'tutor-lms-migration-tool'));
+        $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_DESC).text(__(description, 'tutor-lms-migration-tool'));
+
         $wooMigrateBtn.removeAttr('disabled');
         window.onbeforeunload = null;
-        $('.tutor-migration-tab .tutor-nav-link')
-            .removeClass('disabled');
+        $('.tutor-migration-tab .tutor-nav-link').removeClass('disabled');
         toggleWooSpinners(activeTab, 'stop');
+
         if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
             revertWooCheckboxes();
         }
 
+        $(WOO_CONFIG.WOO_REPORT_ITEMS.SUCCESS).toggle(hasSuccess);
+        $(WOO_CONFIG.WOO_REPORT_ITEMS.FAILED).toggle(hasFailed);
 
-        $(WOO_CONFIG.WOO_REPORT_ITEMS.SUCCESS).toggle(succeedReport.length > 0);
-        $(WOO_CONFIG.WOO_REPORT_ITEMS.FAILED).toggle(failedReport.length > 0);
-
-        if (succeedReport) {
+        if (hasSuccess) {
             $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.SUCCESS).text(succeedReport);
         }
 
-        if (failedReport) {
-
-            console.log(generateErrorReportDetails(response));
+        if (hasFailed) {
             $(WOO_CONFIG.WOO_REPORT_DESCRIPTIONS.FAILED).text(failedReport);
             $(WOO_CONFIG.WOO_REPORT_DETAILS).html(generateErrorReportDetails(response));
         }
 
         getWooMigrationHistory();
+    }
+
+    function handleWooMigrationError() {
+        $('.lp-error-modal').addClass('active');
+        const activeTab = getWooActiveTab();
+        toggleWooSpinners(activeTab, 'stop');
+        $('.tutor-migration-tab .tutor-nav-link')
+            .removeClass('disabled');
+        $wooMigrateBtn.removeAttr('disabled');
+        window.onbeforeunload = null;
+
+        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
+            revertWooCheckboxes();
+        }
     }
 
     function pollWooMigrationProgress(jobId) {
@@ -639,6 +662,7 @@ jQuery(document).ready(function ($) {
             },
             error: function (xhr, status, error) {
                 console.error("WooCommerce migration polling failed", { status, error, response: xhr.responseText });
+                handleWooMigrationError();
                 throw new Error("WooCommerce migration polling failed");
             }
         });
@@ -658,19 +682,6 @@ jQuery(document).ready(function ($) {
         window.onbeforeunload = function () {
             return 'Migration is in progress. Are you sure you want to leave?';
         };
-    }
-
-    function handleWooMigrationError() {
-        $('.lp-error-modal').addClass('active');
-        const activeTab = getWooActiveTab();
-        toggleWooSpinners(activeTab, 'stop');
-        $('.tutor-migration-tab .tutor-nav-link')
-            .removeClass('disabled');
-        window.onbeforeunload = null;
-
-        if (activeTab === WOO_CONFIG.TABS.CUSTOM) {
-            revertWooCheckboxes();
-        }
     }
 
     function prepareWooFormData(form) {
