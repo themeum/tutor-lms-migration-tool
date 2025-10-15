@@ -127,9 +127,17 @@ class Coupons extends Singleton implements MigrationTemplate {
 	 *
 	 * @since 2.4.0
 	 *
+	 * @throws \Exception If any error occurs during data transform.
+	 *
 	 * @return array
 	 */
 	public function transform(): MigrationTemplate {
+
+		$discount_type = Helper::get_coupon_discount_type( $this->wc_coupon_data );
+
+		if ( empty( $discount_type ) ) {
+			throw new \Exception( sprintf('Unsupported Discount Type (%s) For Tutor', $this->wc_coupon_data->get_discount_type() ) ); //phpcs:ignore
+		}
 
 		$code                 = $this->wc_coupon_data->get_code();
 		$purchase_requirement = $this->get_purchase_requirement();
@@ -143,7 +151,7 @@ class Coupons extends Singleton implements MigrationTemplate {
 			'coupon_code'                => $code,
 			'coupon_title'               => ucfirst( $code ),
 			'coupon_description'         => $this->wc_coupon_data->get_description(),
-			'discount_type'              => Helper::get_coupon_discount_type( $this->wc_coupon_data ),
+			'discount_type'              => $discount_type,
 			'discount_amount'            => $this->wc_coupon_data->get_amount(),
 			'applies_to'                 => $application_type['type'],
 			'total_usage_limit'          => (int) $this->wc_coupon_data->get_usage_limit(),
