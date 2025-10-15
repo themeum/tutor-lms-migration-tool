@@ -1,7 +1,7 @@
 === Tutor LMS - Migration Tool ===
 Contributors: themeum
 Donate link: https://www.themeum.com
-Tags: lms, migration, course, elearning, education
+Tags: LMS, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
@@ -18,37 +18,40 @@ If you are using the LearnDash, LearnPress, or LifterLMS plugin and want to migr
 
 No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool with its easy user interface. With its simple one-click auto migration settings you can have all the information from your old LMS plugin transferred without any database error.
 
-= UPDATES =
+= KEY FEATURES =
 
-In this version of Tutor LMS Migration Tool, we are introducing migration options from major LMS plugin to Tutor LMS. We have a roadmap to bring you compatibility support for migration with many other plugins in the future.
+The Tutor LMS Migration Tool allows you to seamlessly migrate data from major LMS plugins and WooCommerce into Tutor LMS. We're also actively working on expanding compatibility with more plugins and platforms in future updates.
 
 Currently Tutor LMS Migration support migration options from
 
 * LearnDash
-* LearnPress &
-* LifterLMS
+* LearnPress
+* LifterLMS &
+* WooCommerce to Tutor LMS Native eCommerce migration
 
 = Pre-requisites =
 
-To get started with migrating your information from LearnDash/LearnPress/Lifter LMS to Tutor LMS in the easiest way, you need to make sure you have the following plugins installed.
+To get started with migrating your data from existing LMS to Tutor LMS in the easiest way, you need to make sure you have the following plugins installed.
 
-**Note:** Currently the Tutor LMS Migration Tool supports migration from LearnDash, LearnPress, and LifterLMS to Tutor LMS. We are working hard to bring migration options from other LMS to Tutor LMS as soon as possible. But as it only supports migration from LearnPress/LearnDash the following plugins are required
+**Note:** Currently the Tutor LMS Migration Tool supports migration from LearnDash, LearnPress, LifterLMS, and WooCommerce to Tutor LMS.
 
-  * Tutor LMS (Version 3.6 or later)
+  * Tutor LMS (v3.8 or later)
 
 And the following plugins for their respective migrations
 
-  * For LearnDash ( Version 4.0 or later)
-  * For LearnPress (Version 4.0 or later)
-  * For LifterLMS ( Version 8.0 or later)
+  * For LearnDash (v4.0 or later)
+  * For LearnPress (v4.0 or later)
+  * For LifterLMS (v8.0 or later)
+  * For WooCommerce (v10.0 or later)
+  * For WooCommerce Subscriptions (v7.8 or later)
 
 You need the mentioned versions or later of the plugin for the migration to work properly.
 
 = Get Started =
 
-After you install the migration plugin in your WordPress site you will find the migration option in the Tools menu of Tutor LMS.
+fter installing the Migration Tool plugin on your WordPress site, you’ll find the migration option under the Tools menu in Tutor LMS. Below is a list of available data which you can migrate to Tutor LMS:
 
-LearnDash Migration supports the migration of the following data types:
+**LearnDash Migration** supports the migration of the following data types:
 
   * Courses
   * Lessons
@@ -59,7 +62,7 @@ LearnDash Migration supports the migration of the following data types:
   * Students Progress
   * Course Reviews
 
-LearnPress Migration supports the migration of the following data types:
+**LearnPress Migration** supports the migration of the following data types:
 
   * Courses
   * Lessons
@@ -71,7 +74,7 @@ LearnPress Migration supports the migration of the following data types:
   * Course Enrollment
   * Course Complete Status
 
-LifterLMS Migration supports the migration of the following data types:
+**LifterLMS Migration** supports the migration of the following data types:
 
   * Courses
   * Lessons
@@ -79,6 +82,12 @@ LifterLMS Migration supports the migration of the following data types:
   * Assignments
   * Sales Data
   * Enrollment
+
+**WooCommerce Migration** supports the migration of the following data types:
+
+  * Orders
+  * Subscriptions
+  * Coupons
 
 For quick migrations, click on the "Migrate Now" button to get your migration process started. Sit back and enjoy while the Tutor LMS Migration Tool handles all your database information during the migration process. After the migration tool is done, you can start using Tutor LMS from where you left off in your previous LMS.
 
@@ -97,9 +106,9 @@ With Tutor LMS Migration Tool you can also separately export the data to your lo
 
 = Automatic installation =
 
-The automatic installation is the easiest way to install any plugin in WordPress. You can perform an automatic installation of Tutor by logging in to your WordPress dashboard, navigating to the "Plugins" menu and click on the "Add New" button.
+The easiest way to install any plugin in WordPress is through automatic installation. To install Tutor LMS Migration Tool this way, log in to your WordPress dashboard, navigate to the Plugins menu, and click the Add New button.
 
-This will open up a page showing all the available plugins in WordPress. In the search field, type Tutor. The search result will show you our Tutor plugin, you can then see the detailed info by clicking on "More Details" and to install just click on the "Install Now" button.
+On the Add Plugins page, use the search bar to type “Tutor LMS Migration Tool”. Once the plugin appears in the search results, simply click the Install Now button.
 
 = Manual installation =
 
@@ -109,13 +118,13 @@ The WordPress codex contains [instructions on how to do this here](https://codex
 
 == Frequently Asked Questions ==
 
-= Is This Plugin has any Dependency? =
+= Is this plugin has any dependency? =
 
-Yes, You need to install the [Tutor LMS](https://wordpress.org/plugins/tutor/) plugin in order to use this plugin. Take a backaup of your full website before migrate.
+Yes, you need to install the [Tutor LMS](https://wordpress.org/plugins/tutor/) plugin in order to use this plugin. Take a backaup of your full website before migrating your data.
 
-= I need migrate others LMS data to Tutor LMS, what should I do? =
+= I want to migrate data from another LMS to Tutor LMS. How can I do that? =
 
-We will add others LMS migration to this plugin, so you can migrate it. Or if you don't required any previous data, just delete other LMS and move to Tutor LMS.
+You can use the Tutor LMS Migration Tool to transfer data from another LMS platforms to Tutor LMS. To learn more about the full process, please check the [official migration documentation](https://docs.themeum.com/tutor-lms/migration/).
 
 == Screenshots ==
 
@@ -132,11 +141,7 @@ New: Migrate orders from WooCommerce to Tutor Native, including associated enrol
 New: Migrate subscriptions from WooCommerce to Tutor Native, including related enrollments, customers, and earnings.
 New: Migrate coupons from WooCommerce to Tutor Native.
 
-= 2.3.1 - 17 July, 2025 =
-
-Fix: Fixed an issue where the vendor autoload file was missing.
-
-= 2.3.0 - 15 July, 2025 =
+= 2.3.0 - 14 July, 2025 =
 
 New: Added support for migrating assignments from LearnDash to Tutor LMS.
 New: Student progress (lessons, assignments, and quiz attempts) can now be migrated from LearnDash to Tutor LMS.
