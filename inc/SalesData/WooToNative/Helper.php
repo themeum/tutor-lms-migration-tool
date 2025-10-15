@@ -183,10 +183,10 @@ class Helper {
 							continue;
 						}
 					}
-				}
 
-				if ( $subscriptions === count( $items ) ) {
-					unset( $orders[ $key ] );
+					if ( $subscriptions === count( $items ) ) {
+						unset( $orders[ $key ] );
+					}
 				}
 			}
 		}
