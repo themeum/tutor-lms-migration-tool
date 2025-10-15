@@ -267,8 +267,9 @@ class Orders extends Singleton implements MigrationTemplate {
 			$tax_rate = $tax_item->get_rate_percent();
 		}
 
-		$wc_coupon = $order->get_coupons();
-		$coupon    = ! empty( $wc_coupon ) ? reset( $wc_coupon ) : null;
+		$wc_coupon   = $order->get_coupons();
+		$coupon      = ! empty( $wc_coupon ) ? reset( $wc_coupon ) : null;
+		$coupon_code = ! empty( $coupon ) ? $coupon->get_code() : null;
 
 		$data = array(
 			'parent_id'        => $order->get_parent_id(),
@@ -284,9 +285,9 @@ class Orders extends Singleton implements MigrationTemplate {
 			'tax_amount'       => $tax_amount,
 			'total_price'      => $order->get_total(),
 			'net_payment'      => $order->get_total() - $order->get_total_refunded(),
-			'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
+			'coupon_code'      => $coupon_code,
 			'coupon_amount'    => $coupon ? $order->get_discount_total() : 0.00,
-			'discount_type'    => $coupon ? Helper::get_coupon_discount_type( new \WC_Coupon( $coupon->get_code() ) ) : null,
+			'discount_type'    => $coupon ? Helper::get_coupon_discount_type( new \WC_Coupon( $coupon_code ) ) : null,
 			'discount_amount'  => ! $coupon ? $order->get_discount_total() : 0.00,
 			'discount_reason'  => '',
 			'fees'             => $order->get_total_fees(),
