@@ -590,7 +590,7 @@ jQuery(document).ready(function ($) {
 
         const [title, description] = hasSuccess && hasFailed
             ? [__('Migration Complete with Errors', 'tutor-lms-migration-tool'), __('The migration process has finished, but some items could not be imported. ', 'tutor-lms-migration-tool')]
-            : [__('Migration Successful!', 'tutor-lms-migration-tool'), __('Your data has been successfully migrated from WooCommerce to Tutor LMS eCommerce.', 'tutor-lms-migration-tool')];
+            : [__('Migration Successful!', 'tutor-lms-migration-tool'), __('Your data has been successfully migrated from WooCommerce to Tutor LMS native eCommerce.', 'tutor-lms-migration-tool')];
 
         $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_TITLE).text(__(title, 'tutor-lms-migration-tool'));
         $(WOO_CONFIG.WOO_MIGRATION_SUCCESS_DESC).text(__(description, 'tutor-lms-migration-tool'));
