@@ -161,7 +161,7 @@ class Orders implements MigrationTemplate {
 			)
 		);
 
-		return Helper::filter_order_subscription_count( $orders->orders );
+		return $orders->orders;
 	}
 
 	/**
@@ -190,7 +190,7 @@ class Orders implements MigrationTemplate {
 			)
 		);
 
-		return Helper::filter_order_subscription_count( $total_query->get_orders(), true );
+		return count( $total_query->get_orders() );
 	}
 
 	/**
