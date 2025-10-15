@@ -258,7 +258,7 @@ $migration_history = Helper::get_wc_migration_history();
 				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
 					<?php
 						// translators: %s: Line break tag (<br>).
-						printf( esc_html__( "You're about to migrate your WooCommerce data %sto Tutor LMS eCommerce. Do you want to proceed?", 'tutor-lms-migration-tool' ), '<br>' );
+						printf( esc_html__( "You're about to migrate your WooCommerce data %sto Tutor LMS native eCommerce. Do you want to proceed?", 'tutor-lms-migration-tool' ), '<br>' );
 					?>
 				</div>
 				<div class="tutor-d-flex">
@@ -298,7 +298,7 @@ $migration_history = Helper::get_wc_migration_history();
 				<?php esc_html_e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12 tutor-mb-40" data-woo-migration-success-desc>
-				<?php esc_html_e( 'Your data has been successfully migrated from WooCommerce to Tutor LMS eCommerce.', 'tutor-lms-migration-tool' ); ?>
+				<?php esc_html_e( 'Your data has been successfully migrated from WooCommerce to Tutor LMS native eCommerce.', 'tutor-lms-migration-tool' ); ?>
 			</div>
 
 			<div class="migration-complete-report">

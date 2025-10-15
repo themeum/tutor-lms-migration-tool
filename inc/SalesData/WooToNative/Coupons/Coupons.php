@@ -16,6 +16,7 @@ use Tutor\Models\CourseModel;
 use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Tutor\Models\CouponModel;
+use TUTOR\Singleton;
 use WC_Coupon;
 use WP_Query;
 
@@ -27,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Coupons implements MigrationTemplate {
+class Coupons extends Singleton implements MigrationTemplate {
 
 
 	const WC_COUPON_POST_TYPE = 'shop_coupon';
