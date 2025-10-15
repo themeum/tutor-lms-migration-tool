@@ -17,6 +17,7 @@ use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
 use Themeum\TutorLMSMigrationTool\SalesDataTypes;
 use Tutor\Helpers\QueryHelper;
 use Tutor\Models\OrderModel;
+use TUTOR\Singleton;
 use WC_Customer;
 use WC_Order;
 use WC_Order_Query;
@@ -29,7 +30,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Orders implements MigrationTemplate {
+class Orders extends Singleton implements MigrationTemplate {
 
 	/**
 	 * WC_Order
