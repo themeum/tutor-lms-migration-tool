@@ -10,12 +10,12 @@
 
 namespace Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Transformers;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
-use Themeum\TutorLMSMigrationTool\MigrationMapper;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
-use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
 use Tutor\Models\OrderModel;
 use TutorPro\Subscription\Models\PlanModel;
+use Themeum\TutorLMSMigrationTool\MigrationMapper;
+use Themeum\TutorLMSMigrationTool\Interfaces\DataTransformer;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Helper;
+use Themeum\TutorLMSMigrationTool\SalesData\WooToNative\Subscriptions\Subscriptions;
 
 /**
  * Class OrderDataTransformer
@@ -100,6 +100,10 @@ class OrderDataTransformer implements DataTransformer {
 				$tax_rate = $tax_item->get_rate_percent();
 			}
 
+			$wc_coupon   = $order->get_coupons();
+			$coupon      = ! empty( $wc_coupon ) ? reset( $wc_coupon ) : null;
+			$coupon_code = ! empty( $coupon ) ? $coupon->get_code() : null;
+
 			$order_data[] = array(
 				'wc_order_id'      => $order->get_id(),
 				'order_type'       => $order_type,
@@ -118,10 +122,10 @@ class OrderDataTransformer implements DataTransformer {
 				'total_price'      => $total,
 				'net_payment'      => $total - $refunded,
 
-				'coupon_code'      => implode( ',', $order->get_coupon_codes() ),
-				'coupon_amount'    => $discount,
-				'discount_amount'  => $discount,
-				'discount_type'    => '',
+				'coupon_code'      => $coupon_code,
+				'coupon_amount'    => $coupon ? $discount : 0.00,
+				'discount_amount'  => ! $coupon ? $discount : 0.00,
+				'discount_type'    => $coupon ? Helper::get_coupon_discount_type( new \WC_Coupon( $coupon_code ) ) : null,
 				'discount_reason'  => '',
 
 				'fees'             => $fees,
