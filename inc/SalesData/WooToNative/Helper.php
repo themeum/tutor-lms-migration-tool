@@ -245,8 +245,8 @@ class Helper {
 		$tutor_order_data['pre_tax_price']   = $order->get_subtotal();
 		$tutor_order_data['tax_amount']      = $order->get_total_tax();
 		$tutor_order_data['net_payment']     = $order->get_total() - $order->get_total_refunded();
-		$tutor_order_data['coupon_amount']   = $order->get_discount_total();
-		$tutor_order_data['discount_amount'] = $order->get_discount_total();
+		$tutor_order_data['coupon_amount']   = $tutor_order_data['coupon_amount'] ?? $order->get_discount_total();
+		$tutor_order_data['discount_amount'] = $tutor_order_data['discount_amount'] ?? $order->get_discount_total();
 		$tutor_order_data['fees']            = $order->get_total_fees();
 		$tutor_order_data['earnings']        = ( $order->get_total() - $order->get_total_refunded() ) - $order->get_total_fees();
 		$tutor_order_data['refund_amount']   = $order->get_total_refunded();
