@@ -137,9 +137,9 @@ class Helper {
 	 *
 	 * @throws Exception If the coupon type is not supported by tutor.
 	 *
-	 * @return string Tutor discount type for WooCommerce Coupon.
+	 * @return string|null Tutor discount type for WooCommerce Coupon.
 	 */
-	public static function get_coupon_discount_type( $wc_coupon ): string {
+	public static function get_coupon_discount_type( $wc_coupon ): ?string {
 
 		$wc_discount_type = $wc_coupon->get_discount_type();
 
@@ -149,11 +149,7 @@ class Helper {
 			'fixed_product' => CouponModel::DISCOUNT_TYPE_FLAT,
 		);
 
-		if ( ! isset( $map[ $wc_discount_type ] ) ) {
-			throw new Exception( sprintf('Unsupported Discount Type (%s) For Tutor', $wc_discount_type) ); //phpcs:ignore
-		}
-
-		return $map[ $wc_discount_type ];
+		return $map[ $wc_discount_type ] ?? null;
 	}
 
 	/**
