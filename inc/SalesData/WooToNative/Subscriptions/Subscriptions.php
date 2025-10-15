@@ -22,6 +22,7 @@ use TUTOR\Course;
 use TUTOR\Earnings;
 use Tutor\Helpers\QueryHelper;
 use Tutor\Models\OrderModel;
+use TUTOR\Singleton;
 use TutorPro\Subscription\Models\PlanModel;
 use TutorPro\Subscription\Models\SubscriptionModel;
 
@@ -33,7 +34,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Subscriptions implements MigrationTemplate {
+class Subscriptions extends Singleton implements MigrationTemplate {
 	/**
 	 * Map key for subscription migration
 	 *

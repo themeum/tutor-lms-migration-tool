@@ -14,6 +14,7 @@ use AllowDynamicProperties;
 use Exception;
 use Themeum\TutorLMSMigrationTool\Interfaces\MigrationTemplate;
 use Tutor\Helpers\QueryHelper;
+use TUTOR\Singleton;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 2.4.0
  */
 #[AllowDynamicProperties]
-class Customers implements MigrationTemplate {
+class Customers extends Singleton implements MigrationTemplate {
 
 
 	/**

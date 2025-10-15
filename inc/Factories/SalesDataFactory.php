@@ -40,13 +40,13 @@ abstract class SalesDataFactory {
 		switch ( $migration_type ) {
 			case MigrationTypes::WC_TO_NATIVE:
 				if ( SalesDataTypes::ORDERS === $data_type ) {
-					return new Orders();
+					return Orders::get_instance();
 				} elseif ( SalesDataTypes::SUBSCRIPTIONS === $data_type ) {
-					return new Subscriptions();
+					return Subscriptions::get_instance();
 				} elseif ( SalesDataTypes::CUSTOMERS === $data_type ) {
-					return new Customers();
+					return Customers::get_instance();
 				} elseif ( SalesDataTypes::COUPONS === $data_type ) {
-					return new Coupons();
+					return Coupons::get_instance();
 				}
 				break;
 			default:

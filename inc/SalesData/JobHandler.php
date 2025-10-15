@@ -52,13 +52,12 @@ class JobHandler {
 	 *
 	 * @throws \Throwable If failed to create sales data object.
 	 *
-	 * @param string            $active_job_type Currently active job type like: orders, coupons, etc.
-	 * @param array             $job_data Job data array.
-	 * @param MigrationTemplate $data_obj Data object.
+	 * @param string $active_job_type Currently active job type like: orders, coupons, etc.
+	 * @param array  $job_data Job data array.
 	 *
 	 * @return array updated job data.
 	 */
-	public function process_job( string $active_job_type, array $job_data, MigrationTemplate $data_obj ) {
+	public function process_job( string $active_job_type, array $job_data ) {
 		try {
 			$requirements    = $job_data['requirements'];
 			$active_job      = $requirements[ $active_job_type ];
@@ -76,6 +75,8 @@ class JobHandler {
 				$this->update_job_data( $job_data );
 				return $job_data;
 			}
+
+			$data_obj = tlmt_get_sales_data_object( $active_job_type, MigrationTypes::WC_TO_NATIVE );
 
 			$items = $data_obj->get_items( $limit, $processed_items );
 
@@ -150,9 +151,9 @@ class JobHandler {
 	 * @param array $requirements Migration requirements.
 	 * @param mixed $job_id Unique job id.
 	 *
-	 * @return object
+	 * @return array
 	 */
-	public function get_migration_job( array $requirements, $job_id = 0 ): object {
+	public function get_migration_job( array $requirements, $job_id = 0 ): array {
 		if ( $job_id ) {
 			$job_data = get_option( self::JOB_OPT_NAME . $job_id, null );
 			return json_decode( $job_data, true );
@@ -181,10 +182,7 @@ class JobHandler {
 
 		$job_schema['requirements'] = $job_requirements;
 
-		return (object) array(
-			'schema'   => $job_schema,
-			'data_obj' => $this->data_obj,
-		);
+		return $job_schema;
 	}
 
 	/**
