@@ -23,15 +23,6 @@ defined( 'ABSPATH' ) || exit;
 class JobHandler {
 
 	/**
-	 * Sales data object
-	 *
-	 * @since 2.4.0
-	 *
-	 * @var mixed
-	 */
-	private $data_obj;
-
-	/**
 	 * Job option name
 	 *
 	 * The job_id will concat with the option name to uniquely
@@ -171,8 +162,7 @@ class JobHandler {
 		// Prepare the migration items.
 		foreach ( $job_requirements as $key => $requirement ) {
 			try {
-				$data_obj       = tlmt_get_sales_data_object( $key, MigrationTypes::WC_TO_NATIVE );
-				$this->data_obj = $data_obj;
+				$data_obj = tlmt_get_sales_data_object( $key, MigrationTypes::WC_TO_NATIVE );
 			} catch ( \Throwable $th ) {
 				throw $th;
 			}
