@@ -1,17 +1,45 @@
+<?php
+/**
+ * Migration page
+ *
+ * @package TutorLMSMigrationTool\Views
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 2.3.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+?>
 <div class="tutor-migration-page">
+	<?php
+	global $wpdb;
+
+	$utils = new Utils();
+
+	$tutor_migration_history = $utils->fetch_history( 'ld' );
+
+	$courses_count = $utils->ld_course_count();
+
+	$orders_count = $utils->ld_orders_count();
+
+	$items_count = $courses_count + $orders_count;
+	?>
+	
 	<div id="tutor-migration-wrapper">
 		<div class="tutor-migration-area">
 			<div class="tutor-migration-top tutor-px-48 tutor-pt-32 tutor-pb-40">
-				<div class="">
+				<div class=""> 
 					<div class="tutor-fs-3 tutor-fw-medium tutor-color-black tutor-course-content-title">
-						Migration
+						<?php esc_html_e( 'Migration', 'tutor-lms-migration-tool' ); ?>
 					</div>
 					<div class="tutor-migration-top-subtitle tutor-fs-6">
-						Seamlessly migrate your Learndash courses to Tutor LMS with the Tutor LMS Migration Tool.
+						<?php esc_html_e( 'Seamlessly migrate your Learndash courses to Tutor LMS with the Tutor LMS Migration Tool.', 'tutor-lms-migration-tool' ); ?>
 					</div>
 				</div>
 				<div class="tutor-d-flex tutor-justify-end tutor-align-center">
-					<img src="assets/img/learndash.jpg" alt="import">
+					<img style src="<?php echo esc_url( TLMT_URL . 'assets/img/learndash.jpg' ); ?>" alt="import">
 				</div>
 			</div>
 
@@ -19,22 +47,22 @@
 				<ul class="tutor-nav">
 					<li class="tutor-nav-item">
 						<a class="tutor-nav-link is-active" href="#" data-tutor-nav-target="tutor-auto-migrate-tab">
-							Auto Migrate
+							<?php esc_html_e( 'Auto Migrate', 'tutor-lms-migration-tool' ); ?>
 						</a>
 					</li>
 					<li class="tutor-nav-item">
 						<div class="tutor-d-flex tutor-align-center">
-							<a class="tutor-nav-link" style="cursor: default; padding-right: 8px;">
-								Upload File
-							</a>
-							<span class="tutor-rounded-pill tutor-border tutor-px-8" style="border-radius: 10px;">
-								Coming soon
-							</span>
+						<a class="tutor-nav-link" data-tutor-nav-target="" style="cursor: default; padding-right: 8px;">
+							<?php esc_html_e( 'Upload File', 'tutor-lms-migration-tool' ); ?>
+						</a>
+						<span class="tutor-rounded-pill tutor-border tutor-px-8" style="border-radius: 10px;">
+							<?php esc_html_e( 'Coming soon', 'tutor-lms-migration-tool' ); ?>
+						</span>
 						</div>
 					</li>
 					<li class="tutor-nav-item tutor-nav-more tutor-d-none">
 						<a class="tutor-nav-link tutor-nav-more-item" href="#">
-							<span class="tutor-mr-4">More</span>
+							<span class="tutor-mr-4"><?php esc_html_e( 'More', 'tutor-lms-migration-tool' ); ?></span> 
 							<span class="tutor-nav-more-icon tutor-icon-times"></span>
 						</a>
 						<ul class="tutor-nav-more-list tutor-dropdown"></ul>
@@ -45,10 +73,11 @@
 			<div class="tutor-migration-tab-item">
 				<div id="tutor-auto-migrate-tab" class="tutor-tab-item is-active">
 					<div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-p-48">
-						<form id="tlmt-lp-migrate-to-tutor-lms">
+						<form id="tlmt-lp-migrate-to-tutor-lms" action="ld_migrate_all_data_to_tutor" method="post">
+							<?php tutor_nonce_field(); ?>
 							<div class="lp-migration-checkbox">
 								<div id="sectionCourse">
-									<label>
+									<label for="courses">
 										<div class="lp-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
 												<span class="j-spinner"></span>
@@ -57,7 +86,7 @@
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">Courses</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													Transfer courses, lessons, quizzes, assignments, etc to Tutor LMS.
+													<?php esc_html_e( 'Transfer courses, lessons, quizzes, assignments, etc to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>
@@ -65,17 +94,17 @@
 									</label>
 								</div>
 								<div id="sectionOrders" class="tutor-py-16">
-									<label>
+									<label for="sales-data">
 										<div class="lp-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
 												<span class="j-spinner"></span>
 											</div>
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													Sales Data
+													<?php esc_html_e( 'Sales Data', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													Migrate revenue and sales data to Tutor LMS.
+													<?php esc_html_e( 'Migrate revenue and sales data to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>
@@ -83,17 +112,17 @@
 									</label>
 								</div>
 								<div id="sectionReviews" class="tutor-py-16">
-									<label>
+									<label for="reviews">
 										<div class="lp-migration-singlebox">
 											<div class="lp-migration-singlebox-checkbox">
 												<span class="j-spinner"></span>
 											</div>
 											<div class="lp-migration-singlebox-desc">
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
-													Reviews
+													<?php esc_html_e( 'Reviews', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													All of the course reviews will be carried over to Tutor LMS.
+													<?php esc_html_e( 'All of the course reviews will be carried over to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>
@@ -105,22 +134,23 @@
 						</form>
 					</div>
 					<div class="tutor-backup-area tutor-px-48 tutor-py-36 tutor-border-top">
-						<button class="tutor-btn tutor-btn-primary tutor-btn-lg">Migrate Now</button>
+						<?php require __DIR__ . '/components/migrate-now.php'; ?>
 					</div>
 				</div>
-
 				<div id="tutor-manual-migrate-tab" class="tutor-tab-item">
 					<div class="tutor-tab-item-wrap tutor-p-48">
 						<div class="tutor-migration-upload-area tutor-migration-drag-drop-zone flex-center tutor-px-48 tutor-py-68">
 							<div class="tutor-migration-upload-circle tutor-mb-16 flex-center">
 								<span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
 							</div>
-							<form id="tutor-manual-migrate-form">
-								<input type="file" id="tutor-migration-browse-file" hidden accept=".xml" required>
-								<div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium">
-									<div class="tutor-color-black">Drag & Drop XML file here</div>
-									or <a href="#" class="tutor-color-primary">Browse File</a>
+							<form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
+								<?php tutor_nonce_field(); ?>
+								<input type="hidden" name="tutor_action" value="tutor_import_from_ld">
+								<div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
+									<div class="tutor-color-black"> <?php esc_html_e( 'Drag & Drop XML file here', 'tutor-lms-migration-tool' ); ?> </div>
+									or <a href="" class="tutor-color-primary"> <?php esc_html_e( 'Browse File', 'tutor-lms-migration-tool' ); ?> </a>
 								</div>
+								<input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
 								<span class="file-info tutor-fw-medium backup-now-subtile tutor-fs-6"></span>
 							</form>
 						</div>
@@ -129,84 +159,103 @@
 					<div class="tutor-backup-area tutor-px-48 tutor-py-36 tutor-border-top">
 						<div class="tutor-row tutor-align-center">
 							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-								<span class="backup-now-subtile tutor-fs-7">Please take a complete backup for safety.</span>
-								<button type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black">
-									Backup Now
-								</button>
+								<sapn class="backup-now-subtile tutor-fs-7"><?php esc_html_e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
+								<form id="tutor_migration_export_form" method="post">
+									<?php tutor_nonce_field(); ?>
+									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="ld">
+									<input type="hidden" name="tutor_action" value="tutor_ld_export_xml">
+									<button <?php echo ! $items_count ? 'disabled' : ''; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black">
+										<?php esc_html_e( 'Backup Now', 'tutor-lms-migration-tool' ); ?>
+									</button>
+								</form>
 							</div>
 							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
 								<button type="submit" id="manual-migrate-now-btn" class="tutor-btn tutor-btn-primary tutor-btn-lg" disabled>
-									Migrate Now
+									<?php esc_html_e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
 								</button>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div> 
+			<!-- ./ tutor migration tab -->
 		</div>
 
 		<!-- migration history area -->
+		<?php if ( count( $tutor_migration_history ) ) : ?>
 		<div class="tutor-migration-history">
 			<div class="tutor-migration-history-heading tutor-fs-5 tutor-color-subdued tutor-mt-24 tutor-mb-16">
-				Settings History
+				<?php esc_html_e( 'Settings History', 'tutor-lms-migration-tool' ); ?>
 			</div>
 			<div class="tutor-table-responsive">
 				<table class="tutor-table tutor-table-middle table-instructors tutor-table-with-checkbox">
 					<thead>
 						<tr>
-							<th style="padding-left: 38px;">Date</th>
-							<th></th>
+							<th class="tutor-table-rows-sorting" style="padding-left: 38px;">
+								<?php esc_html_e( 'Date', 'tutor-lms-migration-tool' ); ?>
+							</th>
+							<th class="tutor-table-rows-sorting">
+							</th>
 						</tr>
 					</thead>
 					<tbody>
+						<?php foreach ( $tutor_migration_history as $tutor_history ) : ?>
 						<tr>
 							<td>
 								<div class="tutor-migration-history-time tutor-fs-6 tutor-pl-24 tutor-fw-normal">
-									Sept 12, 2025, 03:15 PM
+									<?php
+										echo esc_html( tutor_get_formated_date( get_option( 'date_format' ), $tutor_history->created_at ) );
+										echo ', ' . date( 'h:i A', strtotime( $tutor_history->created_at ) );
+									?>
+									 
 								</div>
 							</td>
 							<td>
+								<?php
+									$migration_type_class = '';
+								if ( $tutor_history->migration_type == 'Imported' ) {
+									$migration_type_class = 'success';
+								} elseif ( $tutor_history->migration_type == 'Exported' ) {
+									$migration_type_class = 'warning';
+								}
+								?>
 								<div class="tutor-d-flex tutor-justify-end tutor-pr-32">
-									<span class="tutor-badge-label label-success">Imported</span>
+									<span class="tutor-badge-label label-<?php echo esc_attr( $migration_type_class ); ?>">
+										<?php echo esc_html( $tutor_history->migration_type ); ?>
+									</span>
 								</div>
 							</td>
 						</tr>
-						<tr>
-							<td>
-								<div class="tutor-migration-history-time tutor-fs-6 tutor-pl-24 tutor-fw-normal">
-									Sept 10, 2025, 11:45 AM
-								</div>
-							</td>
-							<td>
-								<div class="tutor-d-flex tutor-justify-end tutor-pr-32">
-									<span class="tutor-badge-label label-warning">Exported</span>
-								</div>
-							</td>
-						</tr>
+						<?php endforeach; ?>
 					</tbody>
 				</table>
 			</div>
 		</div>
+		<?php endif; ?>
+		<!-- ./ tutor-migration-history -->
 	</div>
 </div>
 
-<!-- Modal: Confirmation -->
 <div class="lp-migration-modal-wrap">
 	<div class="lp-migration-modal">
 		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
 			<div class="lp-migration-modal-icon">
-				<img src="assets/img/yes_no.svg" alt="export">
+				<img src="<?php echo esc_url( TLMT_URL . 'assets/img/yes_no.svg' ); ?>" alt="export">
 			</div>
 			<div class="migration-modal-btn-group flex-center tutor-flex-column">
 				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
-					Are you sure you want to migrate from <br> LearnDash to Tutor LMS?
+					<?php esc_html_e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
+					<br>
+					<?php esc_html_e( 'LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
 				</div>
 				<div class="tutor-d-flex">
 					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
-						<span>No, Maybe Later!</span>
+						<span> <?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
 					</a>
 					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg">
-						Yes, Let’s Start
+						<?php
+							esc_html_e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' );
+						?>
 					</a>
 				</div>
 			</div>
@@ -218,7 +267,7 @@
 	</div>
 </div>
 
-<!-- Modal: Success -->
+
 <div class="lp-success-modal-wrap">
 	<div class="lp-success-modal">
 		<div class="lp-modal-alert tutor-p-40">
@@ -232,36 +281,35 @@
 				<span class="modal-close-line success-close-line-one"></span>
 				<span class="modal-close-line success-close-line-two"></span>
 			</div>
-			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
-				Migration Successful!
+			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> 
+				<?php esc_html_e( 'Migration Successful!', 'tutor-lms-migration-tool' ); ?> 
 			</div>
-			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
-				Migration from LearnDash to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> 
+				<?php esc_html_e( 'Migration from LearnDash to Tutor LMS has been completed. Please check your contents and ensure everything is working as expected.', 'tutor-lms-migration-tool' ); ?> 
 			</div>
-			<a href="#" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				Go to courses
+			<a href="<?php echo esc_url( admin_url() ); ?>admin.php?page=tutor" class="migration-try-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
+				<?php esc_html_e( 'Go to courses', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>
 </div>
 
-<!-- Modal: Error -->
 <div class="lp-error-modal-wrap">
 	<div class="lp-error-modal">
 		<div class="lp-modal-alert tutor-p-40">
-			<img class="tutor-mt-12" style="width: 80px; height: 80px;" src="assets/img/error-modal-icon.jpg" alt="error-midal-alert-icon">
+			<img class="tutor-mt-12" style="width: 80px; height: 80px;" src="<?php echo esc_url( TLMT_URL . 'assets/img/error-modal-icon.jpg' ); ?>" alt="error-midal-alert-icon">
 			<div class="modal-close success-modal-close">
 				<span class="modal-close-line success-close-line-one"></span>
 				<span class="modal-close-line success-close-line-two"></span>
 			</div>
-			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28">
-				Migration Failed!
+			<div class="tutor-fs-3 tutor-fw-normal tutor-color-black tutor-mt-28"> 
+				<?php esc_html_e( 'Migration Failed!', 'tutor-lms-migration-tool' ); ?> 
 			</div>
-			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12">
-				Oops... The migration from LearnDash to Tutor LMS was unsuccessful. Please review everything and try again.
+			<div class="tutor-fs-6 tutor-fw-normal tutor-color-black tutor-mt-16 tutor-px-12"> 
+				<?php esc_html_e( 'Oops... The migration from LearnDash to Tutor LMS was unsuccessful. Please review everything and try again.', 'tutor-lms-migration-tool' ); ?> 
 			</div>
-			<a href="#" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
-				Try Again
+			<a href="" class="migration-try-again-btn migration-done-btn tutor-btn tutor-btn-primary tutor-btn-lg tutor-mt-44 tutor-mb-20">
+				<?php esc_html_e( 'Try Again', 'tutor-lms-migration-tool' ); ?>
 			</a>
 		</div>
 	</div>
