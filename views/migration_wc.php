@@ -19,7 +19,7 @@ $monetized_by      = get_tutor_option( 'monetize_by' );
 $migration_history = Helper::get_wc_migration_history();
 
 ?>
-<div class="tutor-migration-page">
+<div class="tutor-migration-page-wc">
 
 	<div id="tutor-migration-wrapper">
 		<div class="tutor-migration-area">
@@ -184,10 +184,10 @@ $migration_history = Helper::get_wc_migration_history();
 								</div>
 							</div>
 							<div class="migrate-now-btn-wrapper tutor-col-md-3 tutor-d-flex tutor-justify-end">
-								<span id="total_items_migrate_counts" class="tutor-d-none" data-count="<?php echo esc_attr( $items_count ); ?>"> </span>
+								<span id="total_items_migrate_counts_wc" class="tutor-d-none" data-count="<?php echo esc_attr( $items_count ); ?>"> </span>
 
 								<!-- get active tab using php -->
-								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary" <?php echo esc_attr( $items_count <= 0 ? 'disabled' : '' ); ?>>
+								<button type="submit" class="migrate-now-btn-wc tutor-btn tutor-btn-primary" <?php echo esc_attr( $items_count <= 0 ? 'disabled' : '' ); ?>>
 									<?php esc_html_e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
 								</button>
 							</div>
@@ -267,7 +267,7 @@ $migration_history = Helper::get_wc_migration_history();
 							<?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?>
 						</span>
 					</a>
-					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg">
+					<a href="#" id="migration-start-btn-wc" class="migration-start-btn-wc tutor-btn tutor-btn-primary tutor-btn-lg">
 						<?php esc_html_e( "Yes, Let's Start", 'tutor-lms-migration-tool' ); ?>
 					</a>
 				</div>

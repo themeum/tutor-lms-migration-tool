@@ -233,7 +233,6 @@ jQuery(document).ready(function ($) {
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
-        $('#wc-sales-data-migration-form').submit();
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -386,8 +385,9 @@ jQuery(document).ready(function ($) {
             AUTO: 'tutor-wc-auto-migrate-tab'
         },
         SELECTORS: {
-            migrationPage: '.tutor-migration-page',
-            migrateBtn: '.migrate-now-btn',
+            migrationPage: '.tutor-migration-page-wc',
+            migrateBtn: '.migrate-now-btn-wc',
+            migrationStartBtn: '#migration-start-btn-wc',
             navLink: '.tutor-nav-link',
             activeNavLink: '.tutor-nav-link.is-active',
             form: '#wc-sales-data-migration-form'
@@ -420,6 +420,21 @@ jQuery(document).ready(function ($) {
     const $wooMigrationPage = $(WOO_CONFIG.SELECTORS.migrationPage);
     const $wooMigrateBtn = $wooMigrationPage.find(WOO_CONFIG.SELECTORS.migrateBtn);
     const $wooCheckboxes = $wooMigrationPage.find(`#${WOO_CONFIG.TABS.CUSTOM} input[type="checkbox"]`);
+
+    $wooMigrateBtn.on('click', function (event) {
+        event.preventDefault();
+
+        migrationModal.addClass('active');
+    });
+
+    $(WOO_CONFIG.SELECTORS.migrationStartBtn).on('click', function (event) {
+        event.preventDefault();
+
+        migrationModal.removeClass('active');
+        $(WOO_CONFIG.SELECTORS.form).submit();
+    });
+
+
 
     // Store original checkbox state
     let wooOriginalCheckboxes = [];
