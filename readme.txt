@@ -5,7 +5,7 @@ Tags: LMS, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -134,6 +134,10 @@ You can use the Tutor LMS Migration Tool to transfer data from another LMS platf
 4. Error Alert
 
 == Changelog ==
+
+= 2.4.1 - 11 November, 2025 =
+
+Fix: LearnDash to Tutor migration fails due to permission issue.
 
 = 2.4.0 - 15 October, 2025 =
 
