@@ -29,7 +29,7 @@ class ActionHandler {
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
-		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ) );
+		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ), 10, 2 );
 		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_assignment_meta' ) );
 		add_action( 'tlml_delete_learndash_quiz_questions', array( $this, 'delete_learndash_quiz_questions' ) );
 	}
@@ -154,13 +154,15 @@ class ActionHandler {
 	 * Migrates student progress based on the given migration type.
 	 *
 	 * @since 2.3.0
+	 * @since 4.0.0 parameter $course_id added.
 	 *
+	 * @param int    $course_id the course id.
 	 * @param string $migration_type The type of migration to perform.
 	 */
-	public function migrate_student_progress( string $migration_type ) {
+	public function migrate_student_progress(  string $migration_type, int $course_id ) {
 		try {
 			$student_progress_obj = StudentProgressFactory::create( $migration_type );
-			$student_progress_obj->migrate();
+			$student_progress_obj->migrate( $course_id );
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to migrate student progress. ' . $th->getMessage() );
 		}

@@ -15,7 +15,6 @@ use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
 use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
 
-
 /**
  * Handle student progress migration
  */
@@ -53,12 +52,18 @@ class StudentProgress implements StudentProgressInterface {
 	 * - For topic activities: Marks the lesson as completed in Tutor LMS.
 	 * - For quiz activities: Creates a corresponding quiz attempt and stores related answers.
 	 *
+	 * @param int $course_id the course id.
+	 *
 	 * @return void
 	 */
-	public function migrate() {
+	public function migrate( int $course_id ) {
 
 		try {
-			$ld_course_progress = $this->user_activity();
+			$ld_course_progress = $this->user_activity( $course_id );
+
+			if ( ! tutor_utils()->count( $ld_course_progress ) ) {
+				return;
+			}
 
 			foreach ( $ld_course_progress as $progress ) {
 				$user_id   = $progress->user_id ?? null;
@@ -67,7 +72,7 @@ class StudentProgress implements StudentProgressInterface {
 				$type      = $progress->activity_type ?? null;
 				$completed = $progress->activity_completed ?? null;
 
-				if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+				if ( ! $user_id || ! $course_id || ! is_object( get_post( $course_id ) ) ) {
 					continue;
 				}
 
@@ -95,12 +100,15 @@ class StudentProgress implements StudentProgressInterface {
 	 * Fetches user activity records for LearnDash topics, lessons and quizzes.
 	 *
 	 * @since 2.3.0
+	 * @since 4.0.0 param $course_id added.
+	 *
+	 * @param int $course_id the course id.
 	 *
 	 * @throws \Exception If there is a database error during query execution.
 	 *
 	 * @return array List of activity result objects.
 	 */
-	private function user_activity() {
+	private function user_activity( int $course_id ) {
 
 		global $wpdb;
 
@@ -110,12 +118,16 @@ class StudentProgress implements StudentProgressInterface {
 				"SELECT 
 					* 
 				FROM {$wpdb->prefix}learndash_user_activity 
-				WHERE 
-					( activity_type = %s AND activity_status = %d )
-					OR
-					( activity_type = %s AND activity_status = %d )
-					OR
-					( activity_type = %s AND activity_status IN (%d, %d))",
+				WHERE
+					course_id = %d
+					AND (
+						( activity_type = %s AND activity_status = %d )
+						OR
+						( activity_type = %s AND activity_status = %d )
+						OR
+						( activity_type = %s AND activity_status IN (%d, %d))
+						)",
+						$course_id,
 				self::TOPIC,
 				1,
 				self::LESSON,
@@ -190,6 +202,16 @@ class StudentProgress implements StudentProgressInterface {
 
 		global $wpdb;
 		$activity_meta = $this->get_user_activity_meta( $progress_info->activity_id );
+		$attempt_info  = QueryHelper::get_row(
+			'postmeta',
+			array(
+				'post_id'  => $progress_info->post_id,
+				'meta_key' => 'tutor_quiz_option',
+			),
+			'meta_value'
+		);
+
+		$is_passed = (int) $activity_meta['pass'];
 
 		$attempt_data = array(
 			'course_id'                => $progress_info->course_id,
@@ -198,11 +220,12 @@ class StudentProgress implements StudentProgressInterface {
 			'total_questions'          => $activity_meta['question_show_count'] ?? 0,
 			'total_answered_questions' => $activity_meta['question_show_count'] ?? 0,
 			'total_marks'              => $activity_meta['total_points'] ?? 0,
-			'earned_marks'             => $activity_meta['score'] ?? 0,
-			'attempt_info'             => get_post_meta( $progress_info->post_id, 'tutor_quiz_option', true ),
+			'earned_marks'             => $activity_meta['points'] ?? 0,
+			'attempt_info'             => $attempt_info->meta_value ?? '',
 			'attempt_status'           => self::ATTEMPT_ENDED,
 			'attempt_started_at'       => wp_date( 'Y-m-d H:i:s', $progress_info->activity_started ),
 			'attempt_ended_at'         => wp_date( 'Y-m-d H:i:s', $progress_info->activity_completed ),
+			'result'                   => $is_passed ? 'pass' : 'fail',
 		);
 
 		$inserted = $wpdb->insert( "{$wpdb->prefix}tutor_quiz_attempts", $attempt_data );

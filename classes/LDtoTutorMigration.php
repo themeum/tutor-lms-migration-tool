@@ -212,7 +212,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						 *
 						 * @since 2.3.0
 						 */
-						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR );
+						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR, $course_id );
 
 						MigrationLogger::update_course_migration_log( $course_id, true );
 					} catch ( \Throwable $th ) {
@@ -496,11 +496,11 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 					$question_settings = array(
 						'question_type' => $result['answer_type'],
-						'question_mark' => $result['points']
+						'question_mark' => $result['points'],
 					);
 
 					if ( 'multiple_choice' === $question['question_type'] ) {
-						$question_settings['has_multiple_correct_answer'] = 1; 
+						$question_settings['has_multiple_correct_answer'] = 1;
 					}
 
 					$question['question_settings'] = maybe_serialize( $question_settings );
@@ -578,8 +578,8 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			$i             = 0;
 			$section_count = 0;
 			$topic_id      = 0;
+			$author_id     = get_post_field( 'post_author', $course_id );
 			foreach ( $total_data['sfwd-lessons'] as $lesson_key => $lesson_data ) {
-				$author_id = get_post_field( 'post_author', $course_id );
 
 				// Topic Section.
 				$check = $i == 0 ? 0 : $i + 1;
@@ -615,6 +615,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 
 							if ( $quiz_id ) {
 								$this->migrate_quiz( $quiz_id );
+								do_action( 'tlmt_quiz_migrated', $quiz_id, MigrationTypes::LD_TO_TUTOR );
 							}
 						}
 					}
@@ -623,6 +624,7 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 						$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 						if ( $quiz_id ) {
 							$this->migrate_quiz( $quiz_id );
+							do_action( 'tlmt_quiz_migrated', $quiz_id, MigrationTypes::LD_TO_TUTOR );
 						}
 					}
 				}
@@ -630,6 +632,10 @@ if ( ! class_exists( 'LDtoTutorMigration' ) ) {
 			}
 
 			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
+				if ( ! $topic_id ) {
+					$topic_id = $this->insert_post( 'Tutor Topics', '', $author_id, 'topics', $i, $new_course_id );
+					++$i;
+				}
 				foreach ( $total_data['sfwd-quiz'] as $quiz_key => $quiz_data ) {
 					$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 					if ( $quiz_id ) {
