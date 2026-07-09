@@ -212,6 +212,16 @@ class StudentProgress implements StudentProgressInterface {
 		);
 
 		$is_passed = (int) $activity_meta['pass'];
+		$is_graded = maybe_unserialize( $activity_meta['graded'] );
+		$result    = $is_passed ? 'pass' : 'fail';
+
+		if ( tutor_utils()->count( $is_graded ) ) {
+			foreach ( $is_graded as $graded ) {
+				if ( 'not_graded' === $graded['status'] ) {
+					$result = 'pending';
+				}
+			}
+		}
 
 		$attempt_data = array(
 			'course_id'                => $progress_info->course_id,
@@ -225,7 +235,7 @@ class StudentProgress implements StudentProgressInterface {
 			'attempt_status'           => self::ATTEMPT_ENDED,
 			'attempt_started_at'       => wp_date( 'Y-m-d H:i:s', $progress_info->activity_started ),
 			'attempt_ended_at'         => wp_date( 'Y-m-d H:i:s', $progress_info->activity_completed ),
-			'result'                   => $is_passed ? 'pass' : 'fail',
+			'result'                   => $result,
 		);
 
 		$inserted = $wpdb->insert( "{$wpdb->prefix}tutor_quiz_attempts", $attempt_data );
@@ -258,11 +268,31 @@ class StudentProgress implements StudentProgressInterface {
 
 		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ), 'tutor_migrated_question_answer_map', true );
 		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
+		$is_graded            = maybe_unserialize( $user_activity_meta['graded'] );
 
 		foreach ( $user_quiz_statistics as $quiz_statistic ) {
-
 			$tutor_question_id = $question_ids[ $quiz_statistic->question_id ][0]['tutor_question_id'] ?? null;
-			$data[]            = array(
+			if ( tutor_utils()->count( $is_graded ) && isset( $is_graded[ $quiz_statistic->question_id ] ) ) {
+				$graded = $is_graded[ $quiz_statistic->question_id ];
+				// Need to insert seperately, since the `is_correct` column is not needed and needs to be null.
+				if ( 'not_graded' === $graded['status'] ) {
+					$open_ended_data = array(
+						'user_id'         => $quiz_statistic->user_id,
+						'quiz_id'         => $quiz_statistic->quiz_post_id,
+						'quiz_attempt_id' => $quiz_attempt_id,
+						'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
+						'question_id'     => $tutor_question_id,
+						'question_mark'   => $quiz_statistic->question_points ?? 0,
+						'achieved_mark'   => $quiz_statistic->points ?? 0,
+					);
+					$table_name      = "{$wpdb->prefix}tutor_quiz_attempt_answers";
+					if ( ! QueryHelper::insert( $table_name, $open_ended_data ) ) {
+						ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
+					}
+					continue;
+				}
+			}
+			$data[] = array(
 				'user_id'         => $quiz_statistic->user_id,
 				'quiz_id'         => $quiz_statistic->quiz_post_id,
 				'quiz_attempt_id' => $quiz_attempt_id,
