@@ -111,6 +111,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 									</label>
 								</div>
+								<?php
+								$ld_subscription_available = class_exists( '\Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper' )
+									&& \Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper::is_subscription_migration_available();
+								$woo_subscription_note     = class_exists( '\Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper' )
+									&& \Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper::is_woo_subscription_path_available();
+								?>
+								<div id="sectionSubscriptions" class="tutor-py-16" data-available="<?php echo $ld_subscription_available ? '1' : '0'; ?>">
+									<label for="subscriptions">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Subscriptions', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php if ( $ld_subscription_available ) : ?>
+														<?php esc_html_e( 'Migrate LearnDash recurring plans and active subscribers to Tutor Native subscriptions.', 'tutor-lms-migration-tool' ); ?>
+													<?php else : ?>
+														<?php esc_html_e( 'Requires Tutor Pro Subscriptions addon with Native Payment enabled. Live gateway billing is not transferred.', 'tutor-lms-migration-tool' ); ?>
+													<?php endif; ?>
+												</div>
+												<?php if ( $woo_subscription_note ) : ?>
+													<div class="tutor-color-muted tutor-fs-7 tutor-fw-normal tutor-pb-16">
+														<?php esc_html_e( 'WooCommerce Subscriptions detected: after this migration, use Tools → WooCommerce to Native to convert WC subscription products and subscribers.', 'tutor-lms-migration-tool' ); ?>
+													</div>
+												<?php endif; ?>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
 								<div id="sectionReviews" class="tutor-py-16">
 									<label for="reviews">
 										<div class="lp-migration-singlebox">

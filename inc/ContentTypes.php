@@ -22,9 +22,10 @@ abstract class ContentTypes {
 	const COURSE_REVIEWS  = 'reviews';
 	const COURSE_PROGRESS = 'course_progress';
 
-	const SALES       = 'sales';
-	const ORDERS      = 'orders';
-	const WC_PRODUCTS = 'wc_products';
+	const SALES         = 'sales';
+	const ORDERS        = 'orders';
+	const SUBSCRIPTIONS = 'subscriptions';
+	const WC_PRODUCTS   = 'wc_products';
 
 	const LESSON      = 'lesson';
 	const LESSON_META = 'lesson_meta';

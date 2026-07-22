@@ -448,6 +448,14 @@ class StudentProgress implements StudentProgressInterface {
 	 * @return array Array of selected answer keys.
 	 */
 	private function get_learndash_choice_type_quiz_answers( $statistic_answer_data ) {
+		if ( is_object( $statistic_answer_data ) ) {
+			$statistic_answer_data = (array) $statistic_answer_data;
+		}
+
+		if ( ! is_array( $statistic_answer_data ) ) {
+			return array();
+		}
+
 		return array_keys(
 			array_filter(
 				$statistic_answer_data,
@@ -536,6 +544,14 @@ class StudentProgress implements StudentProgressInterface {
 		$ld_quiz_question_answers_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data ) ?? null;
 
 		if ( empty( $ld_quiz_question_answers_data ) ) {
+			return null;
+		}
+
+		if ( is_object( $ld_quiz_statistic->statistic_answer_data ) ) {
+			$ld_quiz_statistic->statistic_answer_data = (array) $ld_quiz_statistic->statistic_answer_data;
+		}
+
+		if ( ! is_array( $ld_quiz_statistic->statistic_answer_data ) ) {
 			return null;
 		}
 

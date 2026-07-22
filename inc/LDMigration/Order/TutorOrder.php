@@ -165,10 +165,10 @@ class TutorOrder implements Order {
 		global $wpdb;
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE wp_posts, wp_postmeta
-				FROM wp_posts
-				INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
-				WHERE ID = '%d' ",
+				"DELETE p, pm
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				WHERE p.ID = %d",
 				$order_id
 			)
 		);

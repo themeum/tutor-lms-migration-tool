@@ -11,6 +11,9 @@
 namespace Themeum\TutorLMSMigrationTool;
 
 use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
+use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
+use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Subscriptions;
+use TUTOR\Course;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -26,6 +29,7 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_course_migrated', array( $this, 'migrate_subscription_plan' ), 20, 2 );
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
@@ -110,6 +114,41 @@ class ActionHandler {
 	}
 
 	/**
+	 * Create a Tutor native subscription plan for LD subscribe courses.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param int    $course_id       Course ID.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_subscription_plan( $course_id, $migration_type ) {
+		if ( MigrationTypes::LD_TO_TUTOR !== $migration_type ) {
+			return;
+		}
+
+		if ( ! SubscriptionHelper::is_subscription_migration_available() ) {
+			return;
+		}
+
+		try {
+			$subscriptions = new Subscriptions();
+			$subscriptions->migrate_plan_for_course( (int) $course_id );
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error(
+				ContentTypes::SUBSCRIPTIONS,
+				sprintf(
+					/* translators: 1: course id, 2: error message */
+					__( 'Failed to migrate subscription plan for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+					$course_id,
+					$th->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
 	 * Migrate products.
 	 *
 	 * @since 2.3.0
@@ -121,7 +160,18 @@ class ActionHandler {
 	 */
 	public function migrate_products( $course_id, $migration_type ) {
 		try {
-			$course      = get_post( $course_id );
+			$course = get_post( $course_id );
+
+			// Native subscription plans replace one-time product attach for subscribe courses.
+			$selling_option = get_post_meta( $course_id, Course::COURSE_SELLING_OPTION_META, true );
+			if (
+				Course::SELLING_OPTION_SUBSCRIPTION === $selling_option
+				&& function_exists( 'tutor_utils' )
+				&& tutor_utils()->is_monetize_by_tutor()
+			) {
+				return;
+			}
+
 			$monetize_by = tutor_utils()->get_option( 'monetize_by' );
 			$product_obj = tlmt_get_product_obj( $monetize_by, $migration_type );
 
