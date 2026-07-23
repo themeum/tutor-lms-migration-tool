@@ -22,6 +22,7 @@ abstract class ContentTypes {
 	const COURSE_TAXONOMIES = 'course_taxonomies';
 	const COURSE_REVIEWS    = 'reviews';
 	const COURSE_PROGRESS   = 'course_progress';
+	const ENROLLMENTS       = 'enrollments';
 
 	const SALES         = 'sales';
 	const ORDERS        = 'orders';

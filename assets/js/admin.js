@@ -52,6 +52,7 @@ jQuery(document).ready(function ($) {
         clearTimeout(countProgress);
         clearTimeout(countOrderProgress);
         clearTimeout(countSubscriptionProgress);
+        clearTimeout(countEnrollmentProgress);
 
         if (sectionSelector) {
             $(sectionSelector).find('.j-spinner').removeClass('tmtl_spin');
@@ -108,7 +109,7 @@ jQuery(document).ready(function ($) {
             $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             migration_progress_bar(true, 100);
             $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
-            migrate_orders($formData, final_types);
+            migrate_enrollments($formData, final_types);
         }
 
         function migrate_courses_batch(isFirstBatch) {
@@ -161,6 +162,97 @@ jQuery(document).ready(function ($) {
 
         migrate_courses_batch(true);
     });
+
+    var countEnrollmentProgress;
+    function enrollment_migration_progress_bar(cmplete, percent) {
+        var $progressBar = $('#sectionEnrollments').find('.tutor-progress');
+        if (!$progressBar.length) {
+            return;
+        }
+        if (typeof percent === 'number' && !isNaN(percent)) {
+            var clamped = Math.max(0, Math.min(100, Math.round(percent)));
+            $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
+            if (cmplete || clamped >= 100) {
+                clearTimeout(countEnrollmentProgress);
+            }
+            return;
+        }
+        var data_parcent = parseInt($progressBar.attr('data-percent'));
+
+        if (cmplete) {
+            $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
+        } else {
+            data_parcent++;
+            $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
+            countEnrollmentProgress = setTimeout(enrollment_migration_progress_bar, 300, cmplete);
+        }
+    }
+
+    function migrate_enrollments($formData, final_types) {
+        if (!$('#sectionEnrollments').length) {
+            migrate_orders($formData, final_types);
+            return;
+        }
+
+        function finishEnrollmentsMigrationStep() {
+            clearTimeout(countEnrollmentProgress);
+            clearTimeout(countReviewsProgress);
+            clearTimeout(checkProgress);
+            clearTimeout(countProgress);
+            $('#sectionEnrollments').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
+            enrollment_migration_progress_bar(true, 100);
+            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            migrate_orders($formData, final_types);
+        }
+
+        function migrate_enrollments_batch(isFirstBatch) {
+            var requestData = $formData + '&migrate_type=enrollments';
+            if (isFirstBatch && final_types === 'ld') {
+                requestData += '&ld_enrollment_migration_start=1';
+            }
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: requestData,
+                beforeSend: function () {
+                    if (isFirstBatch) {
+                        get_live_progress_course_migrating_info(final_types);
+                        $('#sectionEnrollments').find('.j-spinner').addClass('tmtl_spin');
+                        if (final_types === 'ld') {
+                            enrollment_migration_progress_bar(false, 0);
+                        } else {
+                            enrollment_migration_progress_bar();
+                        }
+                    }
+                },
+                success: function (data) {
+                    if (!data || !data.success) {
+                        handleMigrationStepFailure(data, '#sectionEnrollments');
+                        return;
+                    }
+
+                    var payload = data.data || {};
+                    if (final_types === 'ld' && payload.total > 0) {
+                        var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
+                        enrollment_migration_progress_bar(false, percent);
+                    }
+
+                    if (payload.has_more) {
+                        migrate_enrollments_batch(false);
+                        return;
+                    }
+
+                    finishEnrollmentsMigrationStep();
+                },
+                error: function (xhr) {
+                    handleMigrationStepFailure(xhr.responseJSON || {}, '#sectionEnrollments');
+                }
+            });
+        }
+
+        migrate_enrollments_batch(true);
+    }
 
     var countOrderProgress;
 	function order_migration_progress_bar(cmplete, percent) {

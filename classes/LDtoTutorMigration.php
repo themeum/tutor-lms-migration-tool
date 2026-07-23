@@ -30,6 +30,13 @@ defined( 'ABSPATH' ) || exit;
 		const COURSE_BATCH_SIZE = 5;
 
 		/**
+		 * Courses whose enrollments/progress are processed per AJAX request.
+		 *
+		 * @since 2.5.1
+		 */
+		const ENROLLMENT_BATCH_SIZE = 5;
+
+		/**
 		 * One-time orders processed per AJAX request.
 		 *
 		 * @since 2.5.1
@@ -49,6 +56,20 @@ defined( 'ABSPATH' ) || exit;
 		 * @since 2.5.1
 		 */
 		const REVIEW_BATCH_SIZE = 50;
+
+		/**
+		 * Option key for enrollment migration total.
+		 *
+		 * @since 2.5.1
+		 */
+		const ENROLLMENT_MIGRATION_TOTAL_OPT = '_tlmt_ld_enrollments_migration_total';
+
+		/**
+		 * Post meta marking a course whose enrollments/progress were migrated.
+		 *
+		 * @since 2.5.1
+		 */
+		const ENROLLMENT_MIGRATED_META = '_tlmt_ld_enrollment_migrated';
 
 		/**
 		 * Option key for order migration total.
@@ -171,6 +192,38 @@ defined( 'ABSPATH' ) || exit;
 							);
 						}
 						break;
+					case ContentTypes::ENROLLMENTS:
+						try {
+							$enrollments_result = $this->ld_enrollments_migrate();
+							if ( false === $enrollments_result ) {
+								wp_send_json_error(
+									array(
+										'step'    => ContentTypes::ENROLLMENTS,
+										'message' => ErrorHandler::get_error_message( ContentTypes::ENROLLMENTS ),
+									)
+								);
+							}
+							wp_send_json_success(
+								array_merge(
+									array(
+										'step'    => ContentTypes::ENROLLMENTS,
+										'message' => ! empty( $enrollments_result['has_more'] )
+											? __( 'Enrollment batch migrated successfully.', 'tutor-lms-migration-tool' )
+											: __( 'Enrollments migrated successfully.', 'tutor-lms-migration-tool' ),
+									),
+									is_array( $enrollments_result ) ? $enrollments_result : array()
+								)
+							);
+						} catch ( \Throwable $th ) {
+							error_log( $th->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+							wp_send_json_error(
+								array(
+									'step'    => ContentTypes::ENROLLMENTS,
+									'message' => $th->getMessage(),
+								)
+							);
+						}
+						break;
 					case ContentTypes::ORDERS:
 						$orders_result = $this->ld_order_migrate();
 						if ( false === $orders_result ) {
@@ -247,9 +300,7 @@ defined( 'ABSPATH' ) || exit;
 		 * }
 		 */
 		public function ld_reviews_migrate() {
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			}
+			$this->raise_migration_resource_limits();
 
 			$batch_size = (int) apply_filters( 'tlmt_ld_review_migration_batch_size', self::REVIEW_BATCH_SIZE );
 			if ( $batch_size < 1 ) {
@@ -394,9 +445,7 @@ defined( 'ABSPATH' ) || exit;
 		public function ld_migrate_course_to_tutor( $return_type = false ) {
 			global $wpdb;
 
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			}
+			$this->raise_migration_resource_limits();
 
 			$batch_size = (int) apply_filters( 'tlmt_ld_course_migration_batch_size', self::COURSE_BATCH_SIZE );
 			if ( $batch_size < 1 ) {
@@ -467,18 +516,8 @@ defined( 'ABSPATH' ) || exit;
 						// Attached Prerequisite.
 						$this->attached_prerequisite( $course_id );
 
-						// Add Enrollments.
-						$this->insert_enrollment( $course_id );
-
 						// Attached thumbnail.
 						$this->insert_thumbnail( $ld_course->ID, $course_id );
-
-						/**
-						 * Insert Student Progress
-						 *
-						 * @since 2.3.0
-						 */
-						do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR, $course_id );
 
 						MigrationLogger::update_course_migration_log( $course_id, true );
 					} catch ( \Throwable $th ) {
@@ -560,6 +599,10 @@ defined( 'ABSPATH' ) || exit;
 
 		/**
 		 * Insert Enrollment LD to Tutor.
+		 *
+		 * @param int $course_id Tutor course ID (same ID as LearnDash course).
+		 *
+		 * @return void
 		 */
 		public function insert_enrollment( $course_id ) {
 			global $wpdb;
@@ -631,6 +674,169 @@ defined( 'ABSPATH' ) || exit;
 		}
 
 		/**
+		 * Migrate LearnDash enrollments and student progress to Tutor in batches.
+		 *
+		 * Runs after course migration. Each request processes a limited number of
+		 * Tutor courses so large enrollment sets stay under server timeouts.
+		 * Courses are marked with post meta after success so interrupted runs resume
+		 * without reprocessing completed courses.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @throws \Throwable If enrollment or progress migration fails for a course.
+		 *
+		 * @return array|false Batch payload, or false on blocking error.
+		 */
+		public function ld_enrollments_migrate() {
+			$this->raise_migration_resource_limits();
+
+			if ( ! $this->has_migrated_tutor_courses() ) {
+				ErrorHandler::set_error(
+					ContentTypes::ENROLLMENTS,
+					__( 'No Tutor courses found. Complete course migration before migrating enrollments.', 'tutor-lms-migration-tool' )
+				);
+				return false;
+			}
+
+			$batch_size = (int) apply_filters( 'tlmt_ld_enrollment_migration_batch_size', self::ENROLLMENT_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ENROLLMENT_BATCH_SIZE;
+			}
+
+			$is_first_batch = ! empty( $_POST['ld_enrollment_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in ld_migrate_all_data_to_tutor().
+			if ( $is_first_batch ) {
+				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
+				delete_option( '_tutor_migrated_items_count' );
+			}
+
+			$remaining_total = $this->count_courses_pending_enrollment();
+			if ( $is_first_batch ) {
+				update_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT, $remaining_total, false );
+			}
+
+			$total_courses = (int) get_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT, $remaining_total );
+
+			if ( 0 === $remaining_total ) {
+				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
+				return array(
+					'has_more'   => false,
+					'migrated'   => $total_courses,
+					'total'      => $total_courses,
+					'remaining'  => 0,
+					'batch_size' => $batch_size,
+				);
+			}
+
+			$course_ids = $this->get_courses_pending_enrollment( $batch_size );
+			$item_i     = (int) get_option( '_tutor_migrated_items_count' );
+
+			foreach ( $course_ids as $course_id ) {
+				++$item_i;
+				$course_id = (int) $course_id;
+
+				try {
+					$this->insert_enrollment( $course_id );
+
+					/**
+					 * Insert Student Progress after enrollments for data integrity.
+					 *
+					 * @since 2.3.0
+					 */
+					do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR, $course_id );
+
+					update_post_meta( $course_id, self::ENROLLMENT_MIGRATED_META, 1 );
+					update_option( '_tutor_migrated_items_count', $item_i );
+				} catch ( \Throwable $th ) {
+					ErrorHandler::set_error(
+						ContentTypes::ENROLLMENTS,
+						sprintf(
+							/* translators: %d: course ID */
+							__( 'Failed to migrate enrollments for course %d.', 'tutor-lms-migration-tool' ),
+							$course_id
+						) . ' ' . $th->getMessage()
+					);
+					throw $th;
+				}
+			}
+
+			$remaining_after = $this->count_courses_pending_enrollment();
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_courses - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'has_more'   => $has_more,
+				'migrated'   => $migrated_count,
+				'total'      => $total_courses,
+				'remaining'  => $remaining_after,
+				'batch_size' => $batch_size,
+			);
+		}
+
+		/**
+		 * Count Tutor courses that still need enrollment migration.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @return int
+		 */
+		private function count_courses_pending_enrollment(): int {
+			global $wpdb;
+
+			$course_type = tutor()->course_post_type;
+
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(p.ID)
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} pm
+						ON p.ID = pm.post_id AND pm.meta_key = %s
+					WHERE p.post_type = %s
+						AND p.post_status IN ('publish', 'draft', 'private')
+						AND pm.meta_id IS NULL",
+					self::ENROLLMENT_MIGRATED_META,
+					$course_type
+				)
+			);
+		}
+
+		/**
+		 * Fetch a batch of Tutor course IDs pending enrollment migration.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @param int $limit Batch size.
+		 *
+		 * @return int[]
+		 */
+		private function get_courses_pending_enrollment( int $limit ): array {
+			global $wpdb;
+
+			$course_type = tutor()->course_post_type;
+			$ids         = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT p.ID
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} pm
+						ON p.ID = pm.post_id AND pm.meta_key = %s
+					WHERE p.post_type = %s
+						AND p.post_status IN ('publish', 'draft', 'private')
+						AND pm.meta_id IS NULL
+					ORDER BY p.ID ASC
+					LIMIT %d",
+					self::ENROLLMENT_MIGRATED_META,
+					$course_type,
+					$limit
+				)
+			);
+
+			return array_map( 'intval', $ids ? $ids : array() );
+		}
+
+		/**
 		 * Learndash orders to tutor migration for native, WC and EDD.
 		 *
 		 * Processes one-time (non-subscription) transactions in batches.
@@ -647,9 +853,7 @@ defined( 'ABSPATH' ) || exit;
 
 			Utils::check_course_access();
 
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			}
+			$this->raise_migration_resource_limits();
 
 			if ( ! $this->has_migrated_tutor_courses() ) {
 				ErrorHandler::set_error(
@@ -845,9 +1049,7 @@ defined( 'ABSPATH' ) || exit;
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			}
+			$this->raise_migration_resource_limits();
 
 			if ( ! $this->has_migrated_tutor_courses() ) {
 				ErrorHandler::set_error(
@@ -1262,6 +1464,27 @@ defined( 'ABSPATH' ) || exit;
 				return $ld_lesson_id;
 			} catch ( \Throwable $th ) {
 				return 0;
+			}
+		}
+
+		/**
+		 * Raise time and memory limits for a migration AJAX batch.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @return void
+		 */
+		private function raise_migration_resource_limits() {
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+
+			$current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
+			$target  = 256 * MB_IN_BYTES;
+
+			// Do not lower unlimited (-1) or an already-higher limit.
+			if ( -1 !== $current && $current < $target ) {
+				@ini_set( 'memory_limit', '256M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
 			}
 		}
 	}
