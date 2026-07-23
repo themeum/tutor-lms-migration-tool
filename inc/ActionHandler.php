@@ -11,6 +11,7 @@
 namespace Themeum\TutorLMSMigrationTool;
 
 use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
+use Themeum\TutorLMSMigrationTool\LDMigration\CourseTaxonomies;
 use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
 use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Subscriptions;
 use TUTOR\Course;
@@ -29,6 +30,7 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_taxonomies' ), 15, 2 );
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_subscription_plan' ), 20, 2 );
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
@@ -111,6 +113,36 @@ class ActionHandler {
 		}
 
 		return $content_type;
+	}
+
+	/**
+	 * Migrate LearnDash course categories and tags to Tutor taxonomies.
+	 *
+	 * @since 2.4.1
+	 *
+	 * @param int    $course_id      Course ID.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_course_taxonomies( $course_id, $migration_type ) {
+		if ( MigrationTypes::LD_TO_TUTOR !== $migration_type ) {
+			return;
+		}
+
+		try {
+			( new CourseTaxonomies() )->migrate( (int) $course_id );
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error(
+				ContentTypes::COURSE_TAXONOMIES,
+				sprintf(
+					/* translators: 1: course id, 2: error message */
+					__( 'Failed to migrate taxonomies for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+					(int) $course_id,
+					$th->getMessage()
+				)
+			);
+		}
 	}
 
 	/**

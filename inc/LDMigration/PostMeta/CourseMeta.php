@@ -13,6 +13,7 @@ namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 use Tutor\Helpers\QueryHelper;
 use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
+use TUTOR\Course;
 
 /**
  * Handle course meta migration
@@ -111,7 +112,7 @@ class CourseMeta implements PostMeta {
 		$ld_tutor_meta_map = array(
 			'_tutor_course_price_type'        => 'sfwd-courses_course_price_type',
 			'_tutor_course_material_includes' => 'sfwd-courses_course_materials',
-			'tutor_course_regular_price'      => 'sfwd-courses_course_price',
+			Course::COURSE_PRICE_META         => 'sfwd-courses_course_price',
 		);
 
 		$course_settings = array();
@@ -179,7 +180,7 @@ class CourseMeta implements PostMeta {
 			}
 		} elseif ( 'closed' === $price_type && $has_tutor_pro ) {
 			$course_settings['pause_enrollment'] = 'yes';
-			if ( ! empty( $tutor_meta_map['tutor_course_regular_price'] ) ) {
+			if ( ! empty( $tutor_meta_map[ Course::COURSE_PRICE_META ] ) ) {
 				$tutor_meta_map['_tutor_course_price_type'] = 'paid';
 			} else {
 				$tutor_meta_map['_tutor_course_price_type'] = 'free';
