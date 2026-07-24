@@ -48,31 +48,33 @@ class StudentProgress implements StudentProgressInterface {
 	 * Migrates LearnDash course progress to Tutor LMS.
 	 *
 	 * @since 2.3.0
+	 * @since 2.5.1 Optional $user_id to migrate a single student.
 	 *
 	 * - For topic activities: Marks the lesson as completed in Tutor LMS.
 	 * - For quiz activities: Creates a corresponding quiz attempt and stores related answers.
 	 *
 	 * @param int $course_id the course id.
+	 * @param int $user_id   Optional user id. When > 0, only that student's progress is migrated.
 	 *
 	 * @return void
 	 */
-	public function migrate( int $course_id ) {
+	public function migrate( int $course_id, int $user_id = 0 ) {
 
 		try {
-			$ld_course_progress = $this->user_activity( $course_id );
+			$ld_course_progress = $this->user_activity( $course_id, $user_id );
 
 			if ( ! tutor_utils()->count( $ld_course_progress ) ) {
 				return;
 			}
 
 			foreach ( $ld_course_progress as $progress ) {
-				$user_id   = $progress->user_id ?? null;
-				$course_id = $progress->course_id ?? null;
-				$post_id   = $progress->post_id ?? null;
-				$type      = $progress->activity_type ?? null;
-				$completed = $progress->activity_completed ?? null;
+				$progress_user_id = $progress->user_id ?? null;
+				$course_id        = $progress->course_id ?? null;
+				$post_id          = $progress->post_id ?? null;
+				$type             = $progress->activity_type ?? null;
+				$completed        = $progress->activity_completed ?? null;
 
-				if ( ! $user_id || ! $course_id || ! is_object( get_post( $course_id ) ) ) {
+				if ( ! $progress_user_id || ! $course_id || ! is_object( get_post( $course_id ) ) ) {
 					continue;
 				}
 
@@ -80,7 +82,7 @@ class StudentProgress implements StudentProgressInterface {
 
 					case self::LESSON:
 					case self::TOPIC:
-						update_user_meta( $user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
+						update_user_meta( $progress_user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
 						break;
 
 					case self::QUIZ:
@@ -101,42 +103,73 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @since 2.3.0
 	 * @since 4.0.0 param $course_id added.
+	 * @since 2.5.1 Optional $user_id to scope activity to one student.
 	 *
 	 * @param int $course_id the course id.
+	 * @param int $user_id   Optional user id. When > 0, only that student's activity is returned.
 	 *
 	 * @throws \Exception If there is a database error during query execution.
 	 *
 	 * @return array List of activity result objects.
 	 */
-	private function user_activity( int $course_id ) {
+	private function user_activity( int $course_id, int $user_id = 0 ) {
 
 		global $wpdb;
 
 		// phpcs:disable
-		$result = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT 
-					* 
-				FROM {$wpdb->prefix}learndash_user_activity 
-				WHERE
-					course_id = %d
-					AND (
-						( activity_type = %s AND activity_status = %d )
-						OR
-						( activity_type = %s AND activity_status = %d )
-						OR
-						( activity_type = %s AND activity_status IN (%d, %d))
-						)",
-						$course_id,
-				self::TOPIC,
-				1,
-				self::LESSON,
-				1,
-				self::QUIZ,
-				1,
-				0
-			)
-		);
+		if ( $user_id > 0 ) {
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT 
+						* 
+					FROM {$wpdb->prefix}learndash_user_activity 
+					WHERE
+						course_id = %d
+						AND user_id = %d
+						AND (
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status IN (%d, %d))
+							)",
+					$course_id,
+					$user_id,
+					self::TOPIC,
+					1,
+					self::LESSON,
+					1,
+					self::QUIZ,
+					1,
+					0
+				)
+			);
+		} else {
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT 
+						* 
+					FROM {$wpdb->prefix}learndash_user_activity 
+					WHERE
+						course_id = %d
+						AND (
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status IN (%d, %d))
+							)",
+					$course_id,
+					self::TOPIC,
+					1,
+					self::LESSON,
+					1,
+					self::QUIZ,
+					1,
+					0
+				)
+			);
+		}
 		// phpcs:enable
 
 		if ( $wpdb->last_error ) {

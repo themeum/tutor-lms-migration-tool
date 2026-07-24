@@ -30,11 +30,11 @@ defined( 'ABSPATH' ) || exit;
 		const COURSE_BATCH_SIZE = 5;
 
 		/**
-		 * Courses whose enrollments/progress are processed per AJAX request.
+		 * Student enrollments processed per AJAX request.
 		 *
 		 * @since 2.5.1
 		 */
-		const ENROLLMENT_BATCH_SIZE = 5;
+		const ENROLLMENT_BATCH_SIZE = 50;
 
 		/**
 		 * One-time orders processed per AJAX request.
@@ -70,6 +70,14 @@ defined( 'ABSPATH' ) || exit;
 		 * @since 2.5.1
 		 */
 		const ENROLLMENT_MIGRATED_META = '_tlmt_ld_enrollment_migrated';
+
+		/**
+		 * User meta prefix marking a student whose enrollment/progress was migrated for a course.
+		 * Full key: `{prefix}{course_id}`.
+		 *
+		 * @since 2.5.1
+		 */
+		const ENROLLMENT_USER_META_PREFIX = '_tlmt_ld_enroll_user_';
 
 		/**
 		 * Option key for order migration total.
@@ -598,92 +606,112 @@ defined( 'ABSPATH' ) || exit;
 
 
 		/**
-		 * Insert Enrollment LD to Tutor.
+		 * Insert Enrollment LD to Tutor for a single student.
+		 *
+		 * @since 2.5.1
 		 *
 		 * @param int $course_id Tutor course ID (same ID as LearnDash course).
+		 * @param int $user_id   Student user ID.
 		 *
 		 * @return void
 		 */
-		public function insert_enrollment( $course_id ) {
+		public function insert_enrollment_for_user( $course_id, $user_id ) {
 			global $wpdb;
-			$ld_course_complete_datas = $wpdb->get_results(
+
+			$course_id = (int) $course_id;
+			$user_id   = (int) $user_id;
+
+			$has_completed = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}learndash_user_activity WHERE activity_type = 'course' AND activity_status = 1 AND course_id = %d",
+					"SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity
+					WHERE activity_type = 'course' AND activity_status = 1 AND course_id = %d AND user_id = %d",
+					$course_id,
+					$user_id
+				)
+			);
+
+			$has_access = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity
+					WHERE course_id = %d AND user_id = %d AND activity_type = 'access' AND activity_status = 0",
+					$course_id,
+					$user_id
+				)
+			);
+
+			if ( ( $has_access || $has_completed ) && ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+				$enrollment_id = wp_insert_post(
+					array(
+						'post_type'   => 'tutor_enrolled',
+						'post_title'  => __( 'Course Enrolled', 'tutor' ),
+						'post_status' => 'completed',
+						'post_author' => $user_id,
+						'post_parent' => $course_id,
+					)
+				);
+
+				if ( $enrollment_id ) {
+					update_user_meta( $user_id, '_is_tutor_student', tutor_time() );
+				}
+			}
+
+			if ( ! $has_completed ) {
+				return;
+			}
+
+			$existing_completion = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(comment_ID) FROM {$wpdb->comments}
+					WHERE comment_agent = 'TutorLMSPlugin'
+						AND comment_type = 'course_completed'
+						AND user_id = %d
+						AND comment_post_ID = %d",
+					$user_id,
 					$course_id
 				)
 			);
 
-			foreach ( $ld_course_complete_datas as $ld_course_complete_data ) {
-				$user_id            = $ld_course_complete_data->user_id;
-				$complete_course_id = $ld_course_complete_data->course_id;
-
-				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-
-					$date = date( 'Y-m-d H:i:s', tutor_time() );
-
-					do {
-						$hash    = substr( md5( wp_generate_password( 32 ) . $date . $complete_course_id . $user_id ), 0, 16 );
-						$hasHash = (int) $wpdb->get_var(
-							$wpdb->prepare(
-								"SELECT COUNT(comment_ID) from {$wpdb->comments}
-                                    WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
-								$hash
-							)
-						);
-
-					} while ( $hasHash > 0 );
-
-					$tutor_course_complete_data = array(
-						'comment_type'     => 'course_completed',
-						'comment_agent'    => 'TutorLMSPlugin',
-						'comment_approved' => 'approved',
-						'comment_content'  => $hash,
-						'user_id'          => $user_id,
-						'comment_author'   => $user_id,
-						'comment_post_ID'  => $complete_course_id,
-					);
-
-					$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
-
-				}
+			if ( $existing_completion ) {
+				return;
 			}
 
-			$ld_enrollments = $wpdb->get_results( $wpdb->prepare( "SELECT * from {$wpdb->prefix}learndash_user_activity WHERE course_id = %d AND activity_type = 'access' AND activity_status = 0", $course_id ) );
+			$date = date( 'Y-m-d H:i:s', tutor_time() );
 
-			foreach ( $ld_enrollments as $ld_enrollment ) {
-				$user_id = $ld_enrollment->user_id;
+			do {
+				$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
+				$hasHash = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(comment_ID) from {$wpdb->comments}
+							WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
+						$hash
+					)
+				);
+			} while ( $hasHash > 0 );
 
-				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-
-					$title                 = __( 'Course Enrolled', 'tutor' );
-					$tutor_enrollment_data = array(
-						'post_type'   => 'tutor_enrolled',
-						'post_title'  => $title,
-						'post_status' => 'completed',
-						'post_author' => $user_id,
-						'post_parent' => $course_id,
-					);
-
-					$isEnrolled = wp_insert_post( $tutor_enrollment_data );
-
-					if ( $isEnrolled ) {
-						update_user_meta( $user_id, '_is_tutor_student', tutor_time() );
-					}
-				}
-			}
+			wp_insert_comment(
+				array(
+					'comment_type'     => 'course_completed',
+					'comment_agent'    => 'TutorLMSPlugin',
+					'comment_approved' => 'approved',
+					'comment_content'  => $hash,
+					'user_id'          => $user_id,
+					'comment_author'   => $user_id,
+					'comment_post_ID'  => $course_id,
+				)
+			);
 		}
 
 		/**
 		 * Migrate LearnDash enrollments and student progress to Tutor in batches.
 		 *
 		 * Runs after course migration. Each request processes a limited number of
-		 * Tutor courses so large enrollment sets stay under server timeouts.
-		 * Courses are marked with post meta after success so interrupted runs resume
-		 * without reprocessing completed courses.
+		 * students (not whole courses) so large enrollments stay under server timeouts.
+		 * Per-user meta tracks resume state; a course is marked complete only after
+		 * all of its students are migrated.
 		 *
 		 * @since 2.5.1
 		 *
-		 * @throws \Throwable If enrollment or progress migration fails for a course.
+		 * @throws \Throwable If enrollment or progress migration fails for a student.
 		 *
 		 * @return array|false Batch payload, or false on blocking error.
 		 */
@@ -707,61 +735,79 @@ defined( 'ABSPATH' ) || exit;
 			if ( $is_first_batch ) {
 				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
 				delete_option( '_tutor_migrated_items_count' );
+				$this->mark_courses_without_enrollment_activity();
 			}
 
-			$remaining_total = $this->count_courses_pending_enrollment();
+			$remaining_total = $this->count_pending_enrollment_users();
 			if ( $is_first_batch ) {
 				update_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT, $remaining_total, false );
 			}
 
-			$total_courses = (int) get_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT, $remaining_total );
+			$total_enrollments = (int) get_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT, $remaining_total );
 
 			if ( 0 === $remaining_total ) {
+				$this->mark_courses_without_enrollment_activity();
 				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
 				return array(
 					'has_more'   => false,
-					'migrated'   => $total_courses,
-					'total'      => $total_courses,
+					'migrated'   => $total_enrollments,
+					'total'      => $total_enrollments,
 					'remaining'  => 0,
 					'batch_size' => $batch_size,
 				);
 			}
 
-			$course_ids = $this->get_courses_pending_enrollment( $batch_size );
-			$item_i     = (int) get_option( '_tutor_migrated_items_count' );
+			$students = $this->get_pending_enrollment_users( $batch_size );
+			$item_i   = (int) get_option( '_tutor_migrated_items_count' );
 
-			foreach ( $course_ids as $course_id ) {
+			try {
+				$progress = \Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory::create( MigrationTypes::LD_TO_TUTOR );
+			} catch ( \Throwable $th ) {
+				ErrorHandler::set_error(
+					ContentTypes::ENROLLMENTS,
+					__( 'Error creating student progress migration object.', 'tutor-lms-migration-tool' )
+				);
+				return false;
+			}
+
+			$touched_courses = array();
+
+			foreach ( $students as $student ) {
 				++$item_i;
-				$course_id = (int) $course_id;
+				$course_id = (int) $student->course_id;
+				$user_id   = (int) $student->user_id;
 
 				try {
-					$this->insert_enrollment( $course_id );
-
-					/**
-					 * Insert Student Progress after enrollments for data integrity.
-					 *
-					 * @since 2.3.0
-					 */
-					do_action( 'tlmt_student_progress_migrated', MigrationTypes::LD_TO_TUTOR, $course_id );
-
-					update_post_meta( $course_id, self::ENROLLMENT_MIGRATED_META, 1 );
+					$this->insert_enrollment_for_user( $course_id, $user_id );
+					$progress->migrate( $course_id, $user_id );
+					update_user_meta( $user_id, $this->enrollment_user_meta_key( $course_id ), 1 );
 					update_option( '_tutor_migrated_items_count', $item_i );
+					$touched_courses[ $course_id ] = true;
 				} catch ( \Throwable $th ) {
 					ErrorHandler::set_error(
 						ContentTypes::ENROLLMENTS,
 						sprintf(
-							/* translators: %d: course ID */
-							__( 'Failed to migrate enrollments for course %d.', 'tutor-lms-migration-tool' ),
-							$course_id
+							/* translators: 1: course ID, 2: user ID */
+							__( 'Failed to migrate enrollment for course %1$d, user %2$d.', 'tutor-lms-migration-tool' ),
+							$course_id,
+							$user_id
 						) . ' ' . $th->getMessage()
 					);
 					throw $th;
 				}
 			}
 
-			$remaining_after = $this->count_courses_pending_enrollment();
+			foreach ( array_keys( $touched_courses ) as $course_id ) {
+				if ( 0 === $this->count_pending_enrollment_users_for_course( (int) $course_id ) ) {
+					update_post_meta( (int) $course_id, self::ENROLLMENT_MIGRATED_META, 1 );
+				}
+			}
+
+			$this->mark_courses_without_enrollment_activity();
+
+			$remaining_after = $this->count_pending_enrollment_users();
 			$has_more        = $remaining_after > 0;
-			$migrated_count  = max( 0, $total_courses - $remaining_after );
+			$migrated_count  = max( 0, $total_enrollments - $remaining_after );
 
 			if ( ! $has_more ) {
 				delete_option( self::ENROLLMENT_MIGRATION_TOTAL_OPT );
@@ -770,70 +816,176 @@ defined( 'ABSPATH' ) || exit;
 			return array(
 				'has_more'   => $has_more,
 				'migrated'   => $migrated_count,
-				'total'      => $total_courses,
+				'total'      => $total_enrollments,
 				'remaining'  => $remaining_after,
 				'batch_size' => $batch_size,
 			);
 		}
 
 		/**
-		 * Count Tutor courses that still need enrollment migration.
+		 * User meta key for a migrated enrollment/progress pair.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @param int $course_id Course ID.
+		 *
+		 * @return string
+		 */
+		private function enrollment_user_meta_key( int $course_id ): string {
+			return self::ENROLLMENT_USER_META_PREFIX . $course_id;
+		}
+
+		/**
+		 * Mark Tutor courses that have no LD enrollment/completion activity as done.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @return void
+		 */
+		private function mark_courses_without_enrollment_activity() {
+			global $wpdb;
+
+			$course_type = tutor()->course_post_type;
+			$course_ids  = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT p.ID
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} pm
+						ON p.ID = pm.post_id AND pm.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}learndash_user_activity a
+						ON a.course_id = p.ID
+						AND (
+							( a.activity_type = 'access' AND a.activity_status = 0 )
+							OR ( a.activity_type = 'course' AND a.activity_status = 1 )
+						)
+					WHERE p.post_type = %s
+						AND p.post_status IN ('publish', 'draft', 'private')
+						AND pm.meta_id IS NULL
+						AND a.activity_id IS NULL",
+					self::ENROLLMENT_MIGRATED_META,
+					$course_type
+				)
+			);
+
+			foreach ( $course_ids ? $course_ids : array() as $course_id ) {
+				update_post_meta( (int) $course_id, self::ENROLLMENT_MIGRATED_META, 1 );
+			}
+		}
+
+		/**
+		 * Count pending student-course enrollment pairs.
 		 *
 		 * @since 2.5.1
 		 *
 		 * @return int
 		 */
-		private function count_courses_pending_enrollment(): int {
+		private function count_pending_enrollment_users(): int {
 			global $wpdb;
 
 			$course_type = tutor()->course_post_type;
 
 			return (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(p.ID)
-					FROM {$wpdb->posts} p
-					LEFT JOIN {$wpdb->postmeta} pm
-						ON p.ID = pm.post_id AND pm.meta_key = %s
-					WHERE p.post_type = %s
-						AND p.post_status IN ('publish', 'draft', 'private')
-						AND pm.meta_id IS NULL",
+					"SELECT COUNT(*) FROM (
+						SELECT DISTINCT a.course_id, a.user_id
+						FROM {$wpdb->prefix}learndash_user_activity a
+						INNER JOIN {$wpdb->posts} p ON p.ID = a.course_id
+						LEFT JOIN {$wpdb->postmeta} pm
+							ON p.ID = pm.post_id AND pm.meta_key = %s
+						LEFT JOIN {$wpdb->usermeta} um
+							ON um.user_id = a.user_id
+							AND um.meta_key = CONCAT(%s, a.course_id)
+						WHERE p.post_type = %s
+							AND p.post_status IN ('publish', 'draft', 'private')
+							AND pm.meta_id IS NULL
+							AND um.umeta_id IS NULL
+							AND (
+								( a.activity_type = 'access' AND a.activity_status = 0 )
+								OR ( a.activity_type = 'course' AND a.activity_status = 1 )
+							)
+					) pending_enrollments",
 					self::ENROLLMENT_MIGRATED_META,
+					self::ENROLLMENT_USER_META_PREFIX,
 					$course_type
 				)
 			);
 		}
 
 		/**
-		 * Fetch a batch of Tutor course IDs pending enrollment migration.
+		 * Count pending students for a single course.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @param int $course_id Course ID.
+		 *
+		 * @return int
+		 */
+		private function count_pending_enrollment_users_for_course( int $course_id ): int {
+			global $wpdb;
+
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM (
+						SELECT DISTINCT a.user_id
+						FROM {$wpdb->prefix}learndash_user_activity a
+						LEFT JOIN {$wpdb->usermeta} um
+							ON um.user_id = a.user_id
+							AND um.meta_key = %s
+						WHERE a.course_id = %d
+							AND um.umeta_id IS NULL
+							AND (
+								( a.activity_type = 'access' AND a.activity_status = 0 )
+								OR ( a.activity_type = 'course' AND a.activity_status = 1 )
+							)
+					) pending_course_enrollments",
+					$this->enrollment_user_meta_key( $course_id ),
+					$course_id
+				)
+			);
+		}
+
+		/**
+		 * Fetch a batch of pending student-course enrollment pairs.
 		 *
 		 * @since 2.5.1
 		 *
 		 * @param int $limit Batch size.
 		 *
-		 * @return int[]
+		 * @return array<int, object{course_id: int, user_id: int}>
 		 */
-		private function get_courses_pending_enrollment( int $limit ): array {
+		private function get_pending_enrollment_users( int $limit ): array {
 			global $wpdb;
 
 			$course_type = tutor()->course_post_type;
-			$ids         = $wpdb->get_col(
+
+			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT p.ID
-					FROM {$wpdb->posts} p
+					"SELECT DISTINCT a.course_id, a.user_id
+					FROM {$wpdb->prefix}learndash_user_activity a
+					INNER JOIN {$wpdb->posts} p ON p.ID = a.course_id
 					LEFT JOIN {$wpdb->postmeta} pm
 						ON p.ID = pm.post_id AND pm.meta_key = %s
+					LEFT JOIN {$wpdb->usermeta} um
+						ON um.user_id = a.user_id
+						AND um.meta_key = CONCAT(%s, a.course_id)
 					WHERE p.post_type = %s
 						AND p.post_status IN ('publish', 'draft', 'private')
 						AND pm.meta_id IS NULL
-					ORDER BY p.ID ASC
+						AND um.umeta_id IS NULL
+						AND (
+							( a.activity_type = 'access' AND a.activity_status = 0 )
+							OR ( a.activity_type = 'course' AND a.activity_status = 1 )
+						)
+					ORDER BY a.course_id ASC, a.user_id ASC
 					LIMIT %d",
 					self::ENROLLMENT_MIGRATED_META,
+					self::ENROLLMENT_USER_META_PREFIX,
 					$course_type,
 					$limit
 				)
 			);
 
-			return array_map( 'intval', $ids ? $ids : array() );
+			return $results ? $results : array();
 		}
 
 		/**

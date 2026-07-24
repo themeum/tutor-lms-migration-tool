@@ -104,7 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 													<?php esc_html_e( 'Enrollments', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
-													<?php esc_html_e( 'Migrate student enrollments, course completions, and learning progress to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+													<?php esc_html_e( 'Migrate student enrollments, course completions, and learning progress to Tutor LMS in student batches.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>
