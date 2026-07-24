@@ -623,6 +623,31 @@ defined( 'ABSPATH' ) || exit;
 
 
 		/**
+		 * Convert a LearnDash activity unix timestamp to WP local + GMT MySQL datetimes.
+		 *
+		 * @since 2.5.2
+		 *
+		 * @param int $timestamp Unix timestamp (0 falls back to now).
+		 *
+		 * @return array{local: string, gmt: string, unix: int}
+		 */
+		private function ld_activity_datetimes( $timestamp ) {
+			$timestamp = (int) $timestamp;
+			if ( $timestamp <= 0 ) {
+				$timestamp = time();
+			}
+
+			$gmt   = gmdate( 'Y-m-d H:i:s', $timestamp );
+			$local = get_date_from_gmt( $gmt );
+
+			return array(
+				'local' => $local,
+				'gmt'   => $gmt,
+				'unix'  => $timestamp,
+			);
+		}
+
+		/**
 		 * Insert Enrollment LD to Tutor for a single student.
 		 *
 		 * @since 2.5.1
@@ -638,37 +663,62 @@ defined( 'ABSPATH' ) || exit;
 			$course_id = (int) $course_id;
 			$user_id   = (int) $user_id;
 
-			$has_completed = (int) $wpdb->get_var(
+			$access_activity = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity
-					WHERE activity_type = 'course' AND activity_status = 1 AND course_id = %d AND user_id = %d",
+					"SELECT activity_started, activity_completed FROM {$wpdb->prefix}learndash_user_activity
+					WHERE course_id = %d AND user_id = %d AND activity_type = 'access' AND activity_status = 0
+					ORDER BY activity_id ASC
+					LIMIT 1",
 					$course_id,
 					$user_id
 				)
 			);
 
-			$has_access = (int) $wpdb->get_var(
+			$completion_activity = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity
-					WHERE course_id = %d AND user_id = %d AND activity_type = 'access' AND activity_status = 0",
+					"SELECT activity_started, activity_completed FROM {$wpdb->prefix}learndash_user_activity
+					WHERE activity_type = 'course' AND activity_status = 1 AND course_id = %d AND user_id = %d
+					ORDER BY activity_id DESC
+					LIMIT 1",
 					$course_id,
 					$user_id
 				)
 			);
+
+			$has_access    = ! empty( $access_activity );
+			$has_completed = ! empty( $completion_activity );
 
 			if ( ( $has_access || $has_completed ) && ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+				$enroll_ts = 0;
+				if ( $access_activity ) {
+					$enroll_ts = (int) $access_activity->activity_started;
+					if ( $enroll_ts <= 0 ) {
+						$enroll_ts = (int) $access_activity->activity_completed;
+					}
+				}
+				if ( $enroll_ts <= 0 && $completion_activity ) {
+					$enroll_ts = (int) $completion_activity->activity_started;
+					if ( $enroll_ts <= 0 ) {
+						$enroll_ts = (int) $completion_activity->activity_completed;
+					}
+				}
+
+				$enroll_dates = $this->ld_activity_datetimes( $enroll_ts );
+
 				$enrollment_id = wp_insert_post(
 					array(
-						'post_type'   => 'tutor_enrolled',
-						'post_title'  => __( 'Course Enrolled', 'tutor' ),
-						'post_status' => 'completed',
-						'post_author' => $user_id,
-						'post_parent' => $course_id,
+						'post_type'     => 'tutor_enrolled',
+						'post_title'    => __( 'Course Enrolled', 'tutor' ),
+						'post_status'   => 'completed',
+						'post_author'   => $user_id,
+						'post_parent'   => $course_id,
+						'post_date'     => $enroll_dates['local'],
+						'post_date_gmt' => $enroll_dates['gmt'],
 					)
 				);
 
 				if ( $enrollment_id ) {
-					update_user_meta( $user_id, '_is_tutor_student', tutor_time() );
+					update_user_meta( $user_id, '_is_tutor_student', $enroll_dates['unix'] );
 				}
 			}
 
@@ -692,7 +742,7 @@ defined( 'ABSPATH' ) || exit;
 				return;
 			}
 
-			$date = date( 'Y-m-d H:i:s', tutor_time() );
+			$date = date( 'Y-m-d H:i:s', tutor_time() ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 
 			do {
 				$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
