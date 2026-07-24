@@ -244,13 +244,14 @@ class StudentProgress implements StudentProgressInterface {
 			'meta_value'
 		);
 
-		$is_passed = (int) $activity_meta['pass'];
-		$is_graded = maybe_unserialize( $activity_meta['graded'] );
+		$is_passed = (int) ( $activity_meta['pass'] ?? 0 );
+		$is_graded = maybe_unserialize( $activity_meta['graded'] ?? null );
 		$result    = $is_passed ? 'pass' : 'fail';
 
 		if ( tutor_utils()->count( $is_graded ) ) {
 			foreach ( $is_graded as $graded ) {
-				if ( 'not_graded' === $graded['status'] ) {
+				$graded = (array) $graded;
+				if ( 'not_graded' === ( $graded['status'] ?? '' ) ) {
 					$result = 'pending';
 				}
 			}
@@ -264,7 +265,7 @@ class StudentProgress implements StudentProgressInterface {
 			'total_answered_questions' => $activity_meta['question_show_count'] ?? 0,
 			'total_marks'              => $activity_meta['total_points'] ?? 0,
 			'earned_marks'             => $activity_meta['points'] ?? 0,
-			'attempt_info'             => $attempt_info->meta_value ?? '',
+			'attempt_info'             => ( is_object( $attempt_info ) ? ( $attempt_info->meta_value ?? '' ) : '' ),
 			'attempt_status'           => self::ATTEMPT_ENDED,
 			'attempt_started_at'       => wp_date( 'Y-m-d H:i:s', $progress_info->activity_started ),
 			'attempt_ended_at'         => wp_date( 'Y-m-d H:i:s', $progress_info->activity_completed ),
@@ -275,10 +276,15 @@ class StudentProgress implements StudentProgressInterface {
 
 		if ( ! $inserted ) {
 			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
+			return array();
 		}
 
 		// If Statistics option in Quiz settings is disable then statistic_ref_id will be 0.
-		return (int) $activity_meta['statistic_ref_id'] ? array( $wpdb->insert_id, $activity_meta ) : array();
+		if ( empty( $activity_meta['statistic_ref_id'] ) ) {
+			return array();
+		}
+
+		return array( (int) $wpdb->insert_id, $activity_meta );
 	}
 
 	/**
@@ -299,16 +305,17 @@ class StudentProgress implements StudentProgressInterface {
 
 		$data = array();
 
-		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ), 'tutor_migrated_question_answer_map', true );
+		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ?? 0 ), 'tutor_migrated_question_answer_map', true );
+		$question_ids         = is_array( $question_ids ) ? $question_ids : array();
 		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
-		$is_graded            = maybe_unserialize( $user_activity_meta['graded'] );
+		$is_graded            = maybe_unserialize( $user_activity_meta['graded'] ?? null );
 
 		foreach ( $user_quiz_statistics as $quiz_statistic ) {
 			$tutor_question_id = $question_ids[ $quiz_statistic->question_id ][0]['tutor_question_id'] ?? null;
 			if ( tutor_utils()->count( $is_graded ) && isset( $is_graded[ $quiz_statistic->question_id ] ) ) {
-				$graded = $is_graded[ $quiz_statistic->question_id ];
+				$graded = (array) $is_graded[ $quiz_statistic->question_id ];
 				// Need to insert seperately, since the `is_correct` column is not needed and needs to be null.
-				if ( 'not_graded' === $graded['status'] ) {
+				if ( 'not_graded' === ( $graded['status'] ?? '' ) ) {
 					$open_ended_data = array(
 						'user_id'         => $quiz_statistic->user_id,
 						'quiz_id'         => $quiz_statistic->quiz_post_id,
@@ -367,11 +374,12 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function add_quiz_attempt_to_tutor( $progress ) {
 
-		list( $quiz_attempt_id, $user_activity_meta ) = $this->insert_quiz_attempts( $progress );
-
-		if ( $quiz_attempt_id ) {
-			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $user_activity_meta );
+		$attempt = $this->insert_quiz_attempts( $progress );
+		if ( empty( $attempt[0] ) || empty( $attempt[1] ) ) {
+			return;
 		}
+
+		$this->insert_quiz_attempt_answers( (int) $attempt[0], $attempt[1] );
 	}
 
 	/**
@@ -456,7 +464,7 @@ class StudentProgress implements StudentProgressInterface {
 				return maybe_serialize( $this->get_learndash_choice_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
 			case self::LD_FREE_CHOICE:
-				return $ld_quiz_statistic->statistic_answer_data[0];
+				return $this->get_statistic_answer_value_at( $ld_quiz_statistic->statistic_answer_data, 0 );
 
 			case self::LD_SORT_ANSWER:
 			case self::LD_MATRIX_SORTING:
@@ -469,6 +477,38 @@ class StudentProgress implements StudentProgressInterface {
 			case self::LD_ESSAY:
 				return $this->get_learndash_essay_quiz_answers( $ld_quiz_statistic );
 		}
+	}
+
+	/**
+	 * Read a value from decoded LearnDash statistic answer data.
+	 *
+	 * LearnDash may store JSON arrays or objects; seeded/placeholder payloads can be either.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param mixed $statistic_answer_data Decoded answer payload.
+	 * @param int   $index                 Preferred numeric index.
+	 *
+	 * @return mixed|null
+	 */
+	private function get_statistic_answer_value_at( $statistic_answer_data, int $index ) {
+		if ( is_object( $statistic_answer_data ) ) {
+			$statistic_answer_data = (array) $statistic_answer_data;
+		}
+
+		if ( ! is_array( $statistic_answer_data ) || empty( $statistic_answer_data ) ) {
+			return null;
+		}
+
+		if ( array_key_exists( $index, $statistic_answer_data ) ) {
+			return $statistic_answer_data[ $index ];
+		}
+
+		if ( array_key_exists( (string) $index, $statistic_answer_data ) ) {
+			return $statistic_answer_data[ (string) $index ];
+		}
+
+		return null;
 	}
 
 	/**
@@ -559,6 +599,9 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		$answer_map = get_post_meta( intval( $ld_quiz_statistic->quiz_post_id ), 'tutor_migrated_question_answer_map', true );
+		if ( ! is_array( $answer_map ) ) {
+			return null;
+		}
 
 		return $answer_map[ $ld_quiz_statistic->question_id ][ $answer_key ]['tutor_answer_id'] ?? null;
 	}
@@ -642,12 +685,16 @@ class StudentProgress implements StudentProgressInterface {
 
 		$question_answer_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data );
 
-		if ( is_array( $question_answer_data ) && $question_answer_data[0] instanceof \WpProQuiz_Model_AnswerTypes ) {
+		if ( is_array( $question_answer_data ) && isset( $question_answer_data[0] ) && $question_answer_data[0] instanceof \WpProQuiz_Model_AnswerTypes ) {
 
 			$assessment_data = learndash_question_assessment_fetch_data( $question_answer_data[0]->getAnswer(), 0, $ld_quiz_statistic->question_id );
 
 			if ( is_array( $assessment_data ) && is_array( $assessment_data['correct'] ?? null ) ) {
-				$index = intval( $ld_quiz_statistic->statistic_answer_data[0] ) - 1;
+				$selected = $this->get_statistic_answer_value_at( $ld_quiz_statistic->statistic_answer_data, 0 );
+				if ( null === $selected || ! is_numeric( $selected ) ) {
+					return null;
+				}
+				$index = (int) $selected - 1;
 				return $assessment_data['correct'][ $index ] ?? null;
 			}
 		}
@@ -666,7 +713,14 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function get_learndash_essay_quiz_answers( $ld_quiz_statistic ) {
 
-		$graded_id = $ld_quiz_statistic->statistic_answer_data->graded_id ?? null;
+		$answer_data = $ld_quiz_statistic->statistic_answer_data;
+		if ( is_array( $answer_data ) ) {
+			$graded_id = $answer_data['graded_id'] ?? null;
+		} elseif ( is_object( $answer_data ) ) {
+			$graded_id = $answer_data->graded_id ?? null;
+		} else {
+			$graded_id = null;
+		}
 
 		if ( empty( $graded_id ) ) {
 			return null;

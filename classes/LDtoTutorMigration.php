@@ -343,6 +343,7 @@ defined( 'ABSPATH' ) || exit;
 
 			if ( 0 === $remaining_total ) {
 				delete_option( self::REVIEW_MIGRATION_TOTAL_OPT );
+				$this->cleanup_after_ld_migration_complete();
 				return array(
 					'has_more'   => false,
 					'migrated'   => $total_reviews,
@@ -417,6 +418,7 @@ defined( 'ABSPATH' ) || exit;
 
 			if ( ! $has_more ) {
 				delete_option( self::REVIEW_MIGRATION_TOTAL_OPT );
+				$this->cleanup_after_ld_migration_complete();
 			}
 
 			return array(
@@ -427,6 +429,29 @@ defined( 'ABSPATH' ) || exit;
 				'batch_size' => $batch_size,
 			);
 		}
+
+		/**
+		 * Run irreversible LearnDash cleanup after every migration step has finished.
+		 *
+		 * Reviews are the final AJAX step (courses → enrollments/progress → orders →
+		 * subscriptions → reviews). Quiz questions must stay available until student
+		 * progress has rebuilt attempt answers from the LearnDash question bank.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @return void
+		 */
+		private function cleanup_after_ld_migration_complete() {
+			/**
+			 * Fires to delete all LearnDash quiz questions after full LD migration.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @hook tlml_delete_learndash_quiz_questions
+			 */
+			do_action( 'tlml_delete_learndash_quiz_questions' );
+		}
+
 		/**
 		 * Migration from LD courses to tutor courses
 		 *
@@ -546,14 +571,6 @@ defined( 'ABSPATH' ) || exit;
 			$migrated_count  = max( 0, $total_courses - $remaining_after );
 
 			if ( ! $has_more ) {
-				/**
-				 * Fires to delete all LearnDash quiz questions.
-				 *
-				 * @since 2.3.0
-				 *
-				 * @hook tlml_delete_learndash_quiz_questions
-				 */
-				do_action( 'tlml_delete_learndash_quiz_questions' );
 				// Migrate Assignment Files.
 				tlmt_get_post_obj( ContentTypes::ASSIGNMENT, MigrationTypes::LD_TO_TUTOR )->migrate_assignment_files();
 			}

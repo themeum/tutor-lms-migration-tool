@@ -251,7 +251,10 @@ class ActionHandler {
 	}
 
 	/**
-	 * Deletes all records from the LearnDash quiz questions table after student progress migration
+	 * Deletes all records from the LearnDash quiz questions table after full LD migration.
+	 *
+	 * Must run only after enrollments/student progress have finished, since progress
+	 * rebuilds attempt answers via JOIN on this table.
 	 *
 	 * @since 2.3.0
 	 *
