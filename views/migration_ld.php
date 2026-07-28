@@ -50,16 +50,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php esc_html_e( 'Auto Migrate', 'tutor-lms-migration-tool' ); ?>
 						</a>
 					</li>
-					<li class="tutor-nav-item">
-						<div class="tutor-d-flex tutor-align-center">
-						<a class="tutor-nav-link" data-tutor-nav-target="" style="cursor: default; padding-right: 8px;">
-							<?php esc_html_e( 'Upload File', 'tutor-lms-migration-tool' ); ?>
-						</a>
-						<span class="tutor-rounded-pill tutor-border tutor-px-8" style="border-radius: 10px;">
-							<?php esc_html_e( 'Coming soon', 'tutor-lms-migration-tool' ); ?>
-						</span>
-						</div>
-					</li>
 					<li class="tutor-nav-item tutor-nav-more tutor-d-none">
 						<a class="tutor-nav-link tutor-nav-more-item" href="#">
 							<span class="tutor-mr-4"><?php esc_html_e( 'More', 'tutor-lms-migration-tool' ); ?></span> 
