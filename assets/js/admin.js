@@ -117,6 +117,9 @@ jQuery(document).ready(function ($) {
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_course_migration_start=1';
             }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_course_migration_start=1';
+            }
 
             $.ajax({
                 url: ajaxurl,
@@ -128,7 +131,7 @@ jQuery(document).ready(function ($) {
                         $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             migration_progress_bar(false, 0);
                         } else {
                             migration_progress_bar();
@@ -142,7 +145,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         migration_progress_bar(false, percent);
                     }
@@ -292,6 +295,9 @@ jQuery(document).ready(function ($) {
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_order_migration_start=1';
             }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_order_migration_start=1';
+            }
 
             $.ajax({
                 url: ajaxurl,
@@ -301,7 +307,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             order_migration_progress_bar(false, 0);
                         } else {
                             order_migration_progress_bar();
@@ -315,7 +321,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         order_migration_progress_bar(false, percent);
                     }
@@ -476,8 +482,11 @@ jQuery(document).ready(function ($) {
 
             const res = (data && data.data) || {};
             const { total_course_count = 0, failed = [] } = res;
+            const fallbackCount = Number($('#total_items_migrate_counts').data('count')) || 0;
+            const migratedTotal = Number(total_course_count) || fallbackCount;
 
-            if (Number(total_course_count) > 0) {
+            // LP/LIF responses may omit total_course_count; treat AJAX success as migration success.
+            if ( ( data && data.success ) && ( migratedTotal > 0 || ( Array.isArray( failed ) && failed.length === 0 ) ) ) {
                 $('.lp-success-modal').addClass('active');
             } else {
                 $('.lp-error-modal').addClass('active');
@@ -489,6 +498,9 @@ jQuery(document).ready(function ($) {
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_review_migration_start=1';
             }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_review_migration_start=1';
+            }
 
             $.ajax({
                 url: ajaxurl,
@@ -498,7 +510,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             reviews_migration_progress_bar(false, 0);
                         } else {
                             reviews_migration_progress_bar();
@@ -512,7 +524,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         reviews_migration_progress_bar(false, percent);
                     }
