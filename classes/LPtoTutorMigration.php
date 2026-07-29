@@ -439,6 +439,9 @@ if ( ! class_exists('LPtoTutorMigration')){
 			wp_update_post($tutor_course);
 			update_post_meta($course_id, '_was_lp_course', true);
 
+			// Migrate additional course meta/settings from LearnPress to Tutor.
+			$this->migrate_lp_course_meta_to_tutor( $course_id );
+
 			/**
 			 * Create WC Product and attaching it with course
 			 */
@@ -1401,6 +1404,162 @@ if ( ! class_exists('LPtoTutorMigration')){
 		", $section_id, /*'publish',*/ 'publish' ) );
 
 			return $results;
+		}
+
+		/**
+		 * Map LearnPress course meta to Tutor course meta.
+		 *
+		 * @param int $course_id Tutor course post id.
+		 * @return void
+		 */
+		private function migrate_lp_course_meta_to_tutor( $course_id ) {
+			// Course level.
+			$lp_level = get_post_meta( $course_id, '_lp_level', true );
+			if ( ! empty( $lp_level ) ) {
+				// Tutor expects 'all_levels' while LearnPress uses 'all'.
+				if ( 'all' === $lp_level ) {
+					$lp_level = 'all_levels';
+				}
+				update_post_meta( $course_id, '_tutor_course_level', sanitize_text_field( $lp_level ) );
+			}
+
+			// Course duration.
+			$lp_duration = get_post_meta( $course_id, '_lp_duration', true );
+			$tutor_duration = $this->lp_duration_to_tutor_course_duration( $lp_duration );
+			if ( ! empty( $tutor_duration ) ) {
+				update_post_meta( $course_id, '_course_duration', $tutor_duration );
+			}
+
+			// Newline-separated list metas.
+			$requirements = $this->normalize_lp_multiline_meta( get_post_meta( $course_id, '_lp_requirements', true ) );
+			if ( '' !== $requirements ) {
+				update_post_meta( $course_id, '_tutor_course_requirements', sanitize_textarea_field( $requirements ) );
+			}
+
+			$target_audiences = $this->normalize_lp_multiline_meta( get_post_meta( $course_id, '_lp_target_audiences', true ) );
+			if ( '' !== $target_audiences ) {
+				update_post_meta( $course_id, '_tutor_course_target_audience', sanitize_textarea_field( $target_audiences ) );
+			}
+
+			$key_features = $this->normalize_lp_multiline_meta( get_post_meta( $course_id, '_lp_key_features', true ) );
+			if ( '' !== $key_features ) {
+				update_post_meta( $course_id, '_tutor_course_benefits', sanitize_textarea_field( $key_features ) );
+			}
+
+			// Maximum students lives under `_tutor_course_settings`.
+			$lp_max_students = get_post_meta( $course_id, '_lp_max_students', true );
+			if ( is_numeric( $lp_max_students ) ) {
+				$current_settings = maybe_unserialize( get_post_meta( $course_id, '_tutor_course_settings', true ) );
+				if ( ! is_array( $current_settings ) ) {
+					$current_settings = array();
+				}
+
+				$current_settings['maximum_students'] = (int) $lp_max_students;
+				update_post_meta( $course_id, '_tutor_course_settings', maybe_serialize( $current_settings ) );
+			}
+		}
+
+		/**
+		 * Normalize LearnPress list meta (array or string) into Tutor newline string.
+		 *
+		 * @param mixed $value LearnPress meta value.
+		 * @return string Newline-separated list.
+		 */
+		private function normalize_lp_multiline_meta( $value ) {
+			$value = maybe_unserialize( $value );
+
+			if ( empty( $value ) ) {
+				return '';
+			}
+
+			if ( is_array( $value ) ) {
+				$items = array();
+				foreach ( $value as $item ) {
+					if ( is_array( $item ) ) {
+						continue;
+					}
+
+					$item = is_string( $item ) ? trim( $item ) : (string) $item;
+					if ( '' !== $item ) {
+						$items[] = $item;
+					}
+				}
+
+				return implode( "\n", $items );
+			}
+
+			if ( is_string( $value ) ) {
+				$value = str_replace( array( "\r\n", "\r" ), "\n", $value );
+
+				// If it looks like a comma-separated string, make it multiline.
+				if ( false !== strpos( $value, ',' ) && false === strpos( $value, "\n" ) ) {
+					$value = str_replace( ',', "\n", $value );
+				}
+
+				return trim( $value );
+			}
+
+			return '';
+		}
+
+		/**
+		 * Convert LearnPress `_lp_duration` (e.g. "4 week", "30 day") into Tutor `_course_duration`.
+		 *
+		 * Tutor stores duration as a serialized array with keys: hours/minutes/seconds.
+		 *
+		 * @param mixed $lp_duration LearnPress duration meta value.
+		 * @return string Serialized Tutor duration meta value, or empty string on failure.
+		 */
+		private function lp_duration_to_tutor_course_duration( $lp_duration ) {
+			if ( empty( $lp_duration ) ) {
+				return '';
+			}
+
+			$lp_duration = strtolower( trim( (string) $lp_duration ) );
+			$lp_duration = str_replace( ',', ' ', $lp_duration );
+
+			$seconds = 0;
+			// Support both singular and plural units (minute(s), hour(s), day(s), week(s), month(s)).
+			if ( preg_match_all( '/([0-9]+)\s*(minutes?|hours?|days?|weeks?|months?)/', $lp_duration, $matches, PREG_SET_ORDER ) ) {
+				foreach ( $matches as $match ) {
+					$number = (int) $match[1];
+					$unit   = rtrim( $match[2], 's' );
+
+					switch ( $unit ) {
+						case 'hour':
+							$seconds += $number * 3600;
+							break;
+						case 'day':
+							$seconds += $number * 86400;
+							break;
+						case 'week':
+							$seconds += $number * 604800;
+							break;
+						case 'month':
+							// LP core doesn't include month by default, but handle it defensively.
+							$seconds += $number * 2592000; // 30 * 24 * 3600
+							break;
+						case 'minute':
+						default:
+							$seconds += $number * 60;
+							break;
+					}
+				}
+			} else {
+				return '';
+			}
+
+			$hours         = (int) floor( $seconds / 3600 );
+			$minutes       = (int) floor( ( $seconds % 3600 ) / 60 );
+			$remaining_secs = (int) ( $seconds % 60 );
+
+			return maybe_serialize(
+				array(
+					'hours'   => $hours,
+					'minutes' => $minutes,
+					'seconds' => $remaining_secs,
+				)
+			);
 		}
 	}
 }
