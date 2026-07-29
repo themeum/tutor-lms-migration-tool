@@ -387,30 +387,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 						$lesson_id = tutils()->array_get('ID', $lesson);
 
 						if ( $lesson['post_type'] === 'tutor_quiz' && $lesson_id ) {
-							$quiz_option = array(
-								'time_limit'                         => array(
-									'time_value' => 0,
-									'time_type'  => 'minutes',
-								),
-								'hide_quiz_time_display'             => '0',
-								'feedback_mode'                      => 'default',
-								'attempts_allowed'                   => 10,
-								'limit_attempts_allowed'             => '0',
-								'passing_grade'                      => 80,
-								'max_questions_for_answer'           => 10,
-								'quiz_auto_start'                    => '0',
-								'question_layout_view'               => '',
-								'questions_order'                    => 'rand',
-								'short_answer_characters_limit'      => 200,
-								'open_ended_answer_characters_limit' => 500,
-								'pass_is_required'                   => '0',
-								'content_drip_settings'              => array(
-									'unlock_date'           => '',
-									'after_xdays_of_enroll' => '',
-									'prerequisites'         => array(),
-								),
-							);
-							update_post_meta( $lesson_id, 'tutor_quiz_option', $quiz_option );
+							update_post_meta( $lesson_id, 'tutor_quiz_option', $this->build_tutor_quiz_option_from_lp( $lesson_id ) );
 						}
 
 						if ($lesson_id){
@@ -1039,30 +1016,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 							}
 
 							if ( 'tutor_quiz' === $item_data['post_type'] ) {
-								$quiz_option = array(
-									'time_limit'                         => array(
-										'time_value' => 0,
-										'time_type'  => 'minutes',
-									),
-									'hide_quiz_time_display'             => '0',
-									'feedback_mode'                      => 'default',
-									'attempts_allowed'                   => 10,
-									'limit_attempts_allowed'             => '0',
-									'passing_grade'                      => 80,
-									'max_questions_for_answer'           => 10,
-									'quiz_auto_start'                    => '0',
-									'question_layout_view'               => '',
-									'questions_order'                    => 'rand',
-									'short_answer_characters_limit'      => 200,
-									'open_ended_answer_characters_limit' => 500,
-									'pass_is_required'                   => '0',
-									'content_drip_settings'              => array(
-										'unlock_date'           => '',
-										'after_xdays_of_enroll' => '',
-										'prerequisites'         => array(),
-									),
-								);
-								update_post_meta( $item_id, 'tutor_quiz_option', $quiz_option );
+								update_post_meta( $item_id, 'tutor_quiz_option', $this->build_tutor_quiz_option_from_lp( $item_id ) );
 							}
 						}
 					}
@@ -1227,7 +1181,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 									if (is_array($item_metas) && count($item_metas)){
 										foreach ($item_metas as $item_meta){
-											$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
+											$xml .= "<{$item_meta->meta_key}>{$this->xml_cdata($item_meta->meta_value)}</{$item_meta->meta_key}>\n";
 										}
 									}
 
@@ -1404,6 +1358,128 @@ if ( ! class_exists('LPtoTutorMigration')){
 		", $section_id, /*'publish',*/ 'publish' ) );
 
 			return $results;
+		}
+
+		/**
+		 * Build Tutor `tutor_quiz_option` from LearnPress quiz meta.
+		 *
+		 * Maps only settings Tutor already supports:
+		 * - `_lp_duration`        → `time_limit`
+		 * - `_lp_passing_grade`   → `passing_grade`
+		 * - `_lp_retake_count`    → `limit_attempts_allowed` / `attempts_allowed` / `feedback_mode`
+		 * - `_lp_instant_check`   → `enable_answer_reveal`
+		 *
+		 * Unmapped (no Tutor quiz-option equivalent): `_lp_review`, `_lp_negative_marking`.
+		 *
+		 * @param int $quiz_id Quiz post ID (still holding LP meta, or after meta copy on XML import).
+		 * @return array
+		 */
+		private function build_tutor_quiz_option_from_lp( $quiz_id ) {
+			$quiz_option = array(
+				'time_limit'                         => array(
+					'time_value' => 0,
+					'time_type'  => 'minutes',
+				),
+				'hide_quiz_time_display'             => '0',
+				'feedback_mode'                      => 'default',
+				'attempts_allowed'                   => 10,
+				'limit_attempts_allowed'             => '0',
+				'enable_answer_reveal'               => '0',
+				'passing_grade'                      => 80,
+				'max_questions_for_answer'           => 10,
+				'quiz_auto_start'                    => '0',
+				'question_layout_view'               => '',
+				'questions_order'                    => 'rand',
+				'short_answer_characters_limit'      => 200,
+				'open_ended_answer_characters_limit' => 500,
+				'pass_is_required'                   => '0',
+				'content_drip_settings'              => array(
+					'unlock_date'           => '',
+					'after_xdays_of_enroll' => '',
+					'prerequisites'         => array(),
+				),
+			);
+
+			$time_limit = $this->lp_duration_to_tutor_quiz_time_limit( get_post_meta( $quiz_id, '_lp_duration', true ) );
+			if ( ! empty( $time_limit ) ) {
+				$quiz_option['time_limit'] = $time_limit;
+			}
+
+			$passing_grade = get_post_meta( $quiz_id, '_lp_passing_grade', true );
+			if ( is_numeric( $passing_grade ) ) {
+				$quiz_option['passing_grade'] = max( 0, min( 100, (int) $passing_grade ) );
+			}
+
+			$retake_count = get_post_meta( $quiz_id, '_lp_retake_count', true );
+			if ( '' !== $retake_count && null !== $retake_count ) {
+				$retake_count = (int) $retake_count;
+
+				if ( -1 === $retake_count ) {
+					// Unlimited retakes.
+					$quiz_option['limit_attempts_allowed'] = '1';
+					$quiz_option['attempts_allowed']       = 0;
+					$quiz_option['feedback_mode']          = 'retry';
+				} elseif ( $retake_count > 0 ) {
+					// LP stores retakes; Tutor stores total attempts (initial + retakes).
+					$quiz_option['limit_attempts_allowed'] = '1';
+					$quiz_option['attempts_allowed']       = $retake_count + 1;
+					$quiz_option['feedback_mode']          = 'retry';
+				} else {
+					// No retakes — single attempt.
+					$quiz_option['limit_attempts_allowed'] = '0';
+					$quiz_option['attempts_allowed']       = 1;
+					$quiz_option['feedback_mode']          = 'default';
+				}
+			}
+
+			$instant_check = get_post_meta( $quiz_id, '_lp_instant_check', true );
+			if ( 'yes' === $instant_check ) {
+				$quiz_option['enable_answer_reveal'] = '1';
+			}
+
+			return $quiz_option;
+		}
+
+		/**
+		 * Convert LearnPress quiz `_lp_duration` into Tutor quiz `time_limit`.
+		 *
+		 * @param mixed $lp_duration LearnPress duration (e.g. "30 minute", "1 hour", "0").
+		 * @return array{time_value:int,time_type:string}|array Empty array when unparseable / no limit text.
+		 */
+		private function lp_duration_to_tutor_quiz_time_limit( $lp_duration ) {
+			if ( '' === $lp_duration || null === $lp_duration ) {
+				return array();
+			}
+
+			$lp_duration = strtolower( trim( (string) $lp_duration ) );
+
+			// Bare zero (or "0 minute") means no time limit.
+			if ( '0' === $lp_duration || preg_match( '/^0\s*(minute|hour|day|week)s?$/', $lp_duration ) ) {
+				return array(
+					'time_value' => 0,
+					'time_type'  => 'minutes',
+				);
+			}
+
+			if ( ! preg_match( '/^([0-9]+)\s*(minutes?|hours?|days?|weeks?|seconds?)$/', $lp_duration, $match ) ) {
+				return array();
+			}
+
+			$value = (int) $match[1];
+			$unit  = rtrim( $match[2], 's' );
+
+			$type_map = array(
+				'second' => 'seconds',
+				'minute' => 'minutes',
+				'hour'   => 'hours',
+				'day'    => 'days',
+				'week'   => 'weeks',
+			);
+
+			return array(
+				'time_value' => $value,
+				'time_type'  => isset( $type_map[ $unit ] ) ? $type_map[ $unit ] : 'minutes',
+			);
 		}
 
 		/**
