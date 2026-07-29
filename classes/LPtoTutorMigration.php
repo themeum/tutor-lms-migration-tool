@@ -327,8 +327,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 									if ($question->question_type === 'single_choice'){
 										$question_type = 'single_choice';
 									}
-									if ($question->question_type === 'multiple_choice'){
-										$question_type = 'multi_choice';
+									if ($question->question_type === 'multi_choice'){
+										$question_type = 'multiple_choice';
 									}
 
 									if ($question_type) {
@@ -385,6 +385,34 @@ if ( ! class_exists('LPtoTutorMigration')){
 						wp_update_post($lesson);
 
 						$lesson_id = tutils()->array_get('ID', $lesson);
+
+						if ( $lesson['post_type'] === 'tutor_quiz' && $lesson_id ) {
+							$quiz_option = array(
+								'time_limit'                         => array(
+									'time_value' => 0,
+									'time_type'  => 'minutes',
+								),
+								'hide_quiz_time_display'             => '0',
+								'feedback_mode'                      => 'default',
+								'attempts_allowed'                   => 10,
+								'limit_attempts_allowed'             => '0',
+								'passing_grade'                      => 80,
+								'max_questions_for_answer'           => 10,
+								'quiz_auto_start'                    => '0',
+								'question_layout_view'               => '',
+								'questions_order'                    => 'rand',
+								'short_answer_characters_limit'      => 200,
+								'open_ended_answer_characters_limit' => 500,
+								'pass_is_required'                   => '0',
+								'content_drip_settings'              => array(
+									'unlock_date'           => '',
+									'after_xdays_of_enroll' => '',
+									'prerequisites'         => array(),
+								),
+							);
+							update_post_meta( $lesson_id, 'tutor_quiz_option', $quiz_option );
+						}
+
 						if ($lesson_id){
 							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 						}
@@ -1001,6 +1029,33 @@ if ( ! class_exists('LPtoTutorMigration')){
 										$wpdb->insert($wpdb->prefix.'tutor_quiz_question_answers', $answer);
 									}
 								}
+							}
+
+							if ( 'tutor_quiz' === $item_data['post_type'] ) {
+								$quiz_option = array(
+									'time_limit'                         => array(
+										'time_value' => 0,
+										'time_type'  => 'minutes',
+									),
+									'hide_quiz_time_display'             => '0',
+									'feedback_mode'                      => 'default',
+									'attempts_allowed'                   => 10,
+									'limit_attempts_allowed'             => '0',
+									'passing_grade'                      => 80,
+									'max_questions_for_answer'           => 10,
+									'quiz_auto_start'                    => '0',
+									'question_layout_view'               => '',
+									'questions_order'                    => 'rand',
+									'short_answer_characters_limit'      => 200,
+									'open_ended_answer_characters_limit' => 500,
+									'pass_is_required'                   => '0',
+									'content_drip_settings'              => array(
+										'unlock_date'           => '',
+										'after_xdays_of_enroll' => '',
+										'prerequisites'         => array(),
+									),
+								);
+								update_post_meta( $item_id, 'tutor_quiz_option', $quiz_option );
 							}
 						}
 					}
