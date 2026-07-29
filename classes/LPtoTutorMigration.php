@@ -427,6 +427,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 				}
 			}
 
+			// Migrate categories & tags before the CPT change (LP taxonomies are only registered for lp_course).
+			$lp_tax_migrator = new \Themeum\TutorLMSMigrationTool\LPMigration\CourseTaxonomies();
+			$lp_tax_migrator->migrate( $course_id );
+
 			//Migrate Course
 			$tutor_course = array(
 				'ID'            => $course_id,
