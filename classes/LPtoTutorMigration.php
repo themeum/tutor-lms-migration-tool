@@ -604,6 +604,24 @@ if ( ! class_exists('LPtoTutorMigration')){
 					}
 				}
 			}
+
+			/**
+			 * Lesson progress migration
+			 *
+			 * LP stores completed lessons in learnpress_user_items; Tutor uses
+			 * user meta `_tutor_completed_lesson_id_{lesson_id}`.
+			 */
+			try {
+				$student_progress = \Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory::create(
+					\Themeum\TutorLMSMigrationTool\MigrationTypes::LP_TO_TUTOR
+				);
+				$student_progress->migrate( (int) $course_id );
+			} catch ( \Throwable $th ) {
+				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+					\Themeum\TutorLMSMigrationTool\ContentTypes::STUDENT_PROGRESS,
+					'Failed to migrate lesson progress. ' . $th->getMessage()
+				);
+			}
 		}
 
 		/*
