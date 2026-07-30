@@ -420,35 +420,34 @@ if ( ! class_exists('LPtoTutorMigration')){
 			$this->migrate_lp_course_meta_to_tutor( $course_id );
 
 			/**
-			 * Create WC Product and attaching it with course
+			 * Course pricing:
+			 * 1) Always write Tutor native price meta from LP (needed when monetize_by=tutor).
+			 * 2) Optionally create WC / EDD products when those monetization modes are active.
 			 */
-			update_post_meta($course_id, '_tutor_course_price_type', 'free');
-			$tutor_monetize_by = tutils()->get_option('monetize_by');
+			$this->migrate_lp_course_pricing_to_tutor( $course_id );
 
-			if ( tutils()->has_wc() && ( $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) ) {
+			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
+			$lp_prices        = $this->get_lp_course_prices( $course_id );
 
-				$_lp_price = get_post_meta($course_id, '_lp_price', true);
-				$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
+			if ( tutils()->has_wc() && ( 'wc' === $tutor_monetize_by || '-1' === $tutor_monetize_by || 'free' === $tutor_monetize_by ) ) {
+				if ( $lp_prices['regular'] > 0 ) {
+					$product_id = wp_insert_post(
+						array(
+							'post_title'   => $course->get_title() . ' Product',
+							'post_content' => '',
+							'post_status'  => 'publish',
+							'post_type'    => 'product',
+						)
+					);
 
-				if ($_lp_price){
-
-					update_post_meta($course_id, '_tutor_course_price_type', 'paid');
-	
-					$product_id = wp_insert_post( array(
-						'post_title' => $course->get_title().' Product',
-						'post_content' => '',
-						'post_status' => 'publish',
-						'post_type' => "product",
-					) );
-	
-					if ($product_id) {
-	
+					if ( $product_id ) {
+						$wc_price      = $lp_prices['sale'] > 0 ? $lp_prices['sale'] : $lp_prices['regular'];
 						$product_metas = array(
 							'_stock_status'      => 'instock',
 							'total_sales'        => '0',
-							'_regular_price'     => $_lp_price,
-							'_sale_price'        => $_lp_sale_price,
-							'_price'             => $_lp_price,
+							'_regular_price'     => $lp_prices['regular'],
+							'_sale_price'        => $lp_prices['sale'] > 0 ? $lp_prices['sale'] : '',
+							'_price'             => $wc_price,
 							'_sold_individually' => 'no',
 							'_manage_stock'      => 'no',
 							'_backorders'        => 'no',
@@ -456,60 +455,46 @@ if ( ! class_exists('LPtoTutorMigration')){
 							'_virtual'           => 'yes',
 							'_tutor_product'     => 'yes',
 						);
-	
+
 						foreach ( $product_metas as $key => $value ) {
 							update_post_meta( $product_id, $key, $value );
 						}
-	
 					}
-	
-					/**
-					 * Attaching product to course
-					 */
-					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-					$coursePostThumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
-					if ( $coursePostThumbnail ) {
-						set_post_thumbnail( $product_id, $coursePostThumbnail );
-					}
-	
-				} else{
-					update_post_meta($course_id, '_tutor_course_price_type', 'free');
-				}
 
+					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
+					$course_post_thumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+					if ( $course_post_thumbnail ) {
+						set_post_thumbnail( $product_id, $course_post_thumbnail );
+					}
+				}
 			}
 
-			/**
-			 * Create EDD Product and linked with the course
-			 */
-			if (tutils()->has_edd() && $tutor_monetize_by == 'edd') {
-				$_lp_price = get_post_meta($course_id, '_lp_price', true);
-				$_lp_sale_price = get_post_meta($course_id, '_lp_sale_price', true);
-
-				if ($_lp_price){
-					update_post_meta($course_id, '_tutor_course_price_type', 'paid');
-					$product_id = wp_insert_post(array(
-						'post_title' => $course->get_title().' Product',
-						'post_content' => '',
-						'post_status' => 'publish',
-						'post_type' => "download",
-					));
-					$product_metas = array(
-						'edd_price'             => $_lp_price,
-						'edd_variable_prices'   => array(),
-						'edd_download_files'    => array(),
-						'_edd_bundled_products' => array('0'),
-						'_edd_bundled_products_conditions' => array('all'),
+			if ( tutils()->has_edd() && 'edd' === $tutor_monetize_by ) {
+				if ( $lp_prices['regular'] > 0 ) {
+					$product_id = wp_insert_post(
+						array(
+							'post_title'   => $course->get_title() . ' Product',
+							'post_content' => '',
+							'post_status'  => 'publish',
+							'post_type'    => 'download',
+						)
 					);
-					foreach ($product_metas as $key => $value) {
-						update_post_meta($product_id, $key, $value);
+					$edd_price  = $lp_prices['sale'] > 0 ? $lp_prices['sale'] : $lp_prices['regular'];
+					$product_metas = array(
+						'edd_price'                       => $edd_price,
+						'edd_variable_prices'             => array(),
+						'edd_download_files'              => array(),
+						'_edd_bundled_products'           => array( '0' ),
+						'_edd_bundled_products_conditions' => array( 'all' ),
+					);
+					foreach ( $product_metas as $key => $value ) {
+						update_post_meta( $product_id, $key, $value );
 					}
-					update_post_meta($course_id, '_tutor_course_product_id', $product_id);
-					$coursePostThumbnail = get_post_meta($course_id, '_thumbnail_id', true);
-					if ($coursePostThumbnail) {
-						set_post_thumbnail($product_id, $coursePostThumbnail);
+					update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
+					$course_post_thumbnail = get_post_meta( $course_id, '_thumbnail_id', true );
+					if ( $course_post_thumbnail ) {
+						set_post_thumbnail( $product_id, $course_post_thumbnail );
 					}
-				} else {
-					update_post_meta($course_id, '_tutor_course_price_type', 'free');
 				}
 			}
 
@@ -624,17 +609,129 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 		}
 
-		/*
-		* Learnpress eCommerce order migrate to WC
-		*/
-		public function migrate_lp_orders(){
+		/**
+		 * LearnPress ecommerce order migration.
+		 *
+		 * Routes to Tutor native ecommerce when monetize_by is `tutor`,
+		 * otherwise keeps the legacy WooCommerce shop_order conversion.
+		 *
+		 * @return array
+		 */
+		public function migrate_lp_orders() {
+			tutor_utils()->checking_nonce();
+			Utils::check_course_access();
+			$this->raise_migration_resource_limits();
+
+			if ( tutor_utils()->is_monetize_by_tutor() ) {
+				return $this->migrate_lp_orders_to_native();
+			}
+
+			return $this->migrate_lp_orders_to_wc();
+		}
+
+		/**
+		 * Migrate LP orders into Tutor native ecommerce tables.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return array
+		 */
+		private function migrate_lp_orders_to_native() {
 			global $wpdb;
 
-			tutor_utils()->checking_nonce();
+			$total_course_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lp_course'" );
 
-			Utils::check_course_access();
+			$migrator = new \Themeum\TutorLMSMigrationTool\LPMigration\Orders\OrderMigrator();
 
-			$this->raise_migration_resource_limits();
+			$batch_size = (int) apply_filters( 'tlmt_lp_order_migration_batch_size', self::ORDER_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ORDER_BATCH_SIZE;
+			}
+
+			$remaining_total = $migrator->get_remaining_count();
+
+			$is_first_batch = ! empty( $_POST['lp_order_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				update_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total, false );
+			}
+
+			$total_orders = (int) get_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total );
+			if ( $total_orders < 1 ) {
+				$total_orders = $remaining_total;
+			}
+
+			if ( $remaining_total < 1 ) {
+				return array(
+					'migrated'           => $total_orders,
+					'total'              => $total_orders,
+					'total_course_count' => $total_course_count,
+					'remaining'          => 0,
+					'has_more'           => false,
+					'batch_size'         => $batch_size,
+					'target'             => 'native',
+				);
+			}
+
+			$lp_orders = $migrator->get_batch( $batch_size );
+			$item_i    = (int) get_option( '_tutor_migrated_items_count' );
+
+			foreach ( $lp_orders as $lp_order ) {
+				$item_i++;
+				update_option( '_tutor_migrated_items_count', $item_i );
+
+				try {
+					$migrator->migrate_order( $lp_order );
+				} catch ( \Throwable $th ) {
+					\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+						\Themeum\TutorLMSMigrationTool\ContentTypes::ORDERS,
+						sprintf(
+							/* translators: 1: LP order ID, 2: error message */
+							__( 'LP order #%1$d native migration failed: %2$s', 'tutor-lms-migration-tool' ),
+							(int) $lp_order->ID,
+							$th->getMessage()
+						)
+					);
+					// Mark processed so the batch cannot loop forever on a poison order.
+					update_post_meta(
+						(int) $lp_order->ID,
+						\Themeum\TutorLMSMigrationTool\LPMigration\Orders\OrderMigrator::META_MIGRATED_ORDER_ID,
+						0
+					);
+					update_post_meta(
+						(int) $lp_order->ID,
+						\Themeum\TutorLMSMigrationTool\LPMigration\Orders\OrderMigrator::META_SKIP_REASON,
+						'exception:' . $th->getMessage()
+					);
+				}
+			}
+
+			$remaining_after = $migrator->get_remaining_count();
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_orders - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'migrated'           => $migrated_count,
+				'total'              => $total_orders,
+				'total_course_count' => $total_course_count,
+				'remaining'          => $remaining_after,
+				'has_more'           => $has_more,
+				'batch_size'         => $batch_size,
+				'target'             => 'native',
+			);
+		}
+
+		/**
+		 * Legacy: convert completed LP orders into WooCommerce shop orders.
+		 *
+		 * @return array
+		 */
+		private function migrate_lp_orders_to_wc() {
+			global $wpdb;
 
 			$total_course_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lp_course'" );
 
@@ -647,7 +744,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 					'remaining'          => 0,
 					'has_more'           => false,
 					'skipped'            => true,
-					'message'            => __( 'WooCommerce is not active; LearnPress orders were skipped.', 'tutor-lms-migration-tool' ),
+					'target'             => 'wc',
+					'message'            => __( 'WooCommerce is not active; LearnPress orders were skipped. Switch Tutor monetization to Native or activate WooCommerce.', 'tutor-lms-migration-tool' ),
 				);
 			}
 
@@ -677,6 +775,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 					'remaining'          => 0,
 					'has_more'           => false,
 					'batch_size'         => $batch_size,
+					'target'             => 'wc',
 				);
 			}
 
@@ -687,31 +786,31 @@ if ( ! class_exists('LPtoTutorMigration')){
 				)
 			);
 
-			$item_i = (int) get_option('_tutor_migrated_items_count');
-			foreach ($lp_orders as $lp_order){
+			$item_i = (int) get_option( '_tutor_migrated_items_count' );
+			foreach ( $lp_orders as $lp_order ) {
 				$item_i++;
-				update_option('_tutor_migrated_items_count', $item_i);
+				update_option( '_tutor_migrated_items_count', $item_i );
 
-				$order_id = $lp_order->ID;
+				$order_id           = $lp_order->ID;
 				$migrate_order_data = array(
-					'ID'    => $order_id,
-					'post_status'    => 'wc-completed',
-					'post_type'    => 'shop_order',
+					'ID'          => $order_id,
+					'post_status' => 'wc-completed',
+					'post_type'   => 'shop_order',
 				);
 
-				wp_update_post($migrate_order_data);
+				wp_update_post( $migrate_order_data );
 
-				$_items = $this->get_lp_order_items($order_id);
+				$_items = $this->get_lp_order_items( $order_id );
 
-				foreach ($_items as $item){
+				foreach ( $_items as $item ) {
 
 					$item_data = array(
-						'order_item_name'   => $item->name,
-						'order_item_type'   => 'line_item',
-						'order_id'          => $order_id,
+						'order_item_name' => $item->name,
+						'order_item_type' => 'line_item',
+						'order_id'        => $order_id,
 					);
 
-					$wpdb->insert($wpdb->prefix.'woocommerce_order_items', $item_data);
+					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
 					$order_item_id = (int) $wpdb->insert_id;
 
 					$lp_item_metas = $wpdb->get_results(
@@ -722,14 +821,14 @@ if ( ! class_exists('LPtoTutorMigration')){
 					);
 
 					$lp_formatted_metas = array();
-					foreach ($lp_item_metas as $item_meta) {
-						$lp_formatted_metas[$item_meta->meta_key] = $item_meta->meta_value;
+					foreach ( $lp_item_metas as $item_meta ) {
+						$lp_formatted_metas[ $item_meta->meta_key ] = $item_meta->meta_value;
 					}
 
-					$_course_id = tutils()->array_get('_course_id', $lp_formatted_metas);
-					$_quantity = tutils()->array_get('_quantity', $lp_formatted_metas);
-					$_subtotal = tutils()->array_get('_subtotal', $lp_formatted_metas);
-					$_total = tutils()->array_get('_total', $lp_formatted_metas);
+					$_course_id = tutils()->array_get( '_course_id', $lp_formatted_metas );
+					$_quantity  = tutils()->array_get( '_quantity', $lp_formatted_metas );
+					$_subtotal  = tutils()->array_get( '_subtotal', $lp_formatted_metas );
+					$_total     = tutils()->array_get( '_total', $lp_formatted_metas );
 
 					$wc_item_metas = array(
 						'_product_id'        => $_course_id,
@@ -743,24 +842,23 @@ if ( ! class_exists('LPtoTutorMigration')){
 						'_line_tax_data'     => maybe_serialize( array( 'total' => array(), 'subtotal' => array() ) ),
 					);
 
-					foreach ($wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ){
-						$wc_item_metas = array(
+					foreach ( $wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ) {
+						$wc_item_meta_row = array(
 							'order_item_id' => $order_item_id,
 							'meta_key'      => $wc_item_meta_key,
 							'meta_value'    => $wc_item_meta_value,
 						);
-						$wpdb->insert($wpdb->prefix.'woocommerce_order_itemmeta', $wc_item_metas);
+						$wpdb->insert( $wpdb->prefix . 'woocommerce_order_itemmeta', $wc_item_meta_row );
 					}
-
 				}
 
-				update_post_meta($order_id, '_customer_user', get_post_meta($order_id, '_user_id', true));
-				update_post_meta($order_id, '_customer_ip_address', get_post_meta($order_id, '_user_ip_address', true));
-				update_post_meta($order_id, '_customer_user_agent', get_post_meta($order_id, '_user_agent', true));
+				update_post_meta( $order_id, '_customer_user', get_post_meta( $order_id, '_user_id', true ) );
+				update_post_meta( $order_id, '_customer_ip_address', get_post_meta( $order_id, '_user_ip_address', true ) );
+				update_post_meta( $order_id, '_customer_user_agent', get_post_meta( $order_id, '_user_agent', true ) );
 
 				$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $lp_order->post_author ) );
-				update_post_meta($order_id, '_billing_address_index', $user_email );
-				update_post_meta($order_id, '_billing_email', $user_email );
+				update_post_meta( $order_id, '_billing_address_index', $user_email );
+				update_post_meta( $order_id, '_billing_email', $user_email );
 			}
 
 			$remaining_after = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'lp_order' AND post_status = 'lp-completed'" );
@@ -778,6 +876,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 				'remaining'          => $remaining_after,
 				'has_more'           => $has_more,
 				'batch_size'         => $batch_size,
+				'target'             => 'wc',
 			);
 		}
 
@@ -1498,6 +1597,103 @@ if ( ! class_exists('LPtoTutorMigration')){
 				'time_value' => $value,
 				'time_type'  => isset( $type_map[ $unit ] ) ? $type_map[ $unit ] : 'minutes',
 			);
+		}
+
+		/**
+		 * Resolve LearnPress regular/sale prices for a course.
+		 *
+		 * Prefers `_lp_regular_price`, falls back to `_lp_price`.
+		 * Sale applies only when > 0 and strictly less than regular.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $course_id Course ID.
+		 *
+		 * @return array{regular: float, sale: float}
+		 */
+		private function get_lp_course_prices( $course_id ) {
+			$regular = (float) get_post_meta( $course_id, '_lp_regular_price', true );
+			if ( $regular <= 0 ) {
+				$regular = (float) get_post_meta( $course_id, '_lp_price', true );
+			}
+
+			$sale = (float) get_post_meta( $course_id, '_lp_sale_price', true );
+			if ( $sale <= 0 || $sale >= $regular ) {
+				$sale = 0;
+			}
+
+			return array(
+				'regular' => $regular,
+				'sale'    => $sale,
+			);
+		}
+
+		/**
+		 * Write Tutor native course price meta from LearnPress prices.
+		 *
+		 * Always runs so courses are not left as free when monetize_by is Tutor
+		 * (or when WC/EDD product creation is skipped).
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $course_id Course ID.
+		 *
+		 * @return void
+		 */
+		private function migrate_lp_course_pricing_to_tutor( $course_id ) {
+			$prices = $this->get_lp_course_prices( $course_id );
+
+			if ( $prices['regular'] > 0 ) {
+				update_post_meta( $course_id, \TUTOR\Course::COURSE_PRICE_TYPE_META, \TUTOR\Course::PRICE_TYPE_PAID );
+				update_post_meta( $course_id, \TUTOR\Course::COURSE_PRICE_META, $prices['regular'] );
+
+				if ( $prices['sale'] > 0 ) {
+					update_post_meta( $course_id, \TUTOR\Course::COURSE_SALE_PRICE_META, $prices['sale'] );
+				} else {
+					delete_post_meta( $course_id, \TUTOR\Course::COURSE_SALE_PRICE_META );
+				}
+
+				$this->ensure_native_monetization_for_lp_prices();
+			} else {
+				update_post_meta( $course_id, \TUTOR\Course::COURSE_PRICE_TYPE_META, \TUTOR\Course::PRICE_TYPE_FREE );
+				delete_post_meta( $course_id, \TUTOR\Course::COURSE_PRICE_META );
+				delete_post_meta( $course_id, \TUTOR\Course::COURSE_SALE_PRICE_META );
+			}
+		}
+
+		/**
+		 * If site monetization is unset/free and WC/EDD are not the active mode,
+		 * switch to Tutor native so paid course prices actually render.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return void
+		 */
+		private function ensure_native_monetization_for_lp_prices() {
+			static $done = false;
+			if ( $done ) {
+				return;
+			}
+			$done = true;
+
+			if ( tutor_utils()->is_monetize_by_tutor() ) {
+				return;
+			}
+
+			$monetize_by = tutor_utils()->get_option( 'monetize_by' );
+
+			// Do not override an explicit WC/EDD monetization choice.
+			if ( 'wc' === $monetize_by || 'edd' === $monetize_by || 'pmpro' === $monetize_by ) {
+				return;
+			}
+
+			// If WooCommerce is present and monetize is free/-1/empty, keep legacy WC product path
+			// available; only force native when there is no WC store to attach products to.
+			if ( tutor_utils()->has_wc() ) {
+				return;
+			}
+
+			tutor_utils()->update_option( 'monetize_by', \Tutor\Ecommerce\Ecommerce::MONETIZE_BY );
 		}
 
 		/**
