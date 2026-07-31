@@ -556,6 +556,7 @@ jQuery(document).ready(function ($) {
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
     var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
     var tutorMigrationUploadArea = $('.tutor-migration-upload-area');
+    var migrationConsentCheckbox = $('.migration-consent-checkbox');
 
     function activeModal(activeItem) {
         $(activeItem).addClass('active');
@@ -564,17 +565,55 @@ jQuery(document).ready(function ($) {
         removeItem.removeClass('active');
     }
 
+    function hasMigrationConsentRequirement() {
+        return migrationConsentCheckbox.length > 0;
+    }
+
+    function isMigrationConsentGiven() {
+        if (!hasMigrationConsentRequirement()) {
+            return true;
+        }
+        return migrationConsentCheckbox.is(':checked');
+    }
+
+    function setMigrationStartEnabled(enabled) {
+        if (!migrateStartBtn.length) {
+            return;
+        }
+        migrateStartBtn.toggleClass('is-disabled', !enabled);
+        migrateStartBtn.attr('aria-disabled', enabled ? 'false' : 'true');
+    }
+
+    function resetMigrationConsent() {
+        if (!hasMigrationConsentRequirement()) {
+            setMigrationStartEnabled(true);
+            return;
+        }
+        migrationConsentCheckbox.prop('checked', false);
+        setMigrationStartEnabled(false);
+    }
+
+    resetMigrationConsent();
+
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
         if (totalItemsMigrateCounts > 0) {
+            resetMigrationConsent();
             migrationModal.addClass('active');
         }
+    });
+
+    $(document).on('change', '.migration-consent-checkbox', function () {
+        setMigrationStartEnabled($(this).is(':checked'));
     });
 
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
+        if (!isMigrationConsentGiven()) {
+            return;
+        }
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -584,6 +623,7 @@ jQuery(document).ready(function ($) {
     // migration later button click action
     $(migrateLaterBtn).on('click', function (event) {
         event.preventDefault();
+        resetMigrationConsent();
         removeModal(migrationModal);
     });
 
@@ -602,6 +642,7 @@ jQuery(document).ready(function ($) {
     // error modal close button click action
     $(migrateModalClose).on('click', function (event) {
         event.preventDefault();
+        resetMigrationConsent();
         removeModal(migrationModal);
     });
     // error modal close button click action

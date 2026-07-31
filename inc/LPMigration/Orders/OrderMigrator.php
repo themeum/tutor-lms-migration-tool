@@ -155,7 +155,8 @@ class OrderMigrator {
 	 * Migrate one LP order into Tutor native ecommerce.
 	 *
 	 * Idempotent: if already marked migrated, returns existing id without insert.
-	 * Does not mutate lp_order post_type. Does not fire tutor_order_placed.
+	 * The source lp_order is removed on success; skipped or failed orders are
+	 * left in place with a skip reason. Does not fire tutor_order_placed.
 	 *
 	 * @since 2.5.0
 	 *
@@ -206,7 +207,7 @@ class OrderMigrator {
 				$tutor_order_id = $this->create_native_order( $lp_order, (int) $buyer_id, $items );
 				if ( $tutor_order_id > 0 ) {
 					$created_ids[] = $tutor_order_id;
-					$this->link_enrollments( $tutor_order_id, (int) $buyer_id, $items );
+					$this->link_enrollments( $tutor_order_id, (int) $buyer_id, $items, $lp_order_id );
 				}
 			} catch ( \Throwable $th ) {
 				ErrorHandler::set_error(
@@ -228,15 +229,54 @@ class OrderMigrator {
 			return 0;
 		}
 
-		// Primary id for idempotency; extras kept for audit when multi-buyer.
 		$primary_id = (int) $created_ids[0];
+
+		// Marked before removal so a failed delete cannot re-queue the order.
 		update_post_meta( $lp_order_id, self::META_MIGRATED_ORDER_ID, $primary_id );
-		if ( count( $created_ids ) > 1 ) {
-			update_post_meta( $lp_order_id, '_tlmt_migrated_to_native_order_ids', array_map( 'intval', $created_ids ) );
-		}
 		delete_post_meta( $lp_order_id, self::META_SKIP_REASON );
 
+		$this->remove_lp_order( $lp_order_id );
+
 		return $primary_id;
+	}
+
+	/**
+	 * Remove a LearnPress order once it has been migrated.
+	 *
+	 * Rows are deleted directly instead of via wp_delete_post() because
+	 * LearnPress cascades order deletion into learnpress_user_items, which
+	 * still holds the enrollment and lesson progress source data.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param int $lp_order_id LP order id.
+	 *
+	 * @return void
+	 */
+	private function remove_lp_order( int $lp_order_id ): void {
+		global $wpdb;
+
+		$items_table    = $wpdb->prefix . 'learnpress_order_items';
+		$itemmeta_table = $wpdb->prefix . 'learnpress_order_itemmeta';
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE oim
+				FROM {$itemmeta_table} oim
+				INNER JOIN {$items_table} oi ON oi.order_item_id = oim.learnpress_order_item_id
+				WHERE oi.order_id = %d",
+				$lp_order_id
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$wpdb->delete( $items_table, array( 'order_id' => $lp_order_id ), array( '%d' ) );
+		$wpdb->delete( $wpdb->postmeta, array( 'post_id' => $lp_order_id ), array( '%d' ) );
+		$wpdb->delete( $wpdb->posts, array( 'ID' => $lp_order_id ), array( '%d' ) );
+
+		wp_cache_delete( $lp_order_id, 'posts' );
+		wp_cache_delete( $lp_order_id, 'post_meta' );
 	}
 
 	/**
@@ -348,16 +388,18 @@ class OrderMigrator {
 	 * Link existing Tutor enrollments to the new native order (no re-enroll).
 	 *
 	 * Only for paid/completed-equivalent orders with a real user.
+	 * Replaces a provisional LP order ID written during enrollment migration.
 	 *
 	 * @since 2.5.0
 	 *
 	 * @param int               $tutor_order_id Tutor order id.
 	 * @param int               $buyer_id       Buyer user id.
 	 * @param array<int, array> $items          Line items with course_id.
+	 * @param int               $lp_order_id    Source LearnPress order id.
 	 *
 	 * @return void
 	 */
-	private function link_enrollments( int $tutor_order_id, int $buyer_id, array $items ): void {
+	private function link_enrollments( int $tutor_order_id, int $buyer_id, array $items, int $lp_order_id = 0 ): void {
 		if ( $buyer_id < 1 || $tutor_order_id < 1 ) {
 			return;
 		}
@@ -386,10 +428,13 @@ class OrderMigrator {
 				continue;
 			}
 
-			// Do not overwrite a different order link.
+			// Do not overwrite a different order link — except provisional LP order IDs.
 			$existing_order_id = (int) get_post_meta( $enrollment->ID, EnrollmentModel::ENROLLMENT_ORDER_ID_META, true );
 			if ( $existing_order_id > 0 && $existing_order_id !== $tutor_order_id ) {
-				continue;
+				$is_provisional_lp = $lp_order_id > 0 && $existing_order_id === $lp_order_id;
+				if ( ! $is_provisional_lp ) {
+					continue;
+				}
 			}
 
 			update_post_meta( $enrollment->ID, EnrollmentModel::ENROLLMENT_ORDER_ID_META, $tutor_order_id );

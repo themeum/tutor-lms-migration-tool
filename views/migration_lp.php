@@ -232,26 +232,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="lp-migration-modal-wrap">
 
 	<div class="lp-migration-modal">
-        <div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
+		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-48 tutor-px-32 tutor-text-center">
 			<div class="lp-migration-modal-icon">
-				<img src="<?php echo TLMT_URL . 'assets/img/yes_no.svg'; ?>" alt="export">
+				<img src="<?php echo esc_url( TLMT_URL . 'assets/img/yes_no.svg' ); ?>" alt="export">
 			</div>
-			<div class="migration-modal-btn-group flex-center tutor-flex-column">
-                <div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
-					<?php _e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
-                    <br>
-                    <?php _e( 'LearnPress to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+			<div class="migration-modal-btn-group migration-modal-consent-group flex-center tutor-flex-column">
+				<div class="migration-modal-title tutor-fs-5 tutor-fw-medium tutor-color-black">
+					<?php esc_html_e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
+					<br>
+					<?php esc_html_e( 'LearnPress to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
 				</div>
-                <div class="tutor-d-flex">
-                    <a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
-                        <span> <?php _e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
-                    </a>
-                    <a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-md">
-                        <span>
-                            <?php _e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' ); ?>
-                        </span>
-                    </a>
-                </div>
+				<?php
+				$source_lms     = __( 'LearnPress', 'tutor-lms-migration-tool' );
+				$deletion_items = array(
+					__( 'Courses, lessons, and quizzes — they will disappear from LearnPress and only remain available in Tutor LMS', 'tutor-lms-migration-tool' ),
+					__( 'Migrated LearnPress orders (including order items and order metadata)', 'tutor-lms-migration-tool' ),
+					__( 'LearnPress review titles (review content and ratings are migrated)', 'tutor-lms-migration-tool' ),
+				);
+				require __DIR__ . '/components/migration-deletion-consent.php';
+				?>
+				<div class="migration-modal-actions tutor-d-flex">
+					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg">
+						<span><?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
+					</a>
+					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg" aria-disabled="true">
+						<span><?php esc_html_e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' ); ?></span>
+					</a>
+				</div>
 			</div>
 			<div class="modal-close migration-modal-close">
 				<span class="modal-close-line migration-modal-close-line-one"></span>

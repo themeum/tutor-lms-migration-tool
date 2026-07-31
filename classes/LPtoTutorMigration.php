@@ -499,95 +499,131 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 
 			/**
-			 * Course Complete Status Migration
-			 */
-			
-			$lp_course_complete_datas = $wpdb->get_results( 
-				$wpdb->prepare(
-					"SELECT lp_user_items.*,
-					lp_order.ID as order_id,
-					lp_order.post_date as order_time
-
-					FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-					LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-					WHERE item_id = %d AND item_type = 'lp_course' AND graduation ='passed'",
-					$course_id
-				)
-			);
-
-			foreach ($lp_course_complete_datas as $lp_course_complete_data){
-				$user_id = $lp_course_complete_data->user_id;
-
-				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
-
-					$date = date( 'Y-m-d H:i:s', tutor_time() );
-
-					do {
-						$hash    = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
-						$hasHash = (int) $wpdb->get_var(
-							$wpdb->prepare(
-								"SELECT COUNT(comment_ID) from {$wpdb->comments}
-								WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
-								$hash
-							)
-						);
-			
-					} while ( $hasHash > 0 );
-
-					$tutor_course_complete_data = array(
-						'comment_type'   => 'course_completed',
-						'comment_agent'   => 'TutorLMSPlugin',
-						'comment_approved'   => 'approved',
-						'comment_content'   => $hash,
-						'user_id' => $user_id,
-						'comment_author' => $user_id,
-						'comment_post_ID' => $course_id,
-					);
-
-					$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
-					
-				}
-			}
-			
-
-			/**
 			 * Enrollment Migration to this course
+			 *
+			 * Maps LP status → Tutor enrollment status, preserves start_time,
+			 * and links `_tutor_enrolled_by_order_id` to the LP order ID (WC keeps
+			 * the same ID; native OrderMigrator replaces it later).
 			 */
-			$lp_enrollments = $wpdb->get_results( 
+			$lp_enrollments = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT lp_user_items.*,
 					lp_order.ID as order_id,
-					lp_order.post_date as order_time
+					lp_order.post_date_gmt as order_time_gmt
 
 					FROM {$wpdb->prefix}learnpress_user_items lp_user_items
 					LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-					WHERE item_id = %d AND ref_type = 'lp_order'",
+					WHERE lp_user_items.item_id = %d
+						AND lp_user_items.item_type = 'lp_course'
+						AND lp_user_items.ref_type = 'lp_order'
+					ORDER BY lp_user_items.user_item_id DESC",
 					$course_id
 				)
 			);
 
-			foreach ($lp_enrollments as $lp_enrollment){
-				$user_id = $lp_enrollment->user_id;
+			foreach ( $lp_enrollments as $lp_enrollment ) {
+				$user_id = (int) $lp_enrollment->user_id;
+				if ( $user_id < 1 ) {
+					continue;
+				}
 
-				if ( ! tutils()->is_enrolled($course_id, $user_id)) {
-					$order_time = strtotime($lp_enrollment->order_time);
+				$tutor_status = $this->map_lp_enrollment_status( (string) ( $lp_enrollment->status ?? '' ) );
+				if ( '' === $tutor_status ) {
+					continue;
+				}
 
-					$title = __('Course Enrolled', 'tutor')." &ndash; ".date( get_option('date_format'), $order_time ).' @ '.date( get_option( 'time_format'), $order_time );
-					$tutor_enrollment_data = array(
-						'post_type'   => 'tutor_enrolled',
-						'post_title'  => $title,
-						'post_status' => 'completed',
-						'post_author' => $user_id,
-						'post_parent' => $course_id,
-					);
+				// Any existing enrollment (completed/pending/cancel) — avoid duplicates.
+				if ( tutils()->is_enrolled( $course_id, $user_id, false ) ) {
+					continue;
+				}
 
-					$isEnrolled = wp_insert_post( $tutor_enrollment_data );
+				$enroll_ts = $this->lp_mysql_gmt_to_timestamp( $lp_enrollment->start_time ?? '' );
+				if ( $enroll_ts <= 0 ) {
+					$enroll_ts = $this->lp_mysql_gmt_to_timestamp( $lp_enrollment->order_time_gmt ?? '' );
+				}
+				$enroll_dates = $this->lp_migrate_datetimes( $enroll_ts );
 
-					if ($isEnrolled){
-						//Mark Current User as Students with user meta data
-						update_user_meta( $user_id, '_is_tutor_student', $order_time );
+				$title = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date_i18n( get_option( 'date_format' ), $enroll_dates['unix'] ) . ' @ ' . date_i18n( get_option( 'time_format' ), $enroll_dates['unix'] );
+
+				$enrollment_id = wp_insert_post(
+					array(
+						'post_type'     => 'tutor_enrolled',
+						'post_title'    => $title,
+						'post_status'   => $tutor_status,
+						'post_author'   => $user_id,
+						'post_parent'   => $course_id,
+						'post_date'     => $enroll_dates['local'],
+						'post_date_gmt' => $enroll_dates['gmt'],
+					)
+				);
+
+				if ( $enrollment_id ) {
+					update_user_meta( $user_id, '_is_tutor_student', $enroll_dates['unix'] );
+
+					$lp_order_id = (int) ( $lp_enrollment->order_id ?? 0 );
+					if ( $lp_order_id > 0 ) {
+						update_post_meta( $enrollment_id, '_tutor_enrolled_by_order_id', $lp_order_id );
 					}
 				}
+			}
+
+			/**
+			 * Course Complete Status Migration
+			 *
+			 * Preserve LP end_time as the Tutor completion comment date.
+			 */
+			$lp_course_complete_datas = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, end_time, start_time
+					FROM {$wpdb->prefix}learnpress_user_items
+					WHERE item_id = %d
+						AND item_type = 'lp_course'
+						AND graduation = 'passed'",
+					$course_id
+				)
+			);
+
+			foreach ( $lp_course_complete_datas as $lp_course_complete_data ) {
+				$user_id = (int) $lp_course_complete_data->user_id;
+				if ( $user_id < 1 ) {
+					continue;
+				}
+
+				if ( tutils()->is_completed_course( $course_id, $user_id, false ) ) {
+					continue;
+				}
+
+				$complete_ts = $this->lp_mysql_gmt_to_timestamp( $lp_course_complete_data->end_time ?? '' );
+				if ( $complete_ts <= 0 ) {
+					$complete_ts = $this->lp_mysql_gmt_to_timestamp( $lp_course_complete_data->start_time ?? '' );
+				}
+				$complete_dates = $this->lp_migrate_datetimes( $complete_ts );
+
+				$hash_seed = $complete_dates['gmt'] . $course_id . $user_id;
+				do {
+					$hash     = substr( md5( wp_generate_password( 32 ) . $hash_seed ), 0, 16 );
+					$has_hash = (int) $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT COUNT(comment_ID) FROM {$wpdb->comments}
+							WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s",
+							$hash
+						)
+					);
+				} while ( $has_hash > 0 );
+
+				wp_insert_comment(
+					array(
+						'comment_type'     => 'course_completed',
+						'comment_agent'    => 'TutorLMSPlugin',
+						'comment_approved' => 'approved',
+						'comment_content'  => $hash,
+						'user_id'          => $user_id,
+						'comment_author'   => $user_id,
+						'comment_post_ID'  => $course_id,
+						'comment_date'     => $complete_dates['local'],
+						'comment_date_gmt' => $complete_dates['gmt'],
+					)
+				);
 			}
 
 			/**
@@ -1849,6 +1885,80 @@ if ( ! class_exists('LPtoTutorMigration')){
 					'minutes' => $minutes,
 					'seconds' => $remaining_secs,
 				)
+			);
+		}
+
+		/**
+		 * Map LearnPress user-item status to a Tutor enrollment post_status.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string $lp_status LearnPress status (enrolled|purchased|finished|completed|cancel).
+		 *
+		 * @return string Tutor status (completed|pending|cancel), or empty to skip.
+		 */
+		private function map_lp_enrollment_status( $lp_status ) {
+			switch ( $lp_status ) {
+				case 'cancel':
+					return 'cancel';
+				case 'purchased':
+					return 'pending';
+				case 'enrolled':
+				case 'finished':
+				case 'completed':
+					return 'completed';
+				default:
+					return '';
+			}
+		}
+
+		/**
+		 * Convert a LearnPress GMT MySQL datetime to a Unix timestamp.
+		 *
+		 * LearnPress stores start_time/end_time via gmdate().
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string $mysql_datetime GMT datetime string.
+		 *
+		 * @return int Unix timestamp, or 0 when invalid.
+		 */
+		private function lp_mysql_gmt_to_timestamp( $mysql_datetime ) {
+			if ( empty( $mysql_datetime ) || '0000-00-00 00:00:00' === $mysql_datetime ) {
+				return 0;
+			}
+
+			$dt = \DateTime::createFromFormat( 'Y-m-d H:i:s', (string) $mysql_datetime, new \DateTimeZone( 'UTC' ) );
+			if ( $dt instanceof \DateTime ) {
+				return (int) $dt->getTimestamp();
+			}
+
+			$timestamp = strtotime( (string) $mysql_datetime . ' UTC' );
+			return ( false !== $timestamp && $timestamp > 0 ) ? (int) $timestamp : 0;
+		}
+
+		/**
+		 * Convert a Unix timestamp to WP local + GMT MySQL datetimes.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $timestamp Unix timestamp (0 falls back to now).
+		 *
+		 * @return array{local: string, gmt: string, unix: int}
+		 */
+		private function lp_migrate_datetimes( $timestamp ) {
+			$timestamp = (int) $timestamp;
+			if ( $timestamp <= 0 ) {
+				$timestamp = time();
+			}
+
+			$gmt   = gmdate( 'Y-m-d H:i:s', $timestamp );
+			$local = get_date_from_gmt( $gmt );
+
+			return array(
+				'local' => $local,
+				'gmt'   => $gmt,
+				'unix'  => $timestamp,
 			);
 		}
 	}

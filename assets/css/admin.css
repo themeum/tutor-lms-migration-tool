@@ -181,6 +181,10 @@
     .lp-migration-alert {
         width: 600px;
     }
+
+    .lp-migration-alert:has(.migration-deletion-consent) {
+        width: 640px;
+    }
 }
 
 .migration-failed-btn:last-child {
@@ -189,6 +193,99 @@
 
 .lp-migration-modal-icon img {
     width: 80px;
+}
+
+/* Consent modal layout */
+.migration-modal-consent-group {
+    width: 100%;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.migration-modal-title {
+    line-height: 1.45;
+    padding: 0 12px;
+}
+
+.migration-modal-actions {
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Migration deletion consent */
+.migration-deletion-consent {
+    width: 100%;
+    max-width: 540px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #fffaf0;
+    border: 1px solid #f0d9a8;
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: left;
+}
+
+.migration-deletion-consent-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px 18px;
+}
+
+.migration-deletion-consent-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.55;
+}
+
+.migration-deletion-consent-warning .tutor-icon-warning {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 18px;
+}
+
+.migration-deletion-consent-list {
+    margin: 0;
+    padding: 0 0 0 28px;
+    list-style: disc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.migration-deletion-consent-list li {
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+    color: #41454f;
+}
+
+.migration-deletion-consent-check {
+    gap: 12px;
+    cursor: pointer;
+    line-height: 1.5;
+    margin: 0;
+    padding: 16px 22px;
+    background: #fff;
+    border-top: 1px solid #f0d9a8;
+}
+
+.migration-deletion-consent-check .migration-consent-checkbox {
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.migration-start-btn.is-disabled,
+.migration-start-btn[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .modal-close {
