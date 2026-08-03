@@ -161,7 +161,7 @@ class OrderDataTransformer implements DataTransformer {
 	 * @return float
 	 */
 	private function get_transaction_price( int $transaction_id, $plan ): float {
-		$pricing = get_post_meta( $transaction_id, 'pricing_info', true );
+		$pricing = maybe_unserialize( get_post_meta( $transaction_id, 'pricing_info', true ) );
 		if ( is_array( $pricing ) && isset( $pricing['price'] ) ) {
 			return (float) $pricing['price'];
 		}

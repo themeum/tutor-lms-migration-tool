@@ -65,12 +65,15 @@ class TutorOrder implements Order {
 	 */
 	public function migrate( $order, $course_id ) {
 		$course_data = get_post_meta( $course_id, '_sfwd-courses', true );
+		$price       = ( is_array( $course_data ) && isset( $course_data['sfwd-courses_course_price'] ) )
+			? $course_data['sfwd-courses_course_price']
+			: 0;
 
 		$args = $this->get_payment_payloads( $order );
 
 		$item = array(
 			'item_id'        => $course_id,
-			'regular_price'  => $course_data['sfwd-courses_course_price'],
+			'regular_price'  => $price,
 			'sale_price'     => null,
 			'discount_price' => null,
 		);

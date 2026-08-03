@@ -554,9 +554,20 @@ defined( 'ABSPATH' ) || exit;
 
 						MigrationLogger::update_course_migration_log( $course_id, true );
 					} catch ( \Throwable $th ) {
+						// Keep migrating remaining courses; empty/draft edge cases must not abort the batch.
 						$this->revert_failed_course( $course_id, $ld_course );
 						MigrationLogger::update_course_migration_log( $course_id, false );
-						throw $th;
+						ErrorHandler::set_error(
+							ContentTypes::COURSE,
+							sprintf(
+								/* translators: 1: course title, 2: course id, 3: error message */
+								__( 'Failed to migrate course "%1$s" (#%2$d): %3$s', 'tutor-lms-migration-tool' ),
+								$ld_course->post_title,
+								(int) $ld_course->ID,
+								$th->getMessage()
+							)
+						);
+						error_log( $th->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 					}
 				}
 			}
@@ -606,7 +617,7 @@ defined( 'ABSPATH' ) || exit;
 
 		public function attached_prerequisite( $course_id ) {
 			$course_data = get_post_meta( $course_id, '_sfwd-courses', true );
-			if ( $course_data['sfwd-courses_course_prerequisite'] ) {
+			if ( is_array( $course_data ) && ! empty( $course_data['sfwd-courses_course_prerequisite'] ) ) {
 				update_post_meta( $course_id, '_tutor_course_prerequisites_ids', $course_data['sfwd-courses_course_prerequisite'] );
 			}
 		}
@@ -1542,8 +1553,6 @@ defined( 'ABSPATH' ) || exit;
 		}
 
 		public function migrate_course( $course_id, $new_course_id ) {
-			global $wpdb;
-
 			$section_heading = get_post_meta( $course_id, 'course_sections', true );
 			$section_heading = $section_heading ? json_decode( $section_heading, true ) : array(
 				array(
@@ -1552,10 +1561,34 @@ defined( 'ABSPATH' ) || exit;
 				),
 			);
 
-			$total_data = LDLMS_Factory_Post::course_steps( $course_id );
-			$total_data = $total_data->get_steps();
+			if ( ! is_array( $section_heading ) ) {
+				$section_heading = array(
+					array(
+						'order'      => 0,
+						'post_title' => 'Tutor Topics',
+					),
+				);
+			}
 
-			if ( empty( $total_data ) ) {
+			// Draft / empty LD courses may have no steps object or only empty containers.
+			$course_steps = LDLMS_Factory_Post::course_steps( $course_id );
+			$total_data   = ( is_object( $course_steps ) && method_exists( $course_steps, 'get_steps' ) )
+				? $course_steps->get_steps()
+				: array();
+
+			if ( ! is_array( $total_data ) ) {
+				$total_data = array();
+			}
+
+			$ld_lessons = isset( $total_data['sfwd-lessons'] ) && is_array( $total_data['sfwd-lessons'] )
+				? $total_data['sfwd-lessons']
+				: array();
+			$ld_quizzes = isset( $total_data['sfwd-quiz'] ) && is_array( $total_data['sfwd-quiz'] )
+				? $total_data['sfwd-quiz']
+				: array();
+
+			// No lessons or quizzes — e.g. empty draft course with no content.
+			if ( empty( $ld_lessons ) && empty( $ld_quizzes ) ) {
 				return;
 			}
 
@@ -1565,7 +1598,10 @@ defined( 'ABSPATH' ) || exit;
 			$section_count = 0;
 			$topic_id      = 0;
 			$author_id     = get_post_field( 'post_author', $course_id );
-			foreach ( $total_data['sfwd-lessons'] as $lesson_key => $lesson_data ) {
+			foreach ( $ld_lessons as $lesson_key => $lesson_data ) {
+				if ( ! is_array( $lesson_data ) ) {
+					$lesson_data = array();
+				}
 
 				// Topic Section.
 				$check = $i == 0 ? 0 : $i + 1;
@@ -1586,7 +1622,14 @@ defined( 'ABSPATH' ) || exit;
 						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 					}
 
-					foreach ( $lesson_data['sfwd-topic'] as $lesson_inner_key => $lesson_inner ) {
+					$lesson_topics = isset( $lesson_data['sfwd-topic'] ) && is_array( $lesson_data['sfwd-topic'] )
+						? $lesson_data['sfwd-topic']
+						: array();
+
+					foreach ( $lesson_topics as $lesson_inner_key => $lesson_inner ) {
+						if ( ! is_array( $lesson_inner ) ) {
+							$lesson_inner = array();
+						}
 
 						if ( $this->is_assignment( $lesson_inner_key, ContentTypes::LD_TOPIC ) && tlmt_has_tutor_pro() ) {
 							$lesson_id = $this->migrate_assignment( $lesson_inner_key, $topic_id, ContentTypes::LD_TOPIC );
@@ -1596,7 +1639,11 @@ defined( 'ABSPATH' ) || exit;
 							do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LD_TO_TUTOR );
 						}
 
-						foreach ( $lesson_inner['sfwd-quiz'] as $quiz_key => $quiz_data ) {
+						$topic_quizzes = isset( $lesson_inner['sfwd-quiz'] ) && is_array( $lesson_inner['sfwd-quiz'] )
+							? $lesson_inner['sfwd-quiz']
+							: array();
+
+						foreach ( $topic_quizzes as $quiz_key => $quiz_data ) {
 							$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 
 							if ( $quiz_id ) {
@@ -1606,7 +1653,11 @@ defined( 'ABSPATH' ) || exit;
 						}
 					}
 
-					foreach ( $lesson_data['sfwd-quiz'] as $quiz_key => $quiz_data ) {
+					$lesson_quizzes = isset( $lesson_data['sfwd-quiz'] ) && is_array( $lesson_data['sfwd-quiz'] )
+						? $lesson_data['sfwd-quiz']
+						: array();
+
+					foreach ( $lesson_quizzes as $quiz_key => $quiz_data ) {
 						$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 						if ( $quiz_id ) {
 							$this->migrate_quiz( $quiz_id );
@@ -1617,12 +1668,12 @@ defined( 'ABSPATH' ) || exit;
 				++$i;
 			}
 
-			if ( ! empty( $total_data['sfwd-quiz'] ) ) {
+			if ( ! empty( $ld_quizzes ) ) {
 				if ( ! $topic_id ) {
 					$topic_id = $this->insert_post( 'Tutor Topics', '', $author_id, 'topics', $i, $new_course_id );
 					++$i;
 				}
-				foreach ( $total_data['sfwd-quiz'] as $quiz_key => $quiz_data ) {
+				foreach ( $ld_quizzes as $quiz_key => $quiz_data ) {
 					$quiz_id = $this->update_post( $quiz_key, 'tutor_quiz', $i, $topic_id );
 					if ( $quiz_id ) {
 						$this->migrate_quiz( $quiz_id );
@@ -1644,11 +1695,11 @@ defined( 'ABSPATH' ) || exit;
 		 */
 		private function is_assignment( int $ld_lesson_id, string $ld_content_type ) {
 			$lesson_meta = get_post_meta( $ld_lesson_id, "_{$ld_content_type}", true );
-			if ( $lesson_meta ) {
-				return isset( $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ] ) && 'on' === $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ];
+			if ( ! is_array( $lesson_meta ) ) {
+				return false;
 			}
 
-			return false;
+			return isset( $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ] ) && 'on' === $lesson_meta[ "{$ld_content_type}_lesson_assignment_upload" ];
 		}
 
 		/**

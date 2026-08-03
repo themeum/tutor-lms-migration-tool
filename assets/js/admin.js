@@ -66,23 +66,23 @@ jQuery(document).ready(function ($) {
         }
     }
 
-	function migration_progress_bar(cmplete, percent) {
+	function migration_progress_bar(complete, percent) {
         var $progressBar = $('#sectionCourse').find('.tutor-progress');
         if (typeof percent === 'number' && !isNaN(percent)) {
             var clamped = Math.max(0, Math.min(100, Math.round(percent)));
             $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
-            if (cmplete || clamped >= 100) {
+            if (complete || clamped >= 100) {
                 clearTimeout(countProgress);
             }
             return;
         }
         var data_parcent = parseInt($progressBar.attr('data-percent'));
-        if (cmplete) {
+        if (complete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
             $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
-            countProgress = setTimeout(migration_progress_bar, 300, cmplete);
+            countProgress = setTimeout(migration_progress_bar, 300, complete);
         }
     }
     var migration_vendor = 'lp';
@@ -164,7 +164,7 @@ jQuery(document).ready(function ($) {
     });
 
     var countEnrollmentProgress;
-    function enrollment_migration_progress_bar(cmplete, percent) {
+    function enrollment_migration_progress_bar(complete, percent) {
         var $progressBar = $('#sectionEnrollments').find('.tutor-progress');
         if (!$progressBar.length) {
             return;
@@ -172,19 +172,19 @@ jQuery(document).ready(function ($) {
         if (typeof percent === 'number' && !isNaN(percent)) {
             var clamped = Math.max(0, Math.min(100, Math.round(percent)));
             $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
-            if (cmplete || clamped >= 100) {
+            if (complete || clamped >= 100) {
                 clearTimeout(countEnrollmentProgress);
             }
             return;
         }
         var data_parcent = parseInt($progressBar.attr('data-percent'));
 
-        if (cmplete) {
+        if (complete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
             $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
-            countEnrollmentProgress = setTimeout(enrollment_migration_progress_bar, 300, cmplete);
+            countEnrollmentProgress = setTimeout(enrollment_migration_progress_bar, 300, complete);
         }
     }
 
@@ -255,24 +255,24 @@ jQuery(document).ready(function ($) {
     }
 
     var countOrderProgress;
-	function order_migration_progress_bar(cmplete, percent) {
+	function order_migration_progress_bar(complete, percent) {
         var $progressBar = $('#sectionOrders').find('.tutor-progress');
         if (typeof percent === 'number' && !isNaN(percent)) {
             var clamped = Math.max(0, Math.min(100, Math.round(percent)));
             $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
-            if (cmplete || clamped >= 100) {
+            if (complete || clamped >= 100) {
                 clearTimeout(countOrderProgress);
             }
             return;
         }
         var data_parcent = parseInt($progressBar.attr('data-percent'));
 
-        if (cmplete) {
+        if (complete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
             $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
-            countOrderProgress = setTimeout(order_migration_progress_bar, 300, cmplete);
+            countOrderProgress = setTimeout(order_migration_progress_bar, 300, complete);
         }
     }
     function migrate_orders($formData, final_types) {
@@ -337,7 +337,7 @@ jQuery(document).ready(function ($) {
     }
 
     var countSubscriptionProgress;
-    function subscription_migration_progress_bar(cmplete, percent) {
+    function subscription_migration_progress_bar(complete, percent) {
         var $progressBar = $('#sectionSubscriptions').find('.tutor-progress');
         if (!$progressBar.length) {
             return;
@@ -345,19 +345,19 @@ jQuery(document).ready(function ($) {
         if (typeof percent === 'number' && !isNaN(percent)) {
             var clamped = Math.max(0, Math.min(100, Math.round(percent)));
             $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
-            if (cmplete || clamped >= 100) {
+            if (complete || clamped >= 100) {
                 clearTimeout(countSubscriptionProgress);
             }
             return;
         }
         var data_parcent = parseInt($progressBar.attr('data-percent'));
 
-        if (cmplete) {
+        if (complete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
             $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
-            countSubscriptionProgress = setTimeout(subscription_migration_progress_bar, 300, cmplete);
+            countSubscriptionProgress = setTimeout(subscription_migration_progress_bar, 300, complete);
         }
     }
 
@@ -434,23 +434,23 @@ jQuery(document).ready(function ($) {
      * Migrate And Progress Reviews
      */
     var countReviewsProgress;
-    function reviews_migration_progress_bar(cmplete, percent) {
+    function reviews_migration_progress_bar(complete, percent) {
         var $progressBar = $('#sectionReviews').find('.tutor-progress');
         if (typeof percent === 'number' && !isNaN(percent)) {
             var clamped = Math.max(0, Math.min(100, Math.round(percent)));
             $progressBar.show().attr('style', '--tutor-progress : ' + clamped + '% ').attr('data-percent', clamped);
-            if (cmplete || clamped >= 100) {
+            if (complete || clamped >= 100) {
                 clearTimeout(countReviewsProgress);
             }
             return;
         }
         var data_parcent = parseInt($progressBar.attr('data-percent'));
-        if (cmplete) {
+        if (complete) {
             $progressBar.attr('style', '--tutor-progress : 100% ').attr('data-percent', 100);
         } else {
             data_parcent++;
             $progressBar.show().attr('style', '--tutor-progress : ' + data_parcent + '% ').attr('data-percent', data_parcent);
-            countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete);
+            countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, complete);
         }
     }
 
