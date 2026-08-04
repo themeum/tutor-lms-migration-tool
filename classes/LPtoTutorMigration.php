@@ -12,6 +12,11 @@ if ( ! class_exists('LPtoTutorMigration')){
 		const COURSE_BATCH_SIZE = 3;
 
 		/**
+		 * Student–course enrollment pairs processed per AJAX request.
+		 */
+		const ENROLLMENT_BATCH_SIZE = 50;
+
+		/**
 		 * Orders processed per AJAX request.
 		 */
 		const ORDER_BATCH_SIZE = 20;
@@ -116,6 +121,18 @@ if ( ! class_exists('LPtoTutorMigration')){
 					case 'courses':
 						$result = $this->lp_migrate_course_to_tutor();
 						wp_send_json_success( $result );
+						break;
+					case 'enrollments':
+						$result = $this->lp_enrollments_migrate();
+						if ( false === $result ) {
+							wp_send_json_error(
+								array(
+									'step'    => 'enrollments',
+									'message' => \Themeum\TutorLMSMigrationTool\ErrorHandler::get_error_message( \Themeum\TutorLMSMigrationTool\ContentTypes::ENROLLMENTS ),
+								)
+							);
+						}
+						wp_send_json_success( is_array( $result ) ? $result : array() );
 						break;
 					case 'orders':
 						$result = $this->migrate_lp_orders();
@@ -320,16 +337,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 							if (tutils()->count($questions)){
 								foreach ($questions as $question) {
 
-									$question_type = null;
-									if ($question->question_type === 'true_or_false'){
-										$question_type = 'true_false';
-									}
-									if ($question->question_type === 'single_choice'){
-										$question_type = 'single_choice';
-									}
-									if ($question->question_type === 'multi_choice'){
-										$question_type = 'multiple_choice';
-									}
+									$question_type = $this->map_lp_question_type_to_tutor( $question->question_type );
 
 									if ($question_type) {
 
@@ -350,26 +358,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 										if ( tutils()->count( $answer_items ) ) {
 											foreach ( $answer_items as $answer_item ) {
-												// LearnPress 4+ uses title/is_true/order; LP 3 used serialized answer_data.
-												if ( isset( $answer_item->title ) ) {
-													$answer_title = $answer_item->title;
-													$is_correct   = ( isset( $answer_item->is_true ) && 'yes' === $answer_item->is_true ) ? 1 : 0;
-													$answer_order = isset( $answer_item->order ) ? (int) $answer_item->order : 0;
-												} else {
-													$legacy_data  = maybe_unserialize( isset( $answer_item->answer_data ) ? $answer_item->answer_data : '' );
-													$answer_title = tutils()->array_get( 'text', $legacy_data );
-													$is_correct   = tutils()->array_get( 'is_true', $legacy_data ) == 'yes' ? 1 : 0;
-													$answer_order = isset( $answer_item->answer_order ) ? (int) $answer_item->answer_order : 0;
-												}
-
-												$answer_data = array(
-													'belongs_question_id'   => $question_id,
-													'belongs_question_type' => $question_type,
-													'answer_title'          => $answer_title,
-													'is_correct'            => $is_correct,
-													'answer_order'          => $answer_order,
-												);
-
+												$answer_data = $this->build_tutor_answer_from_lp( $answer_item, $question_id, $question_type );
 												$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer_data );
 											}
 										}
@@ -498,151 +487,31 @@ if ( ! class_exists('LPtoTutorMigration')){
 				}
 			}
 
-			/**
-			 * Enrollment Migration to this course
-			 *
-			 * Maps LP status → Tutor enrollment status, preserves start_time,
-			 * and links `_tutor_enrolled_by_order_id` to the LP order ID (WC keeps
-			 * the same ID; native OrderMigrator replaces it later).
-			 */
-			$lp_enrollments = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT lp_user_items.*,
-					lp_order.ID as order_id,
-					lp_order.post_date_gmt as order_time_gmt
+			// Enrollments, completions, and lesson progress run in a separate
+			// batched step (lp_enrollments_migrate) after all courses finish.
+		}
 
-					FROM {$wpdb->prefix}learnpress_user_items lp_user_items
-					LEFT JOIN {$wpdb->posts} lp_order ON lp_user_items.ref_id = lp_order.ID
-					WHERE lp_user_items.item_id = %d
-						AND lp_user_items.item_type = 'lp_course'
-						AND lp_user_items.ref_type = 'lp_order'
-					ORDER BY lp_user_items.user_item_id DESC",
-					$course_id
-				)
-			);
+		/**
+		 * Migrate LearnPress enrollments, completions, and lesson progress in batches.
+		 *
+		 * Runs after course structure migration. Processes student–course pairs
+		 * (not whole courses) so large enrollments stay under server timeouts.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return array|false Batch payload, or false on blocking error.
+		 */
+		public function lp_enrollments_migrate() {
+			$this->raise_migration_resource_limits();
 
-			foreach ( $lp_enrollments as $lp_enrollment ) {
-				$user_id = (int) $lp_enrollment->user_id;
-				if ( $user_id < 1 ) {
-					continue;
-				}
-
-				$tutor_status = $this->map_lp_enrollment_status( (string) ( $lp_enrollment->status ?? '' ) );
-				if ( '' === $tutor_status ) {
-					continue;
-				}
-
-				// Any existing enrollment (completed/pending/cancel) — avoid duplicates.
-				if ( tutils()->is_enrolled( $course_id, $user_id, false ) ) {
-					continue;
-				}
-
-				$enroll_ts = $this->lp_mysql_gmt_to_timestamp( $lp_enrollment->start_time ?? '' );
-				if ( $enroll_ts <= 0 ) {
-					$enroll_ts = $this->lp_mysql_gmt_to_timestamp( $lp_enrollment->order_time_gmt ?? '' );
-				}
-				$enroll_dates = $this->lp_migrate_datetimes( $enroll_ts );
-
-				$title = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date_i18n( get_option( 'date_format' ), $enroll_dates['unix'] ) . ' @ ' . date_i18n( get_option( 'time_format' ), $enroll_dates['unix'] );
-
-				$enrollment_id = wp_insert_post(
-					array(
-						'post_type'     => 'tutor_enrolled',
-						'post_title'    => $title,
-						'post_status'   => $tutor_status,
-						'post_author'   => $user_id,
-						'post_parent'   => $course_id,
-						'post_date'     => $enroll_dates['local'],
-						'post_date_gmt' => $enroll_dates['gmt'],
-					)
-				);
-
-				if ( $enrollment_id ) {
-					update_user_meta( $user_id, '_is_tutor_student', $enroll_dates['unix'] );
-
-					$lp_order_id = (int) ( $lp_enrollment->order_id ?? 0 );
-					if ( $lp_order_id > 0 ) {
-						update_post_meta( $enrollment_id, '_tutor_enrolled_by_order_id', $lp_order_id );
-					}
-				}
+			$batch_size = (int) apply_filters( 'tlmt_lp_enrollment_migration_batch_size', self::ENROLLMENT_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ENROLLMENT_BATCH_SIZE;
 			}
 
-			/**
-			 * Course Complete Status Migration
-			 *
-			 * Preserve LP end_time as the Tutor completion comment date.
-			 */
-			$lp_course_complete_datas = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT user_id, end_time, start_time
-					FROM {$wpdb->prefix}learnpress_user_items
-					WHERE item_id = %d
-						AND item_type = 'lp_course'
-						AND graduation = 'passed'",
-					$course_id
-				)
-			);
+			$is_first_batch = ! empty( $_POST['lp_enrollment_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in lp_migrate_all_data_to_tutor().
 
-			foreach ( $lp_course_complete_datas as $lp_course_complete_data ) {
-				$user_id = (int) $lp_course_complete_data->user_id;
-				if ( $user_id < 1 ) {
-					continue;
-				}
-
-				if ( tutils()->is_completed_course( $course_id, $user_id, false ) ) {
-					continue;
-				}
-
-				$complete_ts = $this->lp_mysql_gmt_to_timestamp( $lp_course_complete_data->end_time ?? '' );
-				if ( $complete_ts <= 0 ) {
-					$complete_ts = $this->lp_mysql_gmt_to_timestamp( $lp_course_complete_data->start_time ?? '' );
-				}
-				$complete_dates = $this->lp_migrate_datetimes( $complete_ts );
-
-				$hash_seed = $complete_dates['gmt'] . $course_id . $user_id;
-				do {
-					$hash     = substr( md5( wp_generate_password( 32 ) . $hash_seed ), 0, 16 );
-					$has_hash = (int) $wpdb->get_var(
-						$wpdb->prepare(
-							"SELECT COUNT(comment_ID) FROM {$wpdb->comments}
-							WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s",
-							$hash
-						)
-					);
-				} while ( $has_hash > 0 );
-
-				wp_insert_comment(
-					array(
-						'comment_type'     => 'course_completed',
-						'comment_agent'    => 'TutorLMSPlugin',
-						'comment_approved' => 'approved',
-						'comment_content'  => $hash,
-						'user_id'          => $user_id,
-						'comment_author'   => $user_id,
-						'comment_post_ID'  => $course_id,
-						'comment_date'     => $complete_dates['local'],
-						'comment_date_gmt' => $complete_dates['gmt'],
-					)
-				);
-			}
-
-			/**
-			 * Lesson progress migration
-			 *
-			 * LP stores completed lessons in learnpress_user_items; Tutor uses
-			 * user meta `_tutor_completed_lesson_id_{lesson_id}`.
-			 */
-			try {
-				$student_progress = \Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory::create(
-					\Themeum\TutorLMSMigrationTool\MigrationTypes::LP_TO_TUTOR
-				);
-				$student_progress->migrate( (int) $course_id );
-			} catch ( \Throwable $th ) {
-				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
-					\Themeum\TutorLMSMigrationTool\ContentTypes::STUDENT_PROGRESS,
-					'Failed to migrate lesson progress. ' . $th->getMessage()
-				);
-			}
+			return ( new \Themeum\TutorLMSMigrationTool\LPMigration\Enrollments() )->migrate_batch( $batch_size, (bool) $is_first_batch );
 		}
 
 		/**
@@ -1359,16 +1228,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 											foreach ($questions as $question) {
 
-												$question_type = null;
-												if ($question->question_type === 'true_or_false'){
-													$question_type = 'true_false';
-												}
-												if ($question->question_type === 'single_choice'){
-													$question_type = 'single_choice';
-												}
-												if ($question->question_type === 'multi_choice'){
-													$question_type = 'multiple_choice';
-												}
+												$question_type = $this->map_lp_question_type_to_tutor( $question->question_type );
 
 												if ($question_type) {
 													$xml .= $this->start_element('questions');
@@ -1390,25 +1250,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 													if (tutils()->count($answer_items)){
 														foreach ($answer_items as $answer_item){
-															// LearnPress 4+ uses title/is_true/order; LP 3 used serialized answer_data.
-															if ( isset( $answer_item->title ) ) {
-																$answer_title = $answer_item->title;
-																$is_correct   = ( isset( $answer_item->is_true ) && 'yes' === $answer_item->is_true ) ? 1 : 0;
-																$answer_order = isset( $answer_item->order ) ? (int) $answer_item->order : 0;
-															} else {
-																$legacy_data  = maybe_unserialize( isset( $answer_item->answer_data ) ? $answer_item->answer_data : '' );
-																$answer_title = tutils()->array_get( 'text', $legacy_data );
-																$is_correct   = tutils()->array_get( 'is_true', $legacy_data ) == 'yes' ? 1 : 0;
-																$answer_order = isset( $answer_item->answer_order ) ? (int) $answer_item->answer_order : 0;
-															}
-
-															$answer_data = array(
-																'belongs_question_id'   => $answer_item->question_id,
-																'belongs_question_type' => $question_type,
-																'answer_title'          => $answer_title,
-																'is_correct'            => $is_correct,
-																'answer_order'          => $answer_order,
-															);
+															$answer_data = $this->build_tutor_answer_from_lp( $answer_item, (int) $answer_item->question_id, $question_type );
 
 															$xml .= $this->start_element('answers');
 
@@ -1511,6 +1353,116 @@ if ( ! class_exists('LPtoTutorMigration')){
 		", $section_id, /*'publish',*/ 'publish' ) );
 
 			return $results;
+		}
+
+		/**
+		 * Map a LearnPress question type slug to Tutor's equivalent.
+		 *
+		 * Unsupported LP types return null and are skipped during migration.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string $lp_type LearnPress `_lp_type` meta value.
+		 *
+		 * @return string|null Tutor question type, or null if unsupported.
+		 */
+		private function map_lp_question_type_to_tutor( $lp_type ) {
+			$map = array(
+				'true_or_false'  => 'true_false',
+				'single_choice'  => 'single_choice',
+				'multi_choice'   => 'multiple_choice',
+				'fill_in_blanks' => \Themeum\TutorLMSMigrationTool\LPMigration\Quizzes\FillInBlanksTransformer::TUTOR_TYPE,
+			);
+
+			return isset( $map[ $lp_type ] ) ? $map[ $lp_type ] : null;
+		}
+
+		/**
+		 * Build a Tutor quiz answer row from a LearnPress question_answers row.
+		 *
+		 * Handles LP 4+ columns, LP 3 serialized `answer_data`, and fill-in-blanks
+		 * conversion to Tutor `{dash}` / `answer_two_gap_match` format.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param object $answer_item   LearnPress answer row.
+		 * @param int    $question_id   Tutor question ID (or LP question ID for XML export).
+		 * @param string $question_type Tutor question type slug.
+		 *
+		 * @return array
+		 */
+		private function build_tutor_answer_from_lp( $answer_item, $question_id, $question_type ) {
+			// LearnPress 4+ uses title/is_true/order; LP 3 used serialized answer_data.
+			if ( isset( $answer_item->title ) ) {
+				$answer_title = $answer_item->title;
+				$is_correct   = ( isset( $answer_item->is_true ) && 'yes' === $answer_item->is_true ) ? 1 : 0;
+				$answer_order = isset( $answer_item->order ) ? (int) $answer_item->order : 0;
+			} else {
+				$legacy_data  = maybe_unserialize( isset( $answer_item->answer_data ) ? $answer_item->answer_data : '' );
+				$answer_title = tutils()->array_get( 'text', $legacy_data );
+				$is_correct   = tutils()->array_get( 'is_true', $legacy_data ) == 'yes' ? 1 : 0;
+				$answer_order = isset( $answer_item->answer_order ) ? (int) $answer_item->answer_order : 0;
+			}
+
+			$answer_data = array(
+				'belongs_question_id'   => (int) $question_id,
+				'belongs_question_type' => $question_type,
+				'answer_title'          => $answer_title,
+				'is_correct'            => $is_correct,
+				'answer_order'          => $answer_order,
+			);
+
+			if ( \Themeum\TutorLMSMigrationTool\LPMigration\Quizzes\FillInBlanksTransformer::TUTOR_TYPE === $question_type ) {
+				$answer_id = 0;
+				if ( isset( $answer_item->question_answer_id ) ) {
+					$answer_id = (int) $answer_item->question_answer_id;
+				}
+
+				$blanks      = $this->get_lp_answer_blanks( $answer_id );
+				$transformer = new \Themeum\TutorLMSMigrationTool\LPMigration\Quizzes\FillInBlanksTransformer();
+				$converted   = $transformer->transform( (string) $answer_title, $blanks );
+
+				$answer_data['answer_title']         = $converted['answer_title'];
+				$answer_data['answer_two_gap_match'] = $converted['answer_two_gap_match'];
+				$answer_data['is_correct']           = 1;
+			}
+
+			return $answer_data;
+		}
+
+		/**
+		 * Fetch LearnPress `_blanks` meta for a question answer.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $answer_id LearnPress `question_answer_id`.
+		 *
+		 * @return array|string|null
+		 */
+		private function get_lp_answer_blanks( $answer_id ) {
+			global $wpdb;
+
+			$answer_id = (int) $answer_id;
+			if ( $answer_id <= 0 ) {
+				return null;
+			}
+
+			if ( function_exists( 'learn_press_get_question_answer_meta' ) ) {
+				return learn_press_get_question_answer_meta( $answer_id, '_blanks', true );
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$meta_value = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_value FROM {$wpdb->prefix}learnpress_question_answermeta
+					WHERE learnpress_question_answer_id = %d AND meta_key = %s
+					LIMIT 1",
+					$answer_id,
+					'_blanks'
+				)
+			);
+
+			return maybe_unserialize( $meta_value );
 		}
 
 		/**
@@ -1749,7 +1701,15 @@ if ( ! class_exists('LPtoTutorMigration')){
 				update_post_meta( $course_id, '_tutor_course_level', sanitize_text_field( $lp_level ) );
 			}
 
-			// Course duration.
+			// Public course (no enrollment required).
+			$lp_no_required_enroll = get_post_meta( $course_id, '_lp_no_required_enroll', true );
+			update_post_meta(
+				$course_id,
+				\TUTOR\Course::PUBLIC_COURSE_META,
+				( 'yes' === $lp_no_required_enroll ) ? 'yes' : 'no'
+			);
+
+			// Course duration (display).
 			$lp_duration = get_post_meta( $course_id, '_lp_duration', true );
 			$tutor_duration = $this->lp_duration_to_tutor_course_duration( $lp_duration );
 			if ( ! empty( $tutor_duration ) ) {
@@ -1772,15 +1732,30 @@ if ( ! class_exists('LPtoTutorMigration')){
 				update_post_meta( $course_id, '_tutor_course_benefits', sanitize_textarea_field( $key_features ) );
 			}
 
-			// Maximum students lives under `_tutor_course_settings`.
+			// Course settings bag: maximum students + enrollment expiry.
+			$current_settings = maybe_unserialize( get_post_meta( $course_id, '_tutor_course_settings', true ) );
+			if ( ! is_array( $current_settings ) ) {
+				$current_settings = array();
+			}
+			$settings_changed = false;
+
 			$lp_max_students = get_post_meta( $course_id, '_lp_max_students', true );
 			if ( is_numeric( $lp_max_students ) ) {
-				$current_settings = maybe_unserialize( get_post_meta( $course_id, '_tutor_course_settings', true ) );
-				if ( ! is_array( $current_settings ) ) {
-					$current_settings = array();
-				}
-
 				$current_settings['maximum_students'] = (int) $lp_max_students;
+				$settings_changed                     = true;
+			}
+
+			// When LP blocks access after duration, map that length to Tutor enrollment_expiry (days).
+			$lp_block_expire = get_post_meta( $course_id, '_lp_block_expire_duration', true );
+			if ( 'yes' === $lp_block_expire ) {
+				$expiry_days = $this->lp_duration_to_days( $lp_duration );
+				if ( $expiry_days > 0 ) {
+					$current_settings['enrollment_expiry'] = $expiry_days;
+					$settings_changed                      = true;
+				}
+			}
+
+			if ( $settings_changed ) {
 				update_post_meta( $course_id, '_tutor_course_settings', maybe_serialize( $current_settings ) );
 			}
 		}
@@ -1829,6 +1804,70 @@ if ( ! class_exists('LPtoTutorMigration')){
 		}
 
 		/**
+		 * Parse LearnPress `_lp_duration` into total seconds.
+		 *
+		 * Supports singular/plural units: minute(s), hour(s), day(s), week(s), month(s).
+		 *
+		 * @param mixed $lp_duration LearnPress duration meta value.
+		 * @return int Total seconds, or 0 on failure.
+		 */
+		private function lp_duration_to_seconds( $lp_duration ) {
+			if ( empty( $lp_duration ) ) {
+				return 0;
+			}
+
+			$lp_duration = strtolower( trim( (string) $lp_duration ) );
+			$lp_duration = str_replace( ',', ' ', $lp_duration );
+
+			$seconds = 0;
+			if ( ! preg_match_all( '/([0-9]+)\s*(minutes?|hours?|days?|weeks?|months?)/', $lp_duration, $matches, PREG_SET_ORDER ) ) {
+				return 0;
+			}
+
+			foreach ( $matches as $match ) {
+				$number = (int) $match[1];
+				$unit   = rtrim( $match[2], 's' );
+
+				switch ( $unit ) {
+					case 'hour':
+						$seconds += $number * 3600;
+						break;
+					case 'day':
+						$seconds += $number * 86400;
+						break;
+					case 'week':
+						$seconds += $number * 604800;
+						break;
+					case 'month':
+						// Approximate calendar month as 30 days.
+						$seconds += $number * 2592000;
+						break;
+					case 'minute':
+					default:
+						$seconds += $number * 60;
+						break;
+				}
+			}
+
+			return $seconds;
+		}
+
+		/**
+		 * Convert LearnPress `_lp_duration` into Tutor enrollment expiry days.
+		 *
+		 * @param mixed $lp_duration LearnPress duration meta value.
+		 * @return int Number of days (ceiled), or 0 on failure.
+		 */
+		private function lp_duration_to_days( $lp_duration ) {
+			$seconds = $this->lp_duration_to_seconds( $lp_duration );
+			if ( $seconds <= 0 ) {
+				return 0;
+			}
+
+			return (int) max( 1, (int) ceil( $seconds / 86400 ) );
+		}
+
+		/**
 		 * Convert LearnPress `_lp_duration` (e.g. "4 week", "30 day") into Tutor `_course_duration`.
 		 *
 		 * Tutor stores duration as a serialized array with keys: hours/minutes/seconds.
@@ -1837,46 +1876,13 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 * @return string Serialized Tutor duration meta value, or empty string on failure.
 		 */
 		private function lp_duration_to_tutor_course_duration( $lp_duration ) {
-			if ( empty( $lp_duration ) ) {
+			$seconds = $this->lp_duration_to_seconds( $lp_duration );
+			if ( $seconds <= 0 ) {
 				return '';
 			}
 
-			$lp_duration = strtolower( trim( (string) $lp_duration ) );
-			$lp_duration = str_replace( ',', ' ', $lp_duration );
-
-			$seconds = 0;
-			// Support both singular and plural units (minute(s), hour(s), day(s), week(s), month(s)).
-			if ( preg_match_all( '/([0-9]+)\s*(minutes?|hours?|days?|weeks?|months?)/', $lp_duration, $matches, PREG_SET_ORDER ) ) {
-				foreach ( $matches as $match ) {
-					$number = (int) $match[1];
-					$unit   = rtrim( $match[2], 's' );
-
-					switch ( $unit ) {
-						case 'hour':
-							$seconds += $number * 3600;
-							break;
-						case 'day':
-							$seconds += $number * 86400;
-							break;
-						case 'week':
-							$seconds += $number * 604800;
-							break;
-						case 'month':
-							// LP core doesn't include month by default, but handle it defensively.
-							$seconds += $number * 2592000; // 30 * 24 * 3600
-							break;
-						case 'minute':
-						default:
-							$seconds += $number * 60;
-							break;
-					}
-				}
-			} else {
-				return '';
-			}
-
-			$hours         = (int) floor( $seconds / 3600 );
-			$minutes       = (int) floor( ( $seconds % 3600 ) / 60 );
+			$hours          = (int) floor( $seconds / 3600 );
+			$minutes        = (int) floor( ( $seconds % 3600 ) / 60 );
 			$remaining_secs = (int) ( $seconds % 60 );
 
 			return maybe_serialize(
@@ -1888,78 +1894,5 @@ if ( ! class_exists('LPtoTutorMigration')){
 			);
 		}
 
-		/**
-		 * Map LearnPress user-item status to a Tutor enrollment post_status.
-		 *
-		 * @since 2.5.0
-		 *
-		 * @param string $lp_status LearnPress status (enrolled|purchased|finished|completed|cancel).
-		 *
-		 * @return string Tutor status (completed|pending|cancel), or empty to skip.
-		 */
-		private function map_lp_enrollment_status( $lp_status ) {
-			switch ( $lp_status ) {
-				case 'cancel':
-					return 'cancel';
-				case 'purchased':
-					return 'pending';
-				case 'enrolled':
-				case 'finished':
-				case 'completed':
-					return 'completed';
-				default:
-					return '';
-			}
-		}
-
-		/**
-		 * Convert a LearnPress GMT MySQL datetime to a Unix timestamp.
-		 *
-		 * LearnPress stores start_time/end_time via gmdate().
-		 *
-		 * @since 2.5.0
-		 *
-		 * @param string $mysql_datetime GMT datetime string.
-		 *
-		 * @return int Unix timestamp, or 0 when invalid.
-		 */
-		private function lp_mysql_gmt_to_timestamp( $mysql_datetime ) {
-			if ( empty( $mysql_datetime ) || '0000-00-00 00:00:00' === $mysql_datetime ) {
-				return 0;
-			}
-
-			$dt = \DateTime::createFromFormat( 'Y-m-d H:i:s', (string) $mysql_datetime, new \DateTimeZone( 'UTC' ) );
-			if ( $dt instanceof \DateTime ) {
-				return (int) $dt->getTimestamp();
-			}
-
-			$timestamp = strtotime( (string) $mysql_datetime . ' UTC' );
-			return ( false !== $timestamp && $timestamp > 0 ) ? (int) $timestamp : 0;
-		}
-
-		/**
-		 * Convert a Unix timestamp to WP local + GMT MySQL datetimes.
-		 *
-		 * @since 2.5.0
-		 *
-		 * @param int $timestamp Unix timestamp (0 falls back to now).
-		 *
-		 * @return array{local: string, gmt: string, unix: int}
-		 */
-		private function lp_migrate_datetimes( $timestamp ) {
-			$timestamp = (int) $timestamp;
-			if ( $timestamp <= 0 ) {
-				$timestamp = time();
-			}
-
-			$gmt   = gmdate( 'Y-m-d H:i:s', $timestamp );
-			$local = get_date_from_gmt( $gmt );
-
-			return array(
-				'local' => $local,
-				'gmt'   => $gmt,
-				'unix'  => $timestamp,
-			);
-		}
 	}
 }

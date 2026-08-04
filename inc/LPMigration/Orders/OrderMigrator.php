@@ -388,7 +388,7 @@ class OrderMigrator {
 	 * Link existing Tutor enrollments to the new native order (no re-enroll).
 	 *
 	 * Only for paid/completed-equivalent orders with a real user.
-	 * Replaces a provisional LP order ID written during enrollment migration.
+	 * Replaces a provisional LP order ID written during the enrollments step.
 	 *
 	 * @since 2.5.0
 	 *

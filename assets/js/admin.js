@@ -213,6 +213,9 @@ jQuery(document).ready(function ($) {
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_enrollment_migration_start=1';
             }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_enrollment_migration_start=1';
+            }
 
             $.ajax({
                 url: ajaxurl,
@@ -222,7 +225,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionEnrollments').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             enrollment_migration_progress_bar(false, 0);
                         } else {
                             enrollment_migration_progress_bar();
@@ -236,7 +239,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         enrollment_migration_progress_bar(false, percent);
                     }
