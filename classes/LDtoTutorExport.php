@@ -251,9 +251,6 @@ if (! class_exists('LDtoTutorExport')) {
                     $question = array();
                     switch ($result['answer_type']) {
                         case 'single':
-                            $question['question_type'] = 'single_choice';
-                            break;
-
                         case 'multiple':
                             $question['question_type'] = 'multiple_choice';
                             break;
@@ -280,10 +277,14 @@ if (! class_exists('LDtoTutorExport')) {
                         $question['question_title'] = $result['title'];
                         $question['question_description'] = $result['question'];
                         $question['question_mark'] = $_points;
-                        $question['question_settings'] = maybe_serialize(array(
-                            'question_type' => $result['answer_type'],
-                            'question_mark' => $_points
-                        ));
+                        $question_settings = array(
+                            'question_type' => $question['question_type'],
+                            'question_mark' => $_points,
+                        );
+                        if ( 'multiple_choice' === $question['question_type'] ) {
+                            $question_settings['has_multiple_correct_answer'] = ( 'multiple' === $result['answer_type'] ) ? '1' : '0';
+                        }
+                        $question['question_settings'] = maybe_serialize( $question_settings );
 
                         $xml .= $this->start_element('questions');
                         foreach ($question as $question_key => $question_value) {
