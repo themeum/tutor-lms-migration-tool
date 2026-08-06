@@ -248,6 +248,9 @@ if (! class_exists('LDtoTutorExport')) {
                         $wpdb->prepare( "SELECT id, title, question, points, answer_type, answer_data FROM {$wpdb->prefix}learndash_pro_quiz_question where id = %d", $question_id )
                         , ARRAY_A);
 
+                    $ld_answer_data = (array) maybe_unserialize( $result['answer_data'] );
+                    $is_matrix_image_matching = false;
+
                     $question = array();
                     switch ($result['answer_type']) {
                         case 'single':
@@ -257,6 +260,11 @@ if (! class_exists('LDtoTutorExport')) {
 
                         case 'sort_answer':
                             $question['question_type'] = 'ordering';
+                            break;
+
+                        case 'matrix_sort_answer':
+                            $question['question_type'] = 'matching';
+                            $is_matrix_image_matching  = tlmt_ld_matrix_is_image_matching( $ld_answer_data );
                             break;
 
                         case 'essay':
@@ -284,6 +292,9 @@ if (! class_exists('LDtoTutorExport')) {
                         if ( 'multiple_choice' === $question['question_type'] ) {
                             $question_settings['has_multiple_correct_answer'] = ( 'multiple' === $result['answer_type'] ) ? '1' : '0';
                         }
+                        if ( 'matching' === $question['question_type'] ) {
+                            $question_settings['is_image_matching'] = $is_matrix_image_matching ? '1' : '0';
+                        }
                         $question['question_settings'] = maybe_serialize( $question_settings );
 
                         $xml .= $this->start_element('questions');
@@ -292,47 +303,75 @@ if (! class_exists('LDtoTutorExport')) {
                         }
 
                         if ($question_id) {
-                            foreach ((array)maybe_unserialize($result['answer_data']) as $key => $value) {
-                                $i = 0;
-                                $answer = array();
-                                foreach ((array)$value as $k => $val) {
-                                    if ($i == 0) {
-                                        $answer['answer_title'] = $val;
-                                        if ($result['answer_type'] == 'cloze_answer') {
-                                            $final_question = wp_strip_all_tags( $val );
-                                            preg_match_all('/{.*?\}/', $final_question, $matches);
-                                            if (isset($matches[0])) {
-                                                foreach ($matches[0] as $key => $v) {
-                                                    $v = explode( ']', $v );
-                                                    if (isset($v[0])) {
-                                                        $answer_str[] = str_replace(array('{[','{','}'), '', $v[0]);
-                                                    }
-                                                }
-                                                $final_question = str_replace($matches[0], '{dash}', $final_question);
-                                            }
-                                            $answer['answer_two_gap_match'] = implode('|', $answer_str);
-                                            $answer['answer_title'] = $final_question;
-                                        }
-                                    } elseif ($i == 2) {
-                                        $answer['is_correct'] = $val ? 0 : 1;
-                                    } elseif ($i == 3) {
-                                        $answer['belongs_question_id'] = $question_id;
-                                        $answer['belongs_question_type'] = $question['question_type'];
-                                        $answer['answer_view_format'] = 'text';
-                                        $answer['answer_order'] = $i+1;
-                                        $answer['image_id'] = 0;
+                            if ( 'matrix_sort_answer' === $result['answer_type'] ) {
+                                $answer_order = 0;
+                                foreach ( $ld_answer_data as $key => $value ) {
+                                    $ans_arr = tlmt_ld_answer_data_as_array( $value );
+                                    if ( ! tlmt_ld_matrix_answer_matches_mode( $ans_arr, $is_matrix_image_matching ) ) {
+                                        continue;
                                     }
-                                    $i++;
-                                }
 
-                                if (count($answer) > 0) {
+                                    ++$answer_order;
+                                    $mapped_answer = tlmt_map_ld_matrix_answer( $ans_arr, $is_matrix_image_matching );
+                                    $answer        = array_merge(
+                                        array(
+                                            'belongs_question_id'   => $question_id,
+                                            'belongs_question_type' => $question['question_type'],
+                                            'answer_order'          => $answer_order,
+                                            'is_correct'            => ! empty( $ans_arr['_correct'] ) ? 1 : 0,
+                                        ),
+                                        $mapped_answer
+                                    );
+
                                     $xml .= $this->start_element('answers');
                                     foreach ($answer as $answers_key => $answers_value){
                                         $xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
                                     }
                                     $xml .= $this->close_element('answers');
                                 }
+                            } else {
+                                foreach ( $ld_answer_data as $key => $value) {
+                                    $i = 0;
+                                    $answer = array();
+                                    foreach ((array)$value as $k => $val) {
+                                        if ($i == 0) {
+                                            $answer['answer_title'] = $val;
+                                            if ($result['answer_type'] == 'cloze_answer') {
+                                                $final_question = wp_strip_all_tags( $val );
+                                                preg_match_all('/{.*?\}/', $final_question, $matches);
+                                                if (isset($matches[0])) {
+                                                    foreach ($matches[0] as $key => $v) {
+                                                        $v = explode( ']', $v );
+                                                        if (isset($v[0])) {
+                                                            $answer_str[] = str_replace(array('{[','{','}'), '', $v[0]);
+                                                        }
+                                                    }
+                                                    $final_question = str_replace($matches[0], '{dash}', $final_question);
+                                                }
+                                                $answer['answer_two_gap_match'] = implode('|', $answer_str);
+                                                $answer['answer_title'] = $final_question;
+                                            }
+                                        } elseif ($i == 2) {
+                                            $answer['is_correct'] = $val ? 0 : 1;
+                                        } elseif ($i == 3) {
+                                            $answer['belongs_question_id'] = $question_id;
+                                            $answer['belongs_question_type'] = $question['question_type'];
+                                            $answer['answer_view_format'] = 'text';
+                                            $answer['answer_order'] = $i+1;
+                                            $answer['image_id'] = 0;
+                                        }
+                                        $i++;
+                                    }
 
+                                    if (count($answer) > 0) {
+                                        $xml .= $this->start_element('answers');
+                                        foreach ($answer as $answers_key => $answers_value){
+                                            $xml .= "<{$answers_key}>{$this->xml_cdata($answers_value)}</{$answers_key}>\n";
+                                        }
+                                        $xml .= $this->close_element('answers');
+                                    }
+
+                                }
                             }
                         }
 

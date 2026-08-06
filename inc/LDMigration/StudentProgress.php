@@ -467,7 +467,11 @@ class StudentProgress implements StudentProgressInterface {
 				return $this->get_statistic_answer_value_at( $ld_quiz_statistic->statistic_answer_data, 0 );
 
 			case self::LD_SORT_ANSWER:
+				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
+				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
+
 			case self::LD_MATRIX_SORTING:
+				// Matrix sort migrates to Tutor matching / image matching; given_answer is still ordered answer IDs.
 				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
 				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 

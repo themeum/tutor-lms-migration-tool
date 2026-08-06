@@ -1466,6 +1466,8 @@ defined( 'ABSPATH' ) || exit;
 					$question['question_title']       = $result['title'];
 					$question['question_description'] = (string) $result['question'];
 					$question['question_mark']        = $result['points'];
+
+					$is_matrix_image_matching = false;
 					switch ( $result['answer_type'] ) {
 						case 'single':
 							$question['question_type'] = 'multiple_choice';
@@ -1476,8 +1478,12 @@ defined( 'ABSPATH' ) || exit;
 							break;
 
 						case 'sort_answer':
-						case 'matrix_sort_answer':
 							$question['question_type'] = 'ordering';
+							break;
+
+						case 'matrix_sort_answer':
+							$question['question_type'] = 'matching';
+							$is_matrix_image_matching  = tlmt_ld_matrix_is_image_matching( $ld_answer_data );
 							break;
 
 						case 'essay':
@@ -1501,6 +1507,10 @@ defined( 'ABSPATH' ) || exit;
 						$question_settings['has_multiple_correct_answer'] = ( 'multiple' === $result['answer_type'] ) ? '1' : '0';
 					}
 
+					if ( 'matching' === ( $question['question_type'] ?? '' ) ) {
+						$question_settings['is_image_matching'] = $is_matrix_image_matching ? '1' : '0';
+					}
+
 					$question['question_settings'] = maybe_serialize( $question_settings );
 
 					$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $question );
@@ -1509,22 +1519,35 @@ defined( 'ABSPATH' ) || exit;
 					$question_id = $wpdb->insert_id;
 
 					if ( $question_id ) {
+						$answer_order = 0;
 						foreach ( $ld_answer_data as $key => $value ) {
 
-							$ans_arr = $value->get_object_as_array();
+							$ans_arr = tlmt_ld_answer_data_as_array( $value );
+
+							// Tutor matching is single-mode; skip minority image/text rows.
+							if ( 'matching' === ( $question['question_type'] ?? '' )
+								&& ! tlmt_ld_matrix_answer_matches_mode( $ans_arr, $is_matrix_image_matching )
+							) {
+								continue;
+							}
+
+							++$answer_order;
 
 							$tutor_answer_data = array(
 								'belongs_question_id'   => $question_id,
 								'belongs_question_type' => $question['question_type'],
 								'answer_view_format'    => 'text',
-								'answer_title'          => $ans_arr['_answer'],
-								'answer_order'          => 0,
+								'answer_title'          => $ans_arr['_answer'] ?? '',
+								'answer_order'          => $answer_order,
 								'image_id'              => 0,
-								'is_correct'            => $ans_arr['_correct'],
-								'answer_two_gap_match'  => false,
+								'is_correct'            => ! empty( $ans_arr['_correct'] ) ? 1 : 0,
+								'answer_two_gap_match'  => '',
 							);
 
-							if ( 'fill_in_the_blank' === $question['question_type'] ) {
+							if ( 'matching' === $question['question_type'] ) {
+								$mapped_answer     = tlmt_map_ld_matrix_answer( $ans_arr, $is_matrix_image_matching );
+								$tutor_answer_data = array_merge( $tutor_answer_data, $mapped_answer );
+							} elseif ( 'fill_in_the_blank' === $question['question_type'] ) {
 								// Extract all {string} values.
 								$str = $tutor_answer_data['answer_title'];
 								preg_match_all( '/\{(.*?)\}/', $str, $matches );
@@ -1540,7 +1563,8 @@ defined( 'ABSPATH' ) || exit;
 							$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $tutor_answer_data );
 							$answer_id = $wpdb->insert_id;
 							if ( $answer_id ) {
-								$migrate_map[ $ld_question_id ][] = array(
+								// Preserve LearnDash answer index so student progress can map submissions.
+								$migrate_map[ $ld_question_id ][ $key ] = array(
 									'tutor_answer_id'   => $answer_id,
 									'tutor_question_id' => $question_id,
 								);
