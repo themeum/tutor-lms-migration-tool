@@ -160,9 +160,6 @@ class Subscriptions {
 		$object_id = (int) $plan_data['object_id'];
 		unset( $plan_data['object_id'] );
 
-		// Strip fields not in Tutor plan schema.
-		unset( $plan_data['trial_fee'] );
-
 		$plan_id = $this->plan_model->create_subscription_plan( $object_id, $plan_data );
 		if ( ! $plan_id ) {
 			return false;

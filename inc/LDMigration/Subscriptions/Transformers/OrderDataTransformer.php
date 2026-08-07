@@ -288,17 +288,6 @@ class OrderDataTransformer implements DataTransformer {
 			),
 		);
 
-		if ( OrderModel::TYPE_SUBSCRIPTION === $order_type && ! empty( $tutor_plan->trial_value ) && $tutor_plan->trial_value > 0 ) {
-			$meta[] = array(
-				'meta_key'       => OrderModel::META_IS_PLAN_TRIAL_ORDER,
-				'meta_value'     => true,
-				'created_at_gmt' => $gmt_now,
-				'updated_at_gmt' => $gmt_now,
-				'created_by'     => (int) $order->post_author,
-				'updated_by'     => (int) $order->post_author,
-			);
-		}
-
 		return $meta;
 	}
 }
