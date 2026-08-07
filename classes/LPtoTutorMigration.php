@@ -63,17 +63,25 @@ if ( ! class_exists('LPtoTutorMigration')){
 
 			Utils::check_course_access();
 
+			$migration_type   = isset( $_POST['migration_type'] ) ? sanitize_text_field( wp_unslash( $_POST['migration_type'] ) ) : '';
+			$migration_vendor = isset( $_POST['migration_vendor'] ) ? sanitize_text_field( wp_unslash( $_POST['migration_vendor'] ) ) : '';
+
 			$tutor_migration_table_data = [
-				'migration_type' => $_POST['migration_type'],
-				'migration_vendor' => $_POST['migration_vendor'],
-				'created_by' => get_current_user_id(),
-				'created_at' => current_time('mysql'),
+				'migration_type'   => $migration_type,
+				'migration_vendor' => $migration_vendor,
+				'created_by'       => get_current_user_id(),
+				'created_at'       => current_time( 'mysql' ),
 			];
 
 			$wpdb->insert(
 				$wpdb->prefix . 'tutor_migration',
 				$tutor_migration_table_data
 			);
+
+			// XML import path: convert instructors when LP history is recorded.
+			if ( 'lp' === $migration_vendor && 'Imported' === $migration_type ) {
+				Utils::convert_all_lp_teachers_to_tutor_instructors();
+			}
 		}
 		public function tutor_tool_pages($pages){
 			$hasLPdata = get_option('learnpress_version');
@@ -173,6 +181,8 @@ if ( ! class_exists('LPtoTutorMigration')){
 			if ( $is_first_batch ) {
 				delete_option( '_tutor_migrated_items_count' );
 				update_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total, false );
+				// Convert LP teachers immediately so they appear as Tutor instructors without waiting for login.
+				Utils::convert_all_lp_teachers_to_tutor_instructors();
 			}
 
 			$total_courses = (int) get_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total );
@@ -347,7 +357,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 											'question_description' => $question->post_content,
 											'question_type'        => $question_type,
 											'question_mark'        => $question->question_mark,
-											'question_settings'    => maybe_serialize( array() ),
+											'question_settings'    => maybe_serialize( $this->build_tutor_question_settings( $question_type, $question->question_mark ) ),
 											'question_order'       => $question->question_order,
 										);
 
@@ -1238,7 +1248,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 														'question_description' => $question->post_content,
 														'question_type'        => $question_type,
 														'question_mark'        => $question->question_mark,
-														'question_settings'    => maybe_serialize( array() ),
+														'question_settings'    => maybe_serialize( $this->build_tutor_question_settings( $question_type, $question->question_mark ) ),
 														'question_order'       => $question->question_order,
 													);
 
@@ -1375,6 +1385,38 @@ if ( ! class_exists('LPtoTutorMigration')){
 			);
 
 			return isset( $map[ $lp_type ] ) ? $map[ $lp_type ] : null;
+		}
+
+		/**
+		 * Build Tutor `question_settings` for a migrated LearnPress question.
+		 *
+		 * Tutor's student quiz UI renders checkboxes only when
+		 * `has_multiple_correct_answer` is the string `'1'`. The course builder
+		 * defaults a missing flag to true for `multiple_choice`, which is why
+		 * migrated multi-answer MCQs looked correct in the builder but showed
+		 * radios for students until re-saved.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string     $question_type Tutor question type slug.
+		 * @param int|string $question_mark Question mark/points.
+		 *
+		 * @return array
+		 */
+		private function build_tutor_question_settings( $question_type, $question_mark ) {
+			$settings = array(
+				'question_type'      => $question_type,
+				'question_mark'      => $question_mark,
+				'answer_required'    => 0,
+				'randomize_question' => 0,
+				'show_question_mark' => 0,
+			);
+
+			if ( 'multiple_choice' === $question_type ) {
+				$settings['has_multiple_correct_answer'] = '1';
+			}
+
+			return $settings;
 		}
 
 		/**

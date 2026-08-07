@@ -3,6 +3,32 @@ const { __ } = wp.i18n;
 jQuery(document).ready(function ($) {
     'use strict';
     const { __ } = wp.i18n;
+
+    /**
+     * Tutor nonce for AJAX calls that are not form-serialized.
+     * insert_tutor_migration_data / tlmt_reset_migrated_items_count both require it.
+     */
+    function getTutorMigrationNoncePayload() {
+        var nonceKey = (window._tutorobject && window._tutorobject.nonce_key) || '_tutor_nonce';
+        var nonce = (window._tutorobject && window._tutorobject._tutor_nonce) || '';
+        if (!nonce) {
+            nonce = $('form#tlmt-lp-migrate-to-tutor-lms input[name="_tutor_nonce"]').val()
+                || $('form#tutor_migration_export_form input[name="_tutor_nonce"]').val()
+                || $('#tutor-manual-migrate-form input[name="_tutor_nonce"]').val()
+                || $('input[name="_tutor_nonce"]').first().val()
+                || '';
+        }
+        var payload = {};
+        if (nonce) {
+            payload[nonceKey] = nonce;
+        }
+        return payload;
+    }
+
+    function postWithTutorNonce(data) {
+        return $.post(ajaxurl, $.extend({}, getTutorMigrationNoncePayload(), data));
+    }
+
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -108,7 +134,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_enrollments($formData, final_types);
         }
 
@@ -204,7 +230,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionEnrollments').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             enrollment_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_orders($formData, final_types);
         }
 
@@ -289,7 +315,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             order_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_subscriptions($formData, final_types);
         }
 
@@ -385,7 +411,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionSubscriptions').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             subscription_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_reviews($formData, final_types);
         }
 
@@ -473,10 +499,10 @@ jQuery(document).ready(function ($) {
             $('#sectionReviews').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             reviews_migration_progress_bar(true, 100);
             $('.migrate-now-btn').removeClass('tutor-updating-message');
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
 
             if (data && data.success) {
-                $.post(ajaxurl, {
+                postWithTutorNonce({
                     migration_type: 'Imported',
                     migration_vendor: migration_vendor,
                     action: 'insert_tutor_migration_data'
@@ -690,7 +716,7 @@ jQuery(document).ready(function ($) {
         let button = $(this);
         let form = button.closest('form#tutor_migration_export_form');
 
-        $.post(ajaxurl, {
+        postWithTutorNonce({
             migration_type: 'Exported',
             migration_vendor: form.children("#tutor_migration_vendor").val(),
             action: 'insert_tutor_migration_data'
@@ -726,7 +752,7 @@ jQuery(document).ready(function ($) {
             success: function (res) {
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
-                    $.post(ajaxurl, {
+                    postWithTutorNonce({
                         migration_type: 'Imported',
                         migration_vendor: $('#tutor_migration_vendor').val(),
                         action: 'insert_tutor_migration_data'
