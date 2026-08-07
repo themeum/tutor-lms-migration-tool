@@ -285,26 +285,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 			<div class="migration-modal-btn-group migration-modal-consent-group flex-center tutor-flex-column">
 				<div class="migration-modal-title tutor-fs-5 tutor-fw-medium tutor-color-black">
-					<?php esc_html_e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
-					<br>
-					<?php esc_html_e( 'LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+					<?php
+					printf(
+						/* translators: %s: Source LMS name */
+						esc_html__( 'Migrate from %s to Tutor LMS', 'tutor-lms-migration-tool' ),
+						esc_html__( 'LearnDash', 'tutor-lms-migration-tool' )
+					);
+					?>
 				</div>
 				<?php
 				$source_lms     = __( 'LearnDash', 'tutor-lms-migration-tool' );
 				$deletion_items = array(
-					__( 'Courses, lessons, topics, and quizzes — they will disappear from LearnDash and only remain available in Tutor LMS', 'tutor-lms-migration-tool' ),
-					__( 'Migrated LearnDash orders (and related order metadata)', 'tutor-lms-migration-tool' ),
-					__( 'LearnDash quiz question bank data (after student progress is migrated)', 'tutor-lms-migration-tool' ),
-					__( 'Related LearnDash subscription / transaction posts (when subscriptions are migrated)', 'tutor-lms-migration-tool' ),
+					__( 'Courses, lessons, and quizzes', 'tutor-lms-migration-tool' ),
+					__( 'Course orders and metadata', 'tutor-lms-migration-tool' ),
+					__( 'Course reviews and ratings, etc.', 'tutor-lms-migration-tool' ),
 				);
 				require __DIR__ . '/components/migration-deletion-consent.php';
 				?>
 				<div class="migration-modal-actions tutor-d-flex">
 					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg">
-						<span><?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
+						<span><?php esc_html_e( 'Cancel', 'tutor-lms-migration-tool' ); ?></span>
 					</a>
 					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg" aria-disabled="true">
-						<?php esc_html_e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' ); ?>
+						<?php esc_html_e( 'Start Migration', 'tutor-lms-migration-tool' ); ?>
 					</a>
 				</div>
 			</div>

@@ -215,70 +215,127 @@
 
 /* Migration deletion consent */
 .migration-deletion-consent {
+    --consent-marker: 18px;
+    --consent-gap: 10px;
+    --consent-pad-x: 20px;
+    --consent-pad-y: 16px;
+    --consent-line: 1.5;
     width: 100%;
     max-width: 540px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 0;
     background: #fffaf0;
     border: 1px solid #f0d9a8;
     border-radius: 8px;
-    overflow: hidden;
     text-align: left;
+    overflow: hidden;
+}
+
+.migration-deletion-consent-body,
+.migration-deletion-consent-check {
+    display: grid;
+    grid-template-columns: var(--consent-marker) minmax(0, 1fr);
+    column-gap: var(--consent-gap);
+    align-items: start;
+    padding: var(--consent-pad-y) var(--consent-pad-x);
+    box-sizing: border-box;
 }
 
 .migration-deletion-consent-body {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 20px 22px 18px;
+    row-gap: 0;
 }
 
-.migration-deletion-consent-warning {
+.migration-deletion-consent-icon {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    line-height: 1.55;
+    justify-content: center;
+    width: var(--consent-marker);
+    height: calc(1em * var(--consent-line));
+    line-height: 1;
+    color: #ed9700;
+    margin-top: 4px;
 }
 
-.migration-deletion-consent-warning .tutor-icon-warning {
-    flex-shrink: 0;
-    margin-top: 3px;
-    font-size: 18px;
+.migration-deletion-consent-icon .tutor-icon-warning {
+    font-size: var(--consent-marker);
+    line-height: 1;
+    margin: 0;
+}
+
+.migration-deletion-consent-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.migration-deletion-consent-intro,
+.migration-deletion-consent-note {
+    margin: 0;
+    line-height: var(--consent-line);
 }
 
 .migration-deletion-consent-list {
     margin: 0;
-    padding: 0 0 0 28px;
-    list-style: disc;
+    padding: 0;
+    list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
 }
 
 .migration-deletion-consent-list li {
+    position: relative;
     margin: 0;
-    padding: 0;
-    line-height: 1.55;
+    padding: 0 0 0 14px;
+    line-height: var(--consent-line);
     color: #41454f;
 }
 
+.migration-deletion-consent-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: calc((1em * var(--consent-line) / 2) - 2px);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #41454f;
+}
+
+.migration-deletion-consent-note {
+    color: #41454f;
+    padding-top: 2px;
+}
+
 .migration-deletion-consent-check {
-    gap: 12px;
-    cursor: pointer;
-    line-height: 1.5;
     margin: 0;
-    padding: 16px 22px;
+    cursor: pointer;
     background: #fff;
     border-top: 1px solid #f0d9a8;
+    line-height: var(--consent-line);
+}
+
+.migration-deletion-consent-check-control {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: var(--consent-marker);
+    height: calc(1em * var(--consent-line));
 }
 
 .migration-deletion-consent-check .migration-consent-checkbox {
-    margin-top: 3px;
+    margin: 0;
     flex-shrink: 0;
     width: 16px;
     height: 16px;
+    align-self: center;
+}
+
+.migration-deletion-consent-check-label {
+    min-width: 0;
+    line-height: var(--consent-line);
 }
 
 .migration-start-btn.is-disabled,
