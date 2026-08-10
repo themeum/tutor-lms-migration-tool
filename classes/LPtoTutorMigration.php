@@ -9,7 +9,7 @@ if ( ! class_exists('LPtoTutorMigration')){
 		 * Courses processed per AJAX request.
 		 * Keep small — MAMP FastCGI idle timeout is ~30s.
 		 */
-		const COURSE_BATCH_SIZE = 3;
+		const COURSE_BATCH_SIZE = 1;
 
 		/**
 		 * Student–course enrollment pairs processed per AJAX request.
@@ -245,10 +245,10 @@ if ( ! class_exists('LPtoTutorMigration')){
 			}
 
 			$current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
-			$target  = 256 * MB_IN_BYTES;
+			$target  = 512 * MB_IN_BYTES;
 
 			if ( -1 !== $current && $current < $target ) {
-				@ini_set( 'memory_limit', '256M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
+				@ini_set( 'memory_limit', '512M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
 			}
 		}
 
