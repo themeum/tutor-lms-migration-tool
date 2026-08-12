@@ -120,10 +120,7 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		add_action(
 			'wp_login',
 			function( $user_login, $user ) {
-				// We want $user.
-				if ( in_array( 'lp_teacher', $user->roles ) ) {
-					$user->set_role( 'tutor_instructor' );
-				}
+				Utils::convert_lp_teacher_to_tutor_instructor( $user );
 			},
 			10,
 			2

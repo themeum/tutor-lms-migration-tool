@@ -3,6 +3,32 @@ const { __ } = wp.i18n;
 jQuery(document).ready(function ($) {
     'use strict';
     const { __ } = wp.i18n;
+
+    /**
+     * Tutor nonce for AJAX calls that are not form-serialized.
+     * insert_tutor_migration_data / tlmt_reset_migrated_items_count both require it.
+     */
+    function getTutorMigrationNoncePayload() {
+        var nonceKey = (window._tutorobject && window._tutorobject.nonce_key) || '_tutor_nonce';
+        var nonce = (window._tutorobject && window._tutorobject._tutor_nonce) || '';
+        if (!nonce) {
+            nonce = $('form#tlmt-lp-migrate-to-tutor-lms input[name="_tutor_nonce"]').val()
+                || $('form#tutor_migration_export_form input[name="_tutor_nonce"]').val()
+                || $('#tutor-manual-migrate-form input[name="_tutor_nonce"]').val()
+                || $('input[name="_tutor_nonce"]').first().val()
+                || '';
+        }
+        var payload = {};
+        if (nonce) {
+            payload[nonceKey] = nonce;
+        }
+        return payload;
+    }
+
+    function postWithTutorNonce(data) {
+        return $.post(ajaxurl, $.extend({}, getTutorMigrationNoncePayload(), data));
+    }
+
     $(document).on("click", ".install-tutor-button", function (t) {
         t.preventDefault();
         var select = $(this);
@@ -108,7 +134,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_enrollments($formData, final_types);
         }
 
@@ -116,6 +142,9 @@ jQuery(document).ready(function ($) {
             var requestData = $formData + '&migrate_type=courses';
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_course_migration_start=1';
+            }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_course_migration_start=1';
             }
 
             $.ajax({
@@ -128,7 +157,7 @@ jQuery(document).ready(function ($) {
                         $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             migration_progress_bar(false, 0);
                         } else {
                             migration_progress_bar();
@@ -142,7 +171,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         migration_progress_bar(false, percent);
                     }
@@ -201,7 +230,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionEnrollments').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             enrollment_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_orders($formData, final_types);
         }
 
@@ -209,6 +238,9 @@ jQuery(document).ready(function ($) {
             var requestData = $formData + '&migrate_type=enrollments';
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_enrollment_migration_start=1';
+            }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_enrollment_migration_start=1';
             }
 
             $.ajax({
@@ -219,7 +251,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionEnrollments').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             enrollment_migration_progress_bar(false, 0);
                         } else {
                             enrollment_migration_progress_bar();
@@ -233,7 +265,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         enrollment_migration_progress_bar(false, percent);
                     }
@@ -283,7 +315,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionOrders').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             order_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_subscriptions($formData, final_types);
         }
 
@@ -291,6 +323,9 @@ jQuery(document).ready(function ($) {
             var requestData = $formData + '&migrate_type=orders';
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_order_migration_start=1';
+            }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_order_migration_start=1';
             }
 
             $.ajax({
@@ -301,7 +336,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             order_migration_progress_bar(false, 0);
                         } else {
                             order_migration_progress_bar();
@@ -315,7 +350,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         order_migration_progress_bar(false, percent);
                     }
@@ -376,7 +411,7 @@ jQuery(document).ready(function ($) {
             clearTimeout(countProgress);
             $('#sectionSubscriptions').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             subscription_migration_progress_bar(true, 100);
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
             migrate_reviews($formData, final_types);
         }
 
@@ -464,10 +499,10 @@ jQuery(document).ready(function ($) {
             $('#sectionReviews').find('.j-spinner').removeClass('tmtl_spin').addClass('tmtl_done');
             reviews_migration_progress_bar(true, 100);
             $('.migrate-now-btn').removeClass('tutor-updating-message');
-            $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+            postWithTutorNonce({ action: 'tlmt_reset_migrated_items_count' });
 
             if (data && data.success) {
-                $.post(ajaxurl, {
+                postWithTutorNonce({
                     migration_type: 'Imported',
                     migration_vendor: migration_vendor,
                     action: 'insert_tutor_migration_data'
@@ -476,8 +511,11 @@ jQuery(document).ready(function ($) {
 
             const res = (data && data.data) || {};
             const { total_course_count = 0, failed = [] } = res;
+            const fallbackCount = Number($('#total_items_migrate_counts').data('count')) || 0;
+            const migratedTotal = Number(total_course_count) || fallbackCount;
 
-            if (Number(total_course_count) > 0) {
+            // LP/LIF responses may omit total_course_count; treat AJAX success as migration success.
+            if ( ( data && data.success ) && ( migratedTotal > 0 || ( Array.isArray( failed ) && failed.length === 0 ) ) ) {
                 $('.lp-success-modal').addClass('active');
             } else {
                 $('.lp-error-modal').addClass('active');
@@ -489,6 +527,9 @@ jQuery(document).ready(function ($) {
             if (isFirstBatch && final_types === 'ld') {
                 requestData += '&ld_review_migration_start=1';
             }
+            if (isFirstBatch && final_types === 'lp') {
+                requestData += '&lp_review_migration_start=1';
+            }
 
             $.ajax({
                 url: ajaxurl,
@@ -498,7 +539,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lp') {
                             reviews_migration_progress_bar(false, 0);
                         } else {
                             reviews_migration_progress_bar();
@@ -512,7 +553,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         reviews_migration_progress_bar(false, percent);
                     }
@@ -544,6 +585,7 @@ jQuery(document).ready(function ($) {
     var errorModalClose = $('.lp-modal-alert .modal-close.error-modal-close');
     var totalItemsMigrateCounts = $('#total_items_migrate_counts').data('count');
     var tutorMigrationUploadArea = $('.tutor-migration-upload-area');
+    var migrationConsentCheckbox = $('.migration-consent-checkbox');
 
     function activeModal(activeItem) {
         $(activeItem).addClass('active');
@@ -552,17 +594,55 @@ jQuery(document).ready(function ($) {
         removeItem.removeClass('active');
     }
 
+    function hasMigrationConsentRequirement() {
+        return migrationConsentCheckbox.length > 0;
+    }
+
+    function isMigrationConsentGiven() {
+        if (!hasMigrationConsentRequirement()) {
+            return true;
+        }
+        return migrationConsentCheckbox.is(':checked');
+    }
+
+    function setMigrationStartEnabled(enabled) {
+        if (!migrateStartBtn.length) {
+            return;
+        }
+        migrateStartBtn.toggleClass('is-disabled', !enabled);
+        migrateStartBtn.attr('aria-disabled', enabled ? 'false' : 'true');
+    }
+
+    function resetMigrationConsent() {
+        if (!hasMigrationConsentRequirement()) {
+            setMigrationStartEnabled(true);
+            return;
+        }
+        migrationConsentCheckbox.prop('checked', false);
+        setMigrationStartEnabled(false);
+    }
+
+    resetMigrationConsent();
+
     // migrate now button click
     $(migrateBtn).on('click', function (event) {
         event.preventDefault();
         if (totalItemsMigrateCounts > 0) {
+            resetMigrationConsent();
             migrationModal.addClass('active');
         }
+    });
+
+    $(document).on('change', '.migration-consent-checkbox', function () {
+        setMigrationStartEnabled($(this).is(':checked'));
     });
 
     // migrate now button click
     $(migrateStartBtn).on('click', function (event) {
         event.preventDefault();
+        if (!isMigrationConsentGiven()) {
+            return;
+        }
         if (totalItemsMigrateCounts > 0) {
             migrationModal.removeClass('active');
             $('#tlmt-lp-migrate-to-tutor-lms').submit();
@@ -572,6 +652,7 @@ jQuery(document).ready(function ($) {
     // migration later button click action
     $(migrateLaterBtn).on('click', function (event) {
         event.preventDefault();
+        resetMigrationConsent();
         removeModal(migrationModal);
     });
 
@@ -590,6 +671,7 @@ jQuery(document).ready(function ($) {
     // error modal close button click action
     $(migrateModalClose).on('click', function (event) {
         event.preventDefault();
+        resetMigrationConsent();
         removeModal(migrationModal);
     });
     // error modal close button click action
@@ -634,7 +716,7 @@ jQuery(document).ready(function ($) {
         let button = $(this);
         let form = button.closest('form#tutor_migration_export_form');
 
-        $.post(ajaxurl, {
+        postWithTutorNonce({
             migration_type: 'Exported',
             migration_vendor: form.children("#tutor_migration_vendor").val(),
             action: 'insert_tutor_migration_data'
@@ -670,7 +752,7 @@ jQuery(document).ready(function ($) {
             success: function (res) {
                 if (res.success) {
                     $('.lp-success-modal').addClass('active');
-                    $.post(ajaxurl, {
+                    postWithTutorNonce({
                         migration_type: 'Imported',
                         migration_vendor: $('#tutor_migration_vendor').val(),
                         action: 'insert_tutor_migration_data'
