@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
 		 *
 		 * @since 2.5.1
 		 */
-		const COURSE_BATCH_SIZE = 5;
+		const COURSE_BATCH_SIZE = 1;
 
 		/**
 		 * Student enrollments processed per AJAX request.
@@ -1789,11 +1789,11 @@ defined( 'ABSPATH' ) || exit;
 			}
 
 			$current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
-			$target  = 256 * MB_IN_BYTES;
+			$target  = 512 * MB_IN_BYTES;
 
 			// Do not lower unlimited (-1) or an already-higher limit.
 			if ( -1 !== $current && $current < $target ) {
-				@ini_set( 'memory_limit', '256M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
+				@ini_set( 'memory_limit', '512M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
 			}
 		}
 	}
