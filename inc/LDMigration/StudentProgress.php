@@ -15,7 +15,6 @@ use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
 use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
 
-
 /**
  * Handle student progress migration
  */
@@ -49,25 +48,33 @@ class StudentProgress implements StudentProgressInterface {
 	 * Migrates LearnDash course progress to Tutor LMS.
 	 *
 	 * @since 2.3.0
+	 * @since 2.5.1 Optional $user_id to migrate a single student.
 	 *
 	 * - For topic activities: Marks the lesson as completed in Tutor LMS.
 	 * - For quiz activities: Creates a corresponding quiz attempt and stores related answers.
 	 *
+	 * @param int $course_id the course id.
+	 * @param int $user_id   Optional user id. When > 0, only that student's progress is migrated.
+	 *
 	 * @return void
 	 */
-	public function migrate() {
+	public function migrate( int $course_id, int $user_id = 0 ) {
 
 		try {
-			$ld_course_progress = $this->user_activity();
+			$ld_course_progress = $this->user_activity( $course_id, $user_id );
+
+			if ( ! tutor_utils()->count( $ld_course_progress ) ) {
+				return;
+			}
 
 			foreach ( $ld_course_progress as $progress ) {
-				$user_id   = $progress->user_id ?? null;
-				$course_id = $progress->course_id ?? null;
-				$post_id   = $progress->post_id ?? null;
-				$type      = $progress->activity_type ?? null;
-				$completed = $progress->activity_completed ?? null;
+				$progress_user_id = $progress->user_id ?? null;
+				$course_id        = $progress->course_id ?? null;
+				$post_id          = $progress->post_id ?? null;
+				$type             = $progress->activity_type ?? null;
+				$completed        = $progress->activity_completed ?? null;
 
-				if ( ! $user_id || ! $course_id || ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+				if ( ! $progress_user_id || ! $course_id || ! is_object( get_post( $course_id ) ) ) {
 					continue;
 				}
 
@@ -75,7 +82,7 @@ class StudentProgress implements StudentProgressInterface {
 
 					case self::LESSON:
 					case self::TOPIC:
-						update_user_meta( $user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
+						update_user_meta( $progress_user_id, "_tutor_completed_lesson_id_{$post_id}", $completed );
 						break;
 
 					case self::QUIZ:
@@ -95,36 +102,74 @@ class StudentProgress implements StudentProgressInterface {
 	 * Fetches user activity records for LearnDash topics, lessons and quizzes.
 	 *
 	 * @since 2.3.0
+	 * @since 4.0.0 param $course_id added.
+	 * @since 2.5.1 Optional $user_id to scope activity to one student.
+	 *
+	 * @param int $course_id the course id.
+	 * @param int $user_id   Optional user id. When > 0, only that student's activity is returned.
 	 *
 	 * @throws \Exception If there is a database error during query execution.
 	 *
 	 * @return array List of activity result objects.
 	 */
-	private function user_activity() {
+	private function user_activity( int $course_id, int $user_id = 0 ) {
 
 		global $wpdb;
 
 		// phpcs:disable
-		$result = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT 
-					* 
-				FROM {$wpdb->prefix}learndash_user_activity 
-				WHERE 
-					( activity_type = %s AND activity_status = %d )
-					OR
-					( activity_type = %s AND activity_status = %d )
-					OR
-					( activity_type = %s AND activity_status IN (%d, %d))",
-				self::TOPIC,
-				1,
-				self::LESSON,
-				1,
-				self::QUIZ,
-				1,
-				0
-			)
-		);
+		if ( $user_id > 0 ) {
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT 
+						* 
+					FROM {$wpdb->prefix}learndash_user_activity 
+					WHERE
+						course_id = %d
+						AND user_id = %d
+						AND (
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status IN (%d, %d))
+							)",
+					$course_id,
+					$user_id,
+					self::TOPIC,
+					1,
+					self::LESSON,
+					1,
+					self::QUIZ,
+					1,
+					0
+				)
+			);
+		} else {
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT 
+						* 
+					FROM {$wpdb->prefix}learndash_user_activity 
+					WHERE
+						course_id = %d
+						AND (
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status = %d )
+							OR
+							( activity_type = %s AND activity_status IN (%d, %d))
+							)",
+					$course_id,
+					self::TOPIC,
+					1,
+					self::LESSON,
+					1,
+					self::QUIZ,
+					1,
+					0
+				)
+			);
+		}
 		// phpcs:enable
 
 		if ( $wpdb->last_error ) {
@@ -190,6 +235,27 @@ class StudentProgress implements StudentProgressInterface {
 
 		global $wpdb;
 		$activity_meta = $this->get_user_activity_meta( $progress_info->activity_id );
+		$attempt_info  = QueryHelper::get_row(
+			'postmeta',
+			array(
+				'post_id'  => $progress_info->post_id,
+				'meta_key' => 'tutor_quiz_option',
+			),
+			'meta_value'
+		);
+
+		$is_passed = (int) ( $activity_meta['pass'] ?? 0 );
+		$is_graded = maybe_unserialize( $activity_meta['graded'] ?? null );
+		$result    = $is_passed ? 'pass' : 'fail';
+
+		if ( tutor_utils()->count( $is_graded ) ) {
+			foreach ( $is_graded as $graded ) {
+				$graded = (array) $graded;
+				if ( 'not_graded' === ( $graded['status'] ?? '' ) ) {
+					$result = 'pending';
+				}
+			}
+		}
 
 		$attempt_data = array(
 			'course_id'                => $progress_info->course_id,
@@ -198,21 +264,27 @@ class StudentProgress implements StudentProgressInterface {
 			'total_questions'          => $activity_meta['question_show_count'] ?? 0,
 			'total_answered_questions' => $activity_meta['question_show_count'] ?? 0,
 			'total_marks'              => $activity_meta['total_points'] ?? 0,
-			'earned_marks'             => $activity_meta['score'] ?? 0,
-			'attempt_info'             => get_post_meta( $progress_info->post_id, 'tutor_quiz_option', true ),
+			'earned_marks'             => $activity_meta['points'] ?? 0,
+			'attempt_info'             => ( is_object( $attempt_info ) ? ( $attempt_info->meta_value ?? '' ) : '' ),
 			'attempt_status'           => self::ATTEMPT_ENDED,
 			'attempt_started_at'       => wp_date( 'Y-m-d H:i:s', $progress_info->activity_started ),
 			'attempt_ended_at'         => wp_date( 'Y-m-d H:i:s', $progress_info->activity_completed ),
+			'result'                   => $result,
 		);
 
 		$inserted = $wpdb->insert( "{$wpdb->prefix}tutor_quiz_attempts", $attempt_data );
 
 		if ( ! $inserted ) {
 			ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
+			return array();
 		}
 
 		// If Statistics option in Quiz settings is disable then statistic_ref_id will be 0.
-		return (int) $activity_meta['statistic_ref_id'] ? array( $wpdb->insert_id, $activity_meta ) : array();
+		if ( empty( $activity_meta['statistic_ref_id'] ) ) {
+			return array();
+		}
+
+		return array( (int) $wpdb->insert_id, $activity_meta );
 	}
 
 	/**
@@ -233,13 +305,34 @@ class StudentProgress implements StudentProgressInterface {
 
 		$data = array();
 
-		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ), 'tutor_migrated_question_answer_map', true );
+		$question_ids         = get_post_meta( intval( $user_activity_meta['quiz'] ?? 0 ), 'tutor_migrated_question_answer_map', true );
+		$question_ids         = is_array( $question_ids ) ? $question_ids : array();
 		$user_quiz_statistics = $this->fetch_user_quiz_statistic( $user_activity_meta['statistic_ref_id'], $user_activity_meta['pro_quizid'] );
+		$is_graded            = maybe_unserialize( $user_activity_meta['graded'] ?? null );
 
 		foreach ( $user_quiz_statistics as $quiz_statistic ) {
-
 			$tutor_question_id = $question_ids[ $quiz_statistic->question_id ][0]['tutor_question_id'] ?? null;
-			$data[]            = array(
+			if ( tutor_utils()->count( $is_graded ) && isset( $is_graded[ $quiz_statistic->question_id ] ) ) {
+				$graded = (array) $is_graded[ $quiz_statistic->question_id ];
+				// Need to insert seperately, since the `is_correct` column is not needed and needs to be null.
+				if ( 'not_graded' === ( $graded['status'] ?? '' ) ) {
+					$open_ended_data = array(
+						'user_id'         => $quiz_statistic->user_id,
+						'quiz_id'         => $quiz_statistic->quiz_post_id,
+						'quiz_attempt_id' => $quiz_attempt_id,
+						'given_answer'    => $quiz_statistic->statistic_answer_data ?? null,
+						'question_id'     => $tutor_question_id,
+						'question_mark'   => $quiz_statistic->question_points ?? 0,
+						'achieved_mark'   => $quiz_statistic->points ?? 0,
+					);
+					$table_name      = "{$wpdb->prefix}tutor_quiz_attempt_answers";
+					if ( ! QueryHelper::insert( $table_name, $open_ended_data ) ) {
+						ErrorHandler::set_error( ContentTypes::STUDENT_PROGRESS, 'Database error: ' . $wpdb->last_error );
+					}
+					continue;
+				}
+			}
+			$data[] = array(
 				'user_id'         => $quiz_statistic->user_id,
 				'quiz_id'         => $quiz_statistic->quiz_post_id,
 				'quiz_attempt_id' => $quiz_attempt_id,
@@ -281,11 +374,12 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function add_quiz_attempt_to_tutor( $progress ) {
 
-		list( $quiz_attempt_id, $user_activity_meta ) = $this->insert_quiz_attempts( $progress );
-
-		if ( $quiz_attempt_id ) {
-			$this->insert_quiz_attempt_answers( $quiz_attempt_id, $user_activity_meta );
+		$attempt = $this->insert_quiz_attempts( $progress );
+		if ( empty( $attempt[0] ) || empty( $attempt[1] ) ) {
+			return;
 		}
+
+		$this->insert_quiz_attempt_answers( (int) $attempt[0], $attempt[1] );
 	}
 
 	/**
@@ -370,10 +464,14 @@ class StudentProgress implements StudentProgressInterface {
 				return maybe_serialize( $this->get_learndash_choice_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
 			case self::LD_FREE_CHOICE:
-				return $ld_quiz_statistic->statistic_answer_data[0];
+				return $this->get_statistic_answer_value_at( $ld_quiz_statistic->statistic_answer_data, 0 );
 
 			case self::LD_SORT_ANSWER:
+				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
+				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
+
 			case self::LD_MATRIX_SORTING:
+				// Matrix sort migrates to Tutor matching / image matching; given_answer is still ordered answer IDs.
 				$submitted_answers = $this->get_learndash_sorting_type_quiz_answers( $ld_quiz_statistic );
 				return maybe_serialize( $this->get_learndash_sorting_type_quiz_answer_ids( $submitted_answers, $ld_quiz_statistic ) );
 
@@ -386,6 +484,38 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
+	 * Read a value from decoded LearnDash statistic answer data.
+	 *
+	 * LearnDash may store JSON arrays or objects; seeded/placeholder payloads can be either.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param mixed $statistic_answer_data Decoded answer payload.
+	 * @param int   $index                 Preferred numeric index.
+	 *
+	 * @return mixed|null
+	 */
+	private function get_statistic_answer_value_at( $statistic_answer_data, int $index ) {
+		if ( is_object( $statistic_answer_data ) ) {
+			$statistic_answer_data = (array) $statistic_answer_data;
+		}
+
+		if ( ! is_array( $statistic_answer_data ) || empty( $statistic_answer_data ) ) {
+			return null;
+		}
+
+		if ( array_key_exists( $index, $statistic_answer_data ) ) {
+			return $statistic_answer_data[ $index ];
+		}
+
+		if ( array_key_exists( (string) $index, $statistic_answer_data ) ) {
+			return $statistic_answer_data[ (string) $index ];
+		}
+
+		return null;
+	}
+
+	/**
 	 * Filters submitted LearnDash quiz answers to return only selected choices. Only For multiple choice and single choice questions.
 	 *
 	 * @since 2.3.0
@@ -395,6 +525,14 @@ class StudentProgress implements StudentProgressInterface {
 	 * @return array Array of selected answer keys.
 	 */
 	private function get_learndash_choice_type_quiz_answers( $statistic_answer_data ) {
+		if ( is_object( $statistic_answer_data ) ) {
+			$statistic_answer_data = (array) $statistic_answer_data;
+		}
+
+		if ( ! is_array( $statistic_answer_data ) ) {
+			return array();
+		}
+
 		return array_keys(
 			array_filter(
 				$statistic_answer_data,
@@ -465,6 +603,9 @@ class StudentProgress implements StudentProgressInterface {
 		}
 
 		$answer_map = get_post_meta( intval( $ld_quiz_statistic->quiz_post_id ), 'tutor_migrated_question_answer_map', true );
+		if ( ! is_array( $answer_map ) ) {
+			return null;
+		}
 
 		return $answer_map[ $ld_quiz_statistic->question_id ][ $answer_key ]['tutor_answer_id'] ?? null;
 	}
@@ -483,6 +624,14 @@ class StudentProgress implements StudentProgressInterface {
 		$ld_quiz_question_answers_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data ) ?? null;
 
 		if ( empty( $ld_quiz_question_answers_data ) ) {
+			return null;
+		}
+
+		if ( is_object( $ld_quiz_statistic->statistic_answer_data ) ) {
+			$ld_quiz_statistic->statistic_answer_data = (array) $ld_quiz_statistic->statistic_answer_data;
+		}
+
+		if ( ! is_array( $ld_quiz_statistic->statistic_answer_data ) ) {
 			return null;
 		}
 
@@ -540,12 +689,16 @@ class StudentProgress implements StudentProgressInterface {
 
 		$question_answer_data = maybe_unserialize( $ld_quiz_statistic->question_answer_data );
 
-		if ( is_array( $question_answer_data ) && $question_answer_data[0] instanceof \WpProQuiz_Model_AnswerTypes ) {
+		if ( is_array( $question_answer_data ) && isset( $question_answer_data[0] ) && $question_answer_data[0] instanceof \WpProQuiz_Model_AnswerTypes ) {
 
 			$assessment_data = learndash_question_assessment_fetch_data( $question_answer_data[0]->getAnswer(), 0, $ld_quiz_statistic->question_id );
 
 			if ( is_array( $assessment_data ) && is_array( $assessment_data['correct'] ?? null ) ) {
-				$index = intval( $ld_quiz_statistic->statistic_answer_data[0] ) - 1;
+				$selected = $this->get_statistic_answer_value_at( $ld_quiz_statistic->statistic_answer_data, 0 );
+				if ( null === $selected || ! is_numeric( $selected ) ) {
+					return null;
+				}
+				$index = (int) $selected - 1;
 				return $assessment_data['correct'][ $index ] ?? null;
 			}
 		}
@@ -564,7 +717,14 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	private function get_learndash_essay_quiz_answers( $ld_quiz_statistic ) {
 
-		$graded_id = $ld_quiz_statistic->statistic_answer_data->graded_id ?? null;
+		$answer_data = $ld_quiz_statistic->statistic_answer_data;
+		if ( is_array( $answer_data ) ) {
+			$graded_id = $answer_data['graded_id'] ?? null;
+		} elseif ( is_object( $answer_data ) ) {
+			$graded_id = $answer_data->graded_id ?? null;
+		} else {
+			$graded_id = null;
+		}
 
 		if ( empty( $graded_id ) ) {
 			return null;

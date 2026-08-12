@@ -11,6 +11,10 @@
 namespace Themeum\TutorLMSMigrationTool;
 
 use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
+use Themeum\TutorLMSMigrationTool\LDMigration\CourseTaxonomies;
+use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
+use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Subscriptions;
+use TUTOR\Course;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -26,10 +30,12 @@ class ActionHandler {
 	 */
 	public function __construct() {
 		add_action( 'tlmt_course_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
+		add_action( 'tlmt_course_migrated', array( $this, 'migrate_course_taxonomies' ), 15, 2 );
+		add_action( 'tlmt_course_migrated', array( $this, 'migrate_subscription_plan' ), 20, 2 );
 		add_action( 'tlmt_lesson_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_quiz_migrated', array( $this, 'migrate_post_meta' ), 10, 2 );
 		add_action( 'tlmt_attach_product', array( $this, 'migrate_products' ), 10, 2 );
-		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ) );
+		add_action( 'tlmt_student_progress_migrated', array( $this, 'migrate_student_progress' ), 10, 2 );
 		add_action( 'tlmt_assignment_migrated', array( $this, 'migrate_assignment_meta' ) );
 		add_action( 'tlml_delete_learndash_quiz_questions', array( $this, 'delete_learndash_quiz_questions' ) );
 	}
@@ -110,6 +116,71 @@ class ActionHandler {
 	}
 
 	/**
+	 * Migrate LearnDash course categories and tags to Tutor taxonomies.
+	 *
+	 * @since 2.4.1
+	 *
+	 * @param int    $course_id      Course ID.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_course_taxonomies( $course_id, $migration_type ) {
+		if ( MigrationTypes::LD_TO_TUTOR !== $migration_type ) {
+			return;
+		}
+
+		try {
+			( new CourseTaxonomies() )->migrate( (int) $course_id );
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error(
+				ContentTypes::COURSE_TAXONOMIES,
+				sprintf(
+					/* translators: 1: course id, 2: error message */
+					__( 'Failed to migrate taxonomies for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+					(int) $course_id,
+					$th->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Create a Tutor native subscription plan for LD subscribe courses.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param int    $course_id       Course ID.
+	 * @param string $migration_type Migration type.
+	 *
+	 * @return void
+	 */
+	public function migrate_subscription_plan( $course_id, $migration_type ) {
+		if ( MigrationTypes::LD_TO_TUTOR !== $migration_type ) {
+			return;
+		}
+
+		if ( ! SubscriptionHelper::is_subscription_migration_available() ) {
+			return;
+		}
+
+		try {
+			$subscriptions = new Subscriptions();
+			$subscriptions->migrate_plan_for_course( (int) $course_id );
+		} catch ( \Throwable $th ) {
+			$this->update_migration_error(
+				ContentTypes::SUBSCRIPTIONS,
+				sprintf(
+					/* translators: 1: course id, 2: error message */
+					__( 'Failed to migrate subscription plan for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+					$course_id,
+					$th->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
 	 * Migrate products.
 	 *
 	 * @since 2.3.0
@@ -121,7 +192,18 @@ class ActionHandler {
 	 */
 	public function migrate_products( $course_id, $migration_type ) {
 		try {
-			$course      = get_post( $course_id );
+			$course = get_post( $course_id );
+
+			// Native subscription plans replace one-time product attach for subscribe courses.
+			$selling_option = get_post_meta( $course_id, Course::COURSE_SELLING_OPTION_META, true );
+			if (
+				Course::SELLING_OPTION_SUBSCRIPTION === $selling_option
+				&& function_exists( 'tutor_utils' )
+				&& tutor_utils()->is_monetize_by_tutor()
+			) {
+				return;
+			}
+
 			$monetize_by = tutor_utils()->get_option( 'monetize_by' );
 			$product_obj = tlmt_get_product_obj( $monetize_by, $migration_type );
 
@@ -154,20 +236,25 @@ class ActionHandler {
 	 * Migrates student progress based on the given migration type.
 	 *
 	 * @since 2.3.0
+	 * @since 4.0.0 parameter $course_id added.
 	 *
+	 * @param int    $course_id the course id.
 	 * @param string $migration_type The type of migration to perform.
 	 */
-	public function migrate_student_progress( string $migration_type ) {
+	public function migrate_student_progress(  string $migration_type, int $course_id ) {
 		try {
 			$student_progress_obj = StudentProgressFactory::create( $migration_type );
-			$student_progress_obj->migrate();
+			$student_progress_obj->migrate( $course_id );
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error( ContentTypes::STUDENT_PROGRESS, 'Failed to migrate student progress. ' . $th->getMessage() );
 		}
 	}
 
 	/**
-	 * Deletes all records from the LearnDash quiz questions table after student progress migration
+	 * Deletes all records from the LearnDash quiz questions table after full LD migration.
+	 *
+	 * Must run only after enrollments/student progress have finished, since progress
+	 * rebuilds attempt answers via JOIN on this table.
 	 *
 	 * @since 2.3.0
 	 *

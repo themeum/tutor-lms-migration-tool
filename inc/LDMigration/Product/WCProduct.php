@@ -33,35 +33,33 @@ class WCProduct implements Product {
 		$course_details = get_post_meta( $course_id, '_sfwd-courses', true );
 		update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 
-		if ( $course_details['sfwd-courses_course_price'] ) {
-
-			try {
-				$product_id = wp_insert_post(
-					array(
-						'post_title'   => $course_title . ' Product',
-						'post_content' => '',
-						'post_status'  => 'publish',
-						'post_type'    => 'product',
-					)
-				);
-			} catch ( \Throwable $th ) {
-				return $th;
-			}
-
-			$product_meta = $this->prepare_product_meta( $course_details['sfwd-courses_course_price'] );
-
-			foreach ( $product_meta as $key => $value ) {
-				update_post_meta( $product_id, $key, $value );
-			}
-
-			update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-			update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
-
-			set_product_thumbnail( $course_id, $product_id );
-
-		} else {
-			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
+		if ( ! is_array( $course_details ) || empty( $course_details['sfwd-courses_course_price'] ) ) {
+			return;
 		}
+
+		try {
+			$product_id = wp_insert_post(
+				array(
+					'post_title'   => $course_title . ' Product',
+					'post_content' => '',
+					'post_status'  => 'publish',
+					'post_type'    => 'product',
+				)
+			);
+		} catch ( \Throwable $th ) {
+			return $th;
+		}
+
+		$product_meta = $this->prepare_product_meta( $course_details['sfwd-courses_course_price'] );
+
+		foreach ( $product_meta as $key => $value ) {
+			update_post_meta( $product_id, $key, $value );
+		}
+
+		update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
+		update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
+
+		set_product_thumbnail( $course_id, $product_id );
 	}
 
 	/**

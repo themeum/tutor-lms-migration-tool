@@ -65,6 +65,25 @@ class ErrorHandler {
 	}
 
 	/**
+	 * Get the latest error message for a type.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string $error_type Error type key.
+	 *
+	 * @return string
+	 */
+	public static function get_error_message( string $error_type ): string {
+		$errors = self::get_errors( false );
+
+		if ( empty( $errors[ $error_type ] ) || ! is_array( $errors[ $error_type ] ) ) {
+			return __( 'Migration step failed.', 'tutor-lms-migration-tool' );
+		}
+
+		return (string) end( $errors[ $error_type ] );
+	}
+
+	/**
 	 * Get all the errors
 	 *
 	 * @since 2.3.0
