@@ -1151,12 +1151,18 @@ defined( 'ABSPATH' ) || exit;
 				$course_id = get_post_meta( $order->ID, 'post_id', true );
 
 				if ( ! $course_id ) {
+					// Consume courseless transactions so remaining count can reach zero.
+					if ( isset( $order_errors[0] ) ) {
+						array_push( $order_errors[0], $order->ID );
+					} else {
+						$order_errors[0] = array( $order->ID );
+					}
+					$order_obj->remove_orders( $order->ID );
 					continue;
 				}
 
 				try {
 					$order_obj->migrate( $order, $course_id );
-					$order_obj->remove_orders( $order->ID );
 				} catch ( \Throwable $th ) {
 					if ( isset( $order_errors[ $course_id ] ) ) {
 						array_push( $order_errors[ $course_id ], $order->ID );
@@ -1164,11 +1170,19 @@ defined( 'ABSPATH' ) || exit;
 						$order_errors[ $course_id ] = array( $order->ID );
 					}
 				}
+
+				// Always remove the LD transaction after an attempt. Skipping delete on
+				// migrate failure left the same rows in the queue and has_more stayed true.
+				$order_obj->remove_orders( $order->ID );
 			}
 
 			if ( $order_errors ) {
 				$err_msg = __( 'Failed to migrate orders for ', 'tutor-lms-migration-tool' );
 				foreach ( $order_errors as $course_id => $order_ids ) {
+					if ( empty( $course_id ) ) {
+						$err_msg .= __( 'Orders without course: ', 'tutor-lms-migration-tool' ) . implode( ',', $order_ids ) . ' ';
+						continue;
+					}
 					$err_msg .= __( 'Orders : ', 'tutor-lms-migration-tool ' ) . implode( ',', $order_ids ) . __( ' of Course ', 'tutor-lms-migration-tool' ) . $course_id . ' ';
 				}
 				ErrorHandler::set_error( 'order', $err_msg );
