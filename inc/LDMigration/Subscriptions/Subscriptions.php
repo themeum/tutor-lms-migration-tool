@@ -194,7 +194,7 @@ class Subscriptions {
 	/**
 	 * Migrate a batch of LD subscription line items.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int $batch_size Number of pending subscriptions to process. 0 = all remaining.
 	 *
@@ -417,7 +417,7 @@ class Subscriptions {
 	/**
 	 * Create Tutor subscriptions for enrolled students who have no LD payment txn.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @return array{migrated:int,skipped:int,errors:array}
 	 */
@@ -500,7 +500,7 @@ class Subscriptions {
 	/**
 	 * Create a Tutor order + subscription for an enrolled student without an LD txn.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int      $user_id    User ID.
 	 * @param int      $course_id  Course ID.

@@ -48,7 +48,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * Migrates LearnDash course progress to Tutor LMS.
 	 *
 	 * @since 2.3.0
-	 * @since 2.5.1 Optional $user_id to migrate a single student.
+	 * @since 2.5.0 Optional $user_id to migrate a single student.
 	 *
 	 * - For topic activities: Marks the lesson as completed in Tutor LMS.
 	 * - For quiz activities: Creates a corresponding quiz attempt and stores related answers.
@@ -103,7 +103,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @since 2.3.0
 	 * @since 4.0.0 param $course_id added.
-	 * @since 2.5.1 Optional $user_id to scope activity to one student.
+	 * @since 2.5.0 Optional $user_id to scope activity to one student.
 	 *
 	 * @param int $course_id the course id.
 	 * @param int $user_id   Optional user id. When > 0, only that student's activity is returned.
@@ -488,7 +488,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * LearnDash may store JSON arrays or objects; seeded/placeholder payloads can be either.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param mixed $statistic_answer_data Decoded answer payload.
 	 * @param int   $index                 Preferred numeric index.

@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Tutor course progress (which includes lessons + quizzes).
  *
  * @since 2.5.0
- * @since 2.5.1 Migrate completed LearnPress quizzes into tutor_quiz_attempts.
+ * @since 2.5.0 Migrate completed LearnPress quizzes into tutor_quiz_attempts.
  */
 class StudentProgress implements StudentProgressInterface {
 
@@ -43,7 +43,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * LearnPress quiz item type in user items.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @var string
 	 */
@@ -71,7 +71,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * Migrate LearnPress lesson and quiz progress to Tutor LMS for a course.
 	 *
 	 * @since 2.5.0
-	 * @since 2.5.1 Also migrates completed quizzes for course progress totals.
+	 * @since 2.5.0 Also migrates completed quizzes for course progress totals.
 	 *
 	 * @param int $course_id The course ID.
 	 * @param int $user_id   Optional user ID. When > 0, only that student's progress is migrated.
@@ -90,7 +90,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Migrate completed LearnPress lessons to Tutor lesson-complete user meta.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   Optional user ID to scope migration.
@@ -129,7 +129,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * Tutor course progress counts distinct quizzes with a non-started attempt.
 	 * Full per-question answer history is not reconstructed here.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   Optional user ID to scope migration.
@@ -169,7 +169,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Insert a Tutor quiz attempt from a LearnPress completed quiz row.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int    $course_id Course ID.
 	 * @param int    $quiz_id   Quiz ID.
@@ -234,7 +234,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Fetch completed LearnPress quiz rows (with optional result payload).
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param int $course_id Course ID (stored as ref_id on quiz items).
 	 * @param int $user_id   Optional user ID to scope results.
@@ -298,7 +298,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * Fetch completed LearnPress curriculum item rows for a course.
 	 *
 	 * @since 2.5.0
-	 * @since 2.5.1 Generalized for lesson/quiz item types.
+	 * @since 2.5.0 Generalized for lesson/quiz item types.
 	 *
 	 * @param int    $course_id Course ID (stored as ref_id on items).
 	 * @param string $item_type LearnPress item type (`lp_lesson`, etc.).
@@ -357,7 +357,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Decode LearnPress quiz result JSON into an array.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param mixed $result Raw result column value.
 	 *
@@ -394,7 +394,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Resolve a Unix timestamp from ordered datetime fields on a row.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param object        $row    LearnPress user item row.
 	 * @param array<string> $fields Field names in preference order.

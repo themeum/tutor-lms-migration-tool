@@ -118,7 +118,7 @@ class ActionHandler {
 	/**
 	 * Migrate LearnDash course categories and tags to Tutor taxonomies.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @param int    $course_id      Course ID.
 	 * @param string $migration_type Migration type.

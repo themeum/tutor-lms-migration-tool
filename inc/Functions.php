@@ -118,7 +118,7 @@ if ( ! function_exists( 'tlmt_ld_answer_plain_text' ) ) {
 	/**
 	 * Strip LearnDash answer HTML to plain text.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param string $content Answer content.
 	 *
@@ -133,7 +133,7 @@ if ( ! function_exists( 'tlmt_ld_answer_first_image_id' ) ) {
 	/**
 	 * Resolve the first attachment ID from HTML answer content.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param string $content Answer HTML.
 	 *
@@ -173,7 +173,7 @@ if ( ! function_exists( 'tlmt_ld_answer_data_as_array' ) ) {
 	/**
 	 * Normalize a LearnDash answer row to an array.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param mixed $answer Answer object or array.
 	 *
@@ -196,7 +196,7 @@ if ( ! function_exists( 'tlmt_ld_matrix_criterion_is_image' ) ) {
 	/**
 	 * Whether a LearnDash matrix criterion row is image-based.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param array $ans_arr LearnDash answer as array.
 	 *
@@ -214,7 +214,7 @@ if ( ! function_exists( 'tlmt_ld_matrix_is_image_matching' ) ) {
 	 * Tutor cannot mix image and text matching in one question. Uses the majority
 	 * criterion type; on a 50/50 split prefers image matching.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param array $ld_answer_data Unserialized LearnDash answer_data rows.
 	 *
@@ -248,7 +248,7 @@ if ( ! function_exists( 'tlmt_ld_matrix_answer_matches_mode' ) ) {
 	 *
 	 * Minority opposite-type rows are excluded during migration.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param array $ans_arr            LearnDash answer as array.
 	 * @param bool  $is_image_matching Chosen matching mode.
@@ -269,7 +269,7 @@ if ( ! function_exists( 'tlmt_map_ld_matrix_answer' ) ) {
 	 * Text matching: criterion → answer_title, sort string → answer_two_gap_match.
 	 * Image matching: criterion image → image_id, sort string → answer_title (draggable).
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param array $ans_arr            LearnDash answer as array.
 	 * @param bool  $is_image_matching Whether the question uses image matching.

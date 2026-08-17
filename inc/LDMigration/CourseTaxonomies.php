@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.4.1
+ * @since 2.5.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration;
@@ -24,7 +24,7 @@ class CourseTaxonomies {
 	/**
 	 * LearnDash course category taxonomy.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @var string
 	 */
@@ -33,7 +33,7 @@ class CourseTaxonomies {
 	/**
 	 * LearnDash course tag taxonomy.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @var string
 	 */
@@ -42,7 +42,7 @@ class CourseTaxonomies {
 	/**
 	 * Cached map of LD term ID => Tutor term ID, keyed by source taxonomy.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @var array<string, array<int, int>>
 	 */
@@ -51,7 +51,7 @@ class CourseTaxonomies {
 	/**
 	 * Migrate course-specific categories and tags for a course.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @param int $course_id Course post ID (same ID after in-place CPT conversion).
 	 *
@@ -80,7 +80,7 @@ class CourseTaxonomies {
 	/**
 	 * Migrate terms from a LearnDash taxonomy to a Tutor taxonomy for one course.
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @param int    $course_id     Course ID.
 	 * @param string $source_tax    LearnDash taxonomy name.
@@ -120,7 +120,7 @@ class CourseTaxonomies {
 	/**
 	 * Ensure a Tutor term exists for the given LearnDash term (including parents).
 	 *
-	 * @since 2.4.1
+	 * @since 2.5.0
 	 *
 	 * @param \WP_Term $term             LearnDash term.
 	 * @param string   $source_tax       LearnDash taxonomy.
