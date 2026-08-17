@@ -67,7 +67,7 @@ class ErrorHandler {
 	/**
 	 * Get the latest error message for a type.
 	 *
-	 * @since 2.5.1
+	 * @since 2.5.0
 	 *
 	 * @param string $error_type Error type key.
 	 *

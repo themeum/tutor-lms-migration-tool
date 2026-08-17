@@ -25,49 +25,49 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Courses processed per AJAX request to stay under FastCGI/PHP timeouts.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const COURSE_BATCH_SIZE = 1;
 
 		/**
 		 * Student enrollments processed per AJAX request.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ENROLLMENT_BATCH_SIZE = 50;
 
 		/**
 		 * One-time orders processed per AJAX request.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ORDER_BATCH_SIZE = 10;
 
 		/**
 		 * Subscriptions processed per AJAX request.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const SUBSCRIPTION_BATCH_SIZE = 5;
 
 		/**
 		 * Reviews processed per AJAX request.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const REVIEW_BATCH_SIZE = 50;
 
 		/**
 		 * Option key for enrollment migration total.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ENROLLMENT_MIGRATION_TOTAL_OPT = '_tlmt_ld_enrollments_migration_total';
 
 		/**
 		 * Post meta marking a course whose enrollments/progress were migrated.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ENROLLMENT_MIGRATED_META = '_tlmt_ld_enrollment_migrated';
 
@@ -75,28 +75,28 @@ defined( 'ABSPATH' ) || exit;
 		 * User meta prefix marking a student whose enrollment/progress was migrated for a course.
 		 * Full key: `{prefix}{course_id}`.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ENROLLMENT_USER_META_PREFIX = '_tlmt_ld_enroll_user_';
 
 		/**
 		 * Option key for order migration total.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const ORDER_MIGRATION_TOTAL_OPT = '_tlmt_ld_orders_migration_total';
 
 		/**
 		 * Option key for subscription migration total.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const SUBSCRIPTION_MIGRATION_TOTAL_OPT = '_tlmt_ld_subscriptions_migration_total';
 
 		/**
 		 * Option key for review migration total.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 */
 		const REVIEW_MIGRATION_TOTAL_OPT = '_tlmt_ld_reviews_migration_total';
 
@@ -297,7 +297,7 @@ defined( 'ABSPATH' ) || exit;
 		 * Migrate learndash reviews to tutor.
 		 *
 		 * @since 2.3.0
-		 * @since 2.5.1 Added batch processing return payload.
+		 * @since 2.5.0 Added batch processing return payload.
 		 *
 		 * @return array{
 		 *     has_more: bool,
@@ -437,7 +437,7 @@ defined( 'ABSPATH' ) || exit;
 		 * subscriptions → reviews). Quiz questions must stay available until student
 		 * progress has rebuilt attempt answers from the LearnDash question bank.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @return void
 		 */
@@ -460,7 +460,7 @@ defined( 'ABSPATH' ) || exit;
 		 * LearnDash courses without needing a persistent offset.
 		 *
 		 * @since 1.0.0
-		 * @since 2.5.1 Added batch processing return payload.
+		 * @since 2.5.0 Added batch processing return payload.
 		 *
 		 * @param boolean $return_type Unused legacy parameter.
 		 *
@@ -598,7 +598,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Revert a course to LearnDash when migration fails mid-course.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int      $course_id Course post ID.
 		 * @param \WP_Post $ld_course Original LearnDash course post.
@@ -661,7 +661,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Insert Enrollment LD to Tutor for a single student.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int $course_id Tutor course ID (same ID as LearnDash course).
 		 * @param int $user_id   Student user ID.
@@ -787,7 +787,7 @@ defined( 'ABSPATH' ) || exit;
 		 * Per-user meta tracks resume state; a course is marked complete only after
 		 * all of its students are migrated.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @throws \Throwable If enrollment or progress migration fails for a student.
 		 *
@@ -903,7 +903,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * User meta key for a migrated enrollment/progress pair.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int $course_id Course ID.
 		 *
@@ -916,7 +916,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Mark Tutor courses that have no LD enrollment/completion activity as done.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @return void
 		 */
@@ -953,7 +953,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Count pending student-course enrollment pairs.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @return int
 		 */
@@ -992,7 +992,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Count pending students for a single course.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int $course_id Course ID.
 		 *
@@ -1025,7 +1025,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Fetch a batch of pending student-course enrollment pairs.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int $limit Batch size.
 		 *
@@ -1072,7 +1072,7 @@ defined( 'ABSPATH' ) || exit;
 		 * Processes one-time (non-subscription) transactions in batches.
 		 *
 		 * @since 2.3.0
-		 * @since 2.5.1 Added batch processing return payload.
+		 * @since 2.5.0 Added batch processing return payload.
 		 *
 		 * @return array|false Batch payload, or false on blocking error.
 		 */
@@ -1212,7 +1212,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Count LearnDash one-time transactions (excluding subscription-related).
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int[] $exclude_ids Transaction IDs to exclude.
 		 *
@@ -1243,7 +1243,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Fetch a batch of LearnDash one-time transactions.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @param int[] $exclude_ids Transaction IDs to exclude.
 		 * @param int   $limit       Batch size.
@@ -1285,7 +1285,7 @@ defined( 'ABSPATH' ) || exit;
 		 * Migrate LearnDash recurring subscriptions to Tutor native subscriptions.
 		 *
 		 * @since 2.5.0
-		 * @since 2.5.1 Added batch processing return payload.
+		 * @since 2.5.0 Added batch processing return payload.
 		 *
 		 * @return array|false Batch payload, or false on blocking error.
 		 */
@@ -1384,7 +1384,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Whether any Tutor LMS courses exist (migration prerequisite for sales data).
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @return bool
 		 */
@@ -1779,7 +1779,7 @@ defined( 'ABSPATH' ) || exit;
 		/**
 		 * Raise time and memory limits for a migration AJAX batch.
 		 *
-		 * @since 2.5.1
+		 * @since 2.5.0
 		 *
 		 * @return void
 		 */
