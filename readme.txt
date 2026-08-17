@@ -201,22 +201,22 @@ You can find the complete documentation and step-by-step migration guides in our
 
 = 2.5.0 - 10 August, 2026 =
 
-New: Introduced batch processing while importing courses.
-New: Added course taxonomy import support.
-New: Added LearnPress course meta import support (level, duration, requirements, audience, benefits, max students, expiry, public course).
-New: Added LearnPress course pricing migration to Tutor native ecommerce.
-New: Added LearnPress fill-in-the-blanks quiz question support.
-New: Added LearnPress quiz settings migration support (time limit, passing grade, attempts, answer reveal).
-New: Introduced batch processing while importing enrollments (students, course completions, lesson progress).
-New: Added LearnPress order migration to Tutor native ecommerce.
-New: Added a migration consent warning modal before data deletion.
-New: Added an enrollments section in the LearnPress migration UI.
-Update: Separated student enrollment import from course import.
-Update: Added LearnDash subscription import support.
-Update: Improved LearnPress quiz question type and answer mapping.
-Update: Added Tutor native path for LearnPress order migration alongside existing WooCommerce conversion.
-Fix: Fixed a fatal error that could occur during LearnDash quiz migration.
-Fix: Fixed an issue where LearnDash course progress was not imported correctly.
+New: Added course taxonomy import support. (LearnDash, LearnPress)
+New: Added course meta import support. (LearnPress)
+New: Added course pricing migration to Tutor LMS native e-commerce. (LearnPress)
+New: Added support for fill-in-the-blanks quiz questions. (LearnPress)
+New: Added quiz settings migration support. (LearnPress)
+New: Added order migration to Tutor LMS native e-commerce. (LearnPress)
+New: Added a safety warning modal before deleting data. (LearnDash, LearnPress)
+New: Added an enrollments section to the migration dashboard. (LearnPress)
+Update: Improved the enrollment import mechanism. (LearnDash, LearnPress)
+Update: Improved the course import mechanism by introducing a batch system. (LearnDash, LearnPress)
+Update: Separated student enrollment import from course import. (LearnDash, LearnPress)
+Update: Added subscription import support. (LearnDash)
+Update: Improved quiz question and answer mapping. (LearnPress)
+Update: Added a native Tutor LMS path for order migration. (LearnPress)
+Fix: Fixed a crash issue during quiz migration. (LearnDash)
+Fix: Fixed an accuracy issue with course progress import. (LearnDash)
 
 = 2.4.1 - 11 November, 2025 =
 
