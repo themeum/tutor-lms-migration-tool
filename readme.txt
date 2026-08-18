@@ -5,7 +5,7 @@ Tags: LMS, migration, course, elearning, education
 Requires at least: 5.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.2
+Stable tag: 2.5.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -199,10 +199,6 @@ You can find the complete documentation and step-by-step migration guides in our
 
 == Changelog ==
 
-= 2.5.2 - 18 August, 2026 =
-
-Update: Wordpress 7.0.0 compatiability.
-
 = 2.5.0 - 18 August, 2026 =
 
 New: Added course taxonomy import support. (LearnDash, LearnPress)
@@ -219,6 +215,7 @@ Update: Separated student enrollment import from course import. (LearnDash, Lear
 Update: Added subscription import support. (LearnDash)
 Update: Improved quiz question and answer mapping. (LearnPress)
 Update: Added a native Tutor LMS path for order migration. (LearnPress)
+Update: Wordpress 7.0 compatiability. (LearnDash, LearnPress)
 Fix: Fixed a crash issue during quiz migration. (LearnDash)
 Fix: Fixed an accuracy issue with course progress import. (LearnDash)
 
