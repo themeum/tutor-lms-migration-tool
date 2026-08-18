@@ -2,10 +2,10 @@
 Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: LMS, migration, course, elearning, education
-Requires at least: 5.0
+Requires at least: 5.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.0
+Stable tag: 2.5.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -198,6 +198,10 @@ You can find the complete documentation and step-by-step migration guides in our
 4. Error Alert
 
 == Changelog ==
+
+= 2.5.2 - 18 August, 2026 =
+
+Update: Wordpress 7.0.0 compatiability.
 
 = 2.5.0 - 18 August, 2026 =
 
