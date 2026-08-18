@@ -199,7 +199,7 @@ You can find the complete documentation and step-by-step migration guides in our
 
 == Changelog ==
 
-= 2.5.0 - 10 August, 2026 =
+= 2.5.0 - 18 August, 2026 =
 
 New: Added course taxonomy import support. (LearnDash, LearnPress)
 New: Added course meta import support. (LearnPress)
