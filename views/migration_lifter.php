@@ -73,6 +73,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 									</label>
 								</div>
+								<div id="sectionEnrollments" class="tutor-py-16">
+									<label for="enrollments">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Enrollments', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php esc_html_e( 'Migrate student enrollments, course completions, and learning progress to Tutor LMS in student batches.', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
 								<div id="sectionOrders" class="tutor-py-16">
 									<label for="sales-data">
 										<div class="lp-migration-singlebox">
@@ -83,6 +101,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title"><?php _e( 'Sales Data', 'tutor-lms-migration-tool' ); ?></div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
 													<?php _e( 'Migrate revenue and sales data to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
+								<div id="sectionReviews" class="tutor-py-16">
+									<label for="reviews">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Reviews', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php esc_html_e( 'All of the course reviews will be carried over to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>

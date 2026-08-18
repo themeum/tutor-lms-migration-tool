@@ -9,6 +9,64 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 	 * Lifter migration class
 	 */
 	class LIFtoTutorMigration {
+
+		/**
+		 * Courses processed per AJAX request.
+		 * Keep small — MAMP FastCGI idle timeout is ~30s.
+		 *
+		 * @since 2.5.0
+		 */
+		const COURSE_BATCH_SIZE = 1;
+
+		/**
+		 * Student–course enrollment pairs processed per AJAX request.
+		 *
+		 * @since 2.5.0
+		 */
+		const ENROLLMENT_BATCH_SIZE = 50;
+
+		/**
+		 * Orders processed per AJAX request.
+		 *
+		 * @since 2.5.0
+		 */
+		const ORDER_BATCH_SIZE = 20;
+
+		/**
+		 * Reviews processed per AJAX request.
+		 *
+		 * @since 2.5.0
+		 */
+		const REVIEW_BATCH_SIZE = 50;
+
+		/**
+		 * Option key for total Lifter courses at migration start.
+		 *
+		 * @since 2.5.0
+		 */
+		const COURSE_MIGRATION_TOTAL_OPT = '_tlmt_lif_course_migration_total';
+
+		/**
+		 * Option key for total Lifter orders at migration start.
+		 *
+		 * @since 2.5.0
+		 */
+		const ORDER_MIGRATION_TOTAL_OPT = '_tlmt_lif_order_migration_total';
+
+		/**
+		 * Option key for total Lifter reviews at migration start.
+		 *
+		 * @since 2.5.0
+		 */
+		const REVIEW_MIGRATION_TOTAL_OPT = '_tlmt_lif_review_migration_total';
+
+		/**
+		 * Post meta marking a migrated Lifter review so batches can resume.
+		 *
+		 * @since 2.5.0
+		 */
+		const REVIEW_MIGRATED_META = '_tlmt_lif_review_migrated';
+
 		/**
 		 * Constructor function
 		 */
@@ -91,49 +149,167 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Lifter to tutor data migrate
 		 *
+		 * @since 1.0.0
+		 * @since 2.5.0 Return batch payloads for courses, enrollments, orders, and reviews.
+		 *
 		 * @return void
 		 */
 		public function lif_migrate_all_data_to_tutor() {
 			tutor_utils()->checking_nonce();
-			
+
 			Utils::check_course_access();
 
-			if ( isset( $_POST['migrate_type'] ) ) {
-				$migrate_type = sanitize_text_field( $_POST['migrate_type'] );
+			if ( ! isset( $_POST['migrate_type'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid migration type.', 'tutor-lms-migration-tool' ) ) );
+			}
 
+			$migrate_type = sanitize_text_field( wp_unslash( $_POST['migrate_type'] ) );
+
+			try {
 				switch ( $migrate_type ) {
 					case 'courses':
-						$this->lif_migrate_course_to_tutor();
+						$result = $this->lif_migrate_course_to_tutor();
+						wp_send_json_success( $result );
+						break;
+					case 'enrollments':
+						$result = $this->lif_enrollments_migrate();
+						if ( false === $result ) {
+							wp_send_json_error(
+								array(
+									'step'    => 'enrollments',
+									'message' => \Themeum\TutorLMSMigrationTool\ErrorHandler::get_error_message( \Themeum\TutorLMSMigrationTool\ContentTypes::ENROLLMENTS ),
+								)
+							);
+						}
+						wp_send_json_success( is_array( $result ) ? $result : array() );
 						break;
 					case 'orders':
-						$this->migrate_lif_orders();
+						$result = $this->migrate_lif_orders();
+						wp_send_json_success( is_array( $result ) ? $result : array() );
 						break;
 					case 'reviews':
-						$this->migrate_lif_reviews();
+						$result = $this->migrate_lif_reviews();
+						wp_send_json_success( is_array( $result ) ? $result : array() );
 						break;
+					default:
+						wp_send_json_error( array( 'message' => __( 'Invalid migration type.', 'tutor-lms-migration-tool' ) ) );
 				}
-				wp_send_json_success();
+			} catch ( \Throwable $th ) {
+				error_log( $th->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				wp_send_json_error(
+					array(
+						'step'    => $migrate_type,
+						'message' => $th->getMessage(),
+					)
+				);
 			}
-			wp_send_json_error();
 		}
+
 		/**
-		 * Course migrate function
+		 * Course migrate function.
 		 *
-		 * @return void
+		 * Processes courses in batches so large migrations stay under server timeouts.
+		 * Migrated courses change post_type, so each request pulls the next remaining
+		 * LifterLMS courses without needing a persistent offset.
+		 *
+		 * @since 1.0.0
+		 * @since 2.5.0 Added batch processing return payload.
+		 *
+		 * @return array{
+		 *     migrated: int,
+		 *     total: int,
+		 *     total_course_count: int,
+		 *     remaining: int,
+		 *     has_more: bool,
+		 *     batch_size: int
+		 * }
 		 */
 		public function lif_migrate_course_to_tutor() {
 			global $wpdb;
 
-			$lif_courses = $wpdb->get_results( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'course';" );
-			if ( tutils()->count( $lif_courses ) ) {
-				$course_i = (int) get_option( '_tutor_migrated_items_count' );
-				foreach ( $lif_courses as $lif_course ) {
-					$course_i++;
-					$this->migrate_course( $lif_course->ID );
-					update_option( '_tutor_migrated_items_count', $course_i );
-				}
+			$this->raise_migration_resource_limits();
+
+			$batch_size = (int) apply_filters( 'tlmt_lif_course_migration_batch_size', self::COURSE_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::COURSE_BATCH_SIZE;
 			}
-			wp_send_json_success();
+
+			$remaining_total = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'course'" );
+
+			$is_first_batch = ! empty( $_POST['lif_course_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in lif_migrate_all_data_to_tutor().
+
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				update_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total, false );
+			}
+
+			$total_courses = (int) get_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total );
+			if ( $total_courses < 1 ) {
+				$total_courses = $remaining_total;
+			}
+
+			if ( $remaining_total < 1 ) {
+				$already = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lif_course'" );
+				return array(
+					'migrated'           => max( $total_courses, $already ),
+					'total'              => max( $total_courses, $already ),
+					'total_course_count' => max( $total_courses, $already ),
+					'remaining'          => 0,
+					'has_more'           => false,
+					'batch_size'         => $batch_size,
+				);
+			}
+
+			$lif_courses = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'course' ORDER BY ID ASC LIMIT %d",
+					$batch_size
+				)
+			);
+
+			$course_i = (int) get_option( '_tutor_migrated_items_count' );
+			foreach ( $lif_courses as $lif_course ) {
+				++$course_i;
+				$this->migrate_course( $lif_course->ID );
+				update_option( '_tutor_migrated_items_count', $course_i );
+			}
+
+			$remaining_after = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'course'" );
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_courses - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::COURSE_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'migrated'           => $migrated_count,
+				'total'              => $total_courses,
+				'total_course_count' => $total_courses,
+				'remaining'          => $remaining_after,
+				'has_more'           => $has_more,
+				'batch_size'         => $batch_size,
+			);
+		}
+
+		/**
+		 * Raise time/memory limits for a migration batch.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return void
+		 */
+		private function raise_migration_resource_limits() {
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+
+			$current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
+			$target  = 512 * MB_IN_BYTES;
+
+			if ( -1 !== $current && $current < $target ) {
+				@ini_set( 'memory_limit', '512M' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.IniSet.memory_limit_Disallowed
+			}
 		}
 
 		/**
@@ -154,16 +330,24 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		public function migrate_course( $course_id ) {
 			global $wpdb;
 
+			$course_post_type = tutor()->course_post_type;
+
+			if ( ! function_exists( 'llms_get_post' ) ) {
+				$this->mark_course_as_tutor( $course_id, $course_post_type );
+				return;
+			}
+
 			$course = llms_get_post( $course_id );
 
 			if ( ! $course ) {
+				// Convert anyway so the next batch does not retry a missing Lifter course forever.
+				$this->mark_course_as_tutor( $course_id, $course_post_type );
 				return;
 			}
 
 			$course           = new LLMS_Course( $course_id );
 			$sections         = $course->get_sections();
 			$lesson_post_type = tutor()->lesson_post_type;
-			$course_post_type = tutor()->course_post_type;
 
 			$tutor_course = array();
 			$i            = 0;
@@ -181,53 +365,55 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'items'        => array(),
 					);
 
-					$lessons = $section->get_lessons();
+					$lessons    = $section->get_lessons();
+					$item_order = 0;
 
 					foreach ( $lessons as $lesson ) {
-						if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
-							$assignments = llms_lesson_get_assignment( $lesson );
-
-							$has_assignment = llms_lesson_has_assignment( $lesson );
-
-							if ( $has_assignment ) {
-								$assignment_post_type = 'tutor_assignments';
-								$assignment           = $assignments;
-							}
-						}
+						++$item_order;
+						$topic['items'][] = array(
+							'ID'           => $lesson->id,
+							'post_type'    => $lesson_post_type,
+							'post_title'   => $lesson->post->post_title,
+							'post_content' => $lesson->post->post_content,
+							'post_status'  => 'publish',
+							'post_parent'  => '{topic_id}',
+							'menu_order'   => $item_order,
+						);
 
 						if ( $lesson->has_quiz() ) {
-							$lesson_post_type = 'tutor_quiz';
-							$quiz             = $lesson->get_quiz();
-							$questions        = $quiz->get_questions();
-
-						} else {
-							$lesson_post_type = tutor()->lesson_post_type;
+							$quiz = $lesson->get_quiz();
+							if ( $quiz ) {
+								++$item_order;
+								$topic['items'][] = array(
+									'ID'           => $quiz->get( 'id' ),
+									'post_type'    => 'tutor_quiz',
+									'post_title'   => $quiz->get( 'title' ),
+									'post_content' => $quiz->post->post_content,
+									'post_status'  => 'publish',
+									'post_parent'  => '{topic_id}',
+									'menu_order'   => $item_order,
+								);
+							}
 						}
-							$tutor_lessons = array(
-								'ID'           => $lesson->id,
-								'post_type'    => $lesson_post_type,
-								'post_title'   => $lesson->post->post_title,
-								'post_content' => $lesson->get_video(),
-								'post_parent'  => '{topic_id}',
-							);
-							if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
-								if ( $has_assignment ) {
-									$tutor_assignment = array(
-										'ID'           => $assignment->id,
-										'post_type'    => $assignment_post_type,
-										'post_title'   => $assignment->post->post_title,
-										'post_content' => $assignment,
-										'post_parent'  => '{topic_id}',
-									);
-								}
-							}
 
-							$topic['items'][] = $tutor_lessons;
-							if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' ) ) {
-								if ( $has_assignment ) {
-									$topic['items'][1] = $tutor_assignment;
-								}
+						if ( is_plugin_active( 'lifterlms-assignments/lifterlms-assignments.php' )
+							&& function_exists( 'llms_lesson_has_assignment' )
+							&& llms_lesson_has_assignment( $lesson )
+						) {
+							$assignment = llms_lesson_get_assignment( $lesson );
+							if ( $assignment ) {
+								++$item_order;
+								$topic['items'][] = array(
+									'ID'           => $assignment->id,
+									'post_type'    => 'tutor_assignments',
+									'post_title'   => $assignment->post->post_title,
+									'post_content' => $assignment->post->post_content,
+									'post_status'  => 'publish',
+									'post_parent'  => '{topic_id}',
+									'menu_order'   => $item_order,
+								);
 							}
+						}
 					}
 
 					$tutor_course[] = $topic;
@@ -245,89 +431,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 					// Update lesson from lifter to TutorLMS.
 					foreach ( $lessons as $lesson ) {
+						$quiz_option = null;
 
-						if ( $lesson['post_type'] === 'tutor_quiz' ) {
-							$quiz_id = tutils()->array_get( 'ID', $lesson );
-
-							if ( tutils()->count( $questions ) ) {
-								foreach ( $questions as $question ) {
-									$ques_id  = $question->id;
-									$meta_key = '_llms_question_type';
-
-									$ques_type = get_post_meta( $ques_id, $meta_key, true );
-
-									$question_type = null;
-									if ( $ques_type === 'true_false' ) {
-										$question_type = 'true_false';
-									}
-									if ( $ques_type === 'choice' ) {
-										$question_type = 'multiple_choice';
-									}
-									if ( $ques_type === 'picture_choice' ) {
-										$question_type = 'image_matching';
-									}
-									if ( $ques_type === 'blank' ) {
-										$question_type = 'fill_in_the_blank';
-									}
-									if ( $ques_type === 'short_answer' || $ques_type === 'long_answer' || $ques_type === 'code' ) {
-										$question_type = 'short_answer';
-									}
-									if ( $ques_type === 'reorder' ) {
-										$question_type = 'ordering';
-									}
-									if ( $ques_type === 'upload' ) {
-										$question_type = 'image_answering';
-									}
-
-									if ( $question_type ) {
-
-										$new_question_data = array(
-											'quiz_id' => $quiz_id,
-											'question_title' => $question->post->post_title,
-											'question_description' => $question->post->post_content,
-											'question_type' => $question_type,
-											'question_mark' => $question->post->question_mark,
-											'question_settings' => maybe_serialize( array() ),
-											'question_order' => $question->post->menu_order,
-										);
-
-										$wpdb->insert( $wpdb->prefix . 'tutor_quiz_questions', $new_question_data );
-										$question_id  = $wpdb->insert_id;
-										$answer_items = $question->get_choices();
-
-										if ( tutils()->count( $answer_items ) ) {
-											foreach ( $answer_items as $answer_item ) {
-												$choice  = $answer_item->get( 'choice' );
-												$correct = $answer_item->get( 'correct' );
-
-												$answer_data = array(
-													'belongs_question_id'   => $question_id,
-													'belongs_question_type' => $question_type,
-													'answer_title'          => $choice,
-													'is_correct'            => $correct === true ? 1 : 0,
-													'answer_order'          => '',
-												);
-
-												$wpdb->insert( $wpdb->prefix . 'tutor_quiz_question_answers', $answer_data );
-											}
-										}
-									}
-								}
-							}
-						}
-						if ( 'tutor_assignments' === $lesson['post_type'] ) {
-							$assignment_data = array(
-								'post_type'    => 'tutor_assignments',
-								'post_title'   => (string) $lesson->post_title,
-								'post_content' => (string) $lesson->post_content,
-								'post_status'  => 'publish',
-								'post_author'  => (string) $lesson->post_author,
-								'post_parent'  => $course_id,
-								'menu_order'   => (string) $lesson->menu_order,
-							);
-
-							// Inserting Topics.
-							$assignment_id = wp_insert_post( $assignment_data );
+						if ( 'tutor_quiz' === $lesson['post_type'] ) {
+							$quiz_id     = (int) tutils()->array_get( 'ID', $lesson );
+							$quiz_option = $this->build_tutor_quiz_option_from_lif( $quiz_id );
+							$this->migrate_lif_quiz_questions( $quiz_id );
 						}
 
 						$lesson['post_parent'] = $topic_id;
@@ -338,8 +447,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 						}
 
+						if ( is_array( $quiz_option ) && $lesson_id ) {
+							update_post_meta( $lesson_id, 'tutor_quiz_option', $quiz_option );
+						}
+
 						$_lif_preview = get_post_meta( $lesson_id, '_is_preview', true );
-						if ( $_lif_preview === 'yes' ) {
+						if ( 'yes' === $_lif_preview ) {
 							update_post_meta( $lesson_id, '_is_preview', 1 );
 						} else {
 							delete_post_meta( $lesson_id, '_is_preview' );
@@ -459,187 +572,338 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				}
 			}
 
-			/**
-			 * Course Complete Status Migration
-			 */
+			// Enrollments, completions, and progress run in a separate
+			// batched step (lif_enrollments_migrate) after all courses finish.
+		}
 
-			$lif_course_complete_datas = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
-					WHERE lifuer.post_id = %d AND lifuer.meta_key='_is_complete' AND lifuer.meta_value='yes'",
-					$course_id
-				)
-			);
+		/**
+		 * Migrate LifterLMS quiz questions and answers into Tutor tables.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $quiz_id Lifter quiz post ID (converted to tutor_quiz).
+		 *
+		 * @return void
+		 */
+		private function migrate_lif_quiz_questions( $quiz_id ) {
+			global $wpdb;
 
-			foreach ( $lif_course_complete_datas as $lif_course_complete_data ) {
-				$user_id = $lif_course_complete_data->user_id;
-
-				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-
-					$date = date( 'Y-m-d H:i:s', tutor_time() );
-
-					do {
-						$hash     = substr( md5( wp_generate_password( 32 ) . $date . $course_id . $user_id ), 0, 16 );
-						$has_hash = (int) $wpdb->get_var(
-							$wpdb->prepare(
-								"SELECT COUNT(comment_ID) from {$wpdb->comments}
-								WHERE comment_agent = 'TutorLMSPlugin' AND comment_type = 'course_completed' AND comment_content = %s ",
-								$hash
-							)
-						);
-
-					} while ( $has_hash > 0 );
-
-					$tutor_course_complete_data = array(
-						'comment_type'     => 'course_completed',
-						'comment_agent'    => 'TutorLMSPlugin',
-						'comment_approved' => 'approved',
-						'comment_content'  => $hash,
-						'user_id'          => $user_id,
-						'comment_author'   => $user_id,
-						'comment_post_ID'  => $course_id,
-					);
-
-					$is_has_enrolled = wp_insert_comment( $tutor_course_complete_data );
-
-				}
+			$quiz_id = (int) $quiz_id;
+			if ( $quiz_id < 1 || ! function_exists( 'llms_get_post' ) ) {
+				return;
 			}
 
-			/**
-			 * Enrollment Migration to this course
-			 */
-			$lif_enrollments = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}lifterlms_user_postmeta lifuer 
-					WHERE lifuer.post_id = %d AND lifuer.meta_key='_status' AND lifuer.meta_value='enrolled';",
-					$course_id
-				)
-			);
+			$quiz = llms_get_post( $quiz_id );
+			if ( ! $quiz || ! method_exists( $quiz, 'get_questions' ) ) {
+				return;
+			}
 
-			foreach ( $lif_enrollments as $lif_enrollment ) {
-				$user_id = $lif_enrollment->user_id;
+			$questions = $quiz->get_questions();
+			if ( ! tutils()->count( $questions ) ) {
+				return;
+			}
 
-				if ( ! tutils()->is_enrolled( $course_id, $user_id ) ) {
-					$order_time = strtotime( $lif_enrollment->updated_date );
+			$question_order = 0;
+			foreach ( $questions as $question ) {
+				$question_type = $this->map_lif_question_type( get_post_meta( $question->id, '_llms_question_type', true ) );
+				if ( ! $question_type ) {
+					continue;
+				}
 
-					$title                 = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date( get_option( 'date_format' ), $order_time ) . ' @ ' . date( get_option( 'time_format' ), $order_time );
-					$tutor_enrollment_data = array(
-						'post_type'   => 'tutor_enrolled',
-						'post_title'  => $title,
-						'post_status' => 'completed',
-						'post_author' => $user_id,
-						'post_parent' => $course_id,
+				++$question_order;
+				$question_mark = 1;
+				if ( method_exists( $question, 'get' ) ) {
+					$points = (int) $question->get( 'points' );
+					if ( $points > 0 ) {
+						$question_mark = $points;
+					}
+				}
+
+				$has_multiple = ( 'multiple_choice' === $question_type && method_exists( $question, 'get' ) && 'yes' === $question->get( 'multi_choices' ) );
+
+				$wpdb->insert(
+					$wpdb->prefix . 'tutor_quiz_questions',
+					array(
+						'quiz_id'              => $quiz_id,
+						'question_title'       => $question->post->post_title,
+						'question_description' => $question->post->post_content,
+						'question_type'        => $question_type,
+						'question_mark'        => $question_mark,
+						'question_settings'    => maybe_serialize( $this->build_tutor_question_settings( $question_type, $question_mark, $has_multiple ) ),
+						'question_order'       => $question_order,
+					)
+				);
+
+				$question_id = (int) $wpdb->insert_id;
+				if ( $question_id < 1 || ! method_exists( $question, 'get_choices' ) ) {
+					continue;
+				}
+
+				$answer_items = $question->get_choices();
+				if ( ! tutils()->count( $answer_items ) ) {
+					continue;
+				}
+
+				$answer_order = 0;
+				foreach ( $answer_items as $answer_item ) {
+					++$answer_order;
+					$choice  = $answer_item->get( 'choice' );
+					$correct = $answer_item->get( 'correct' );
+
+					$wpdb->insert(
+						$wpdb->prefix . 'tutor_quiz_question_answers',
+						array(
+							'belongs_question_id'   => $question_id,
+							'belongs_question_type' => $question_type,
+							'answer_title'          => $choice,
+							'is_correct'            => true === $correct ? 1 : 0,
+							'answer_order'          => $answer_order,
+						)
 					);
-
-					$is_has_enrolled = wp_insert_post( $tutor_enrollment_data );
-
-					if ( $is_has_enrolled ) {
-						// Mark Current User as Students with user meta data
-						update_user_meta( $user_id, '_is_tutor_student', $order_time );
-					}
-					// llms_course_752_progress
-					$student  = new LLMS_Student( $user_id );
-					$progress = $student->get_progress( $course_id, 'course' );
-					if ( 100 == $progress ) {
-						$tutor_course_complete_data = array(
-							'comment_type'     => 'course_completed',
-							'comment_agent'    => 'TutorLMSPlugin',
-							'comment_approved' => 'approved',
-							'comment_content'  => $progress,
-							'user_id'          => $user_id,
-							'comment_author'   => $user_id,
-							'comment_post_ID'  => $course_id,
-						);
-
-						$isEnrolled = wp_insert_comment( $tutor_course_complete_data );
-					}
 				}
 			}
 		}
 
+		/**
+		 * Map a LifterLMS question type to a Tutor question type.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string $ques_type Lifter question type slug.
+		 *
+		 * @return string|null
+		 */
+		private function map_lif_question_type( $ques_type ) {
+			$map = array(
+				'true_false'     => 'true_false',
+				'choice'         => 'multiple_choice',
+				'picture_choice' => 'image_matching',
+				'blank'          => 'fill_in_the_blank',
+				'short_answer'   => 'short_answer',
+				'long_answer'    => 'short_answer',
+				'code'           => 'short_answer',
+				'reorder'        => 'ordering',
+				'upload'         => 'image_answering',
+			);
+
+			$ques_type = (string) $ques_type;
+			return isset( $map[ $ques_type ] ) ? $map[ $ques_type ] : null;
+		}
 
 		/**
-		 * Lifter LMS  order migrate to WC
+		 * Build Tutor `question_settings` for a migrated Lifter question.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string     $question_type Tutor question type slug.
+		 * @param int|string $question_mark Question points.
+		 * @param bool       $has_multiple  Whether multiple correct answers are allowed.
+		 *
+		 * @return array
+		 */
+		private function build_tutor_question_settings( $question_type, $question_mark, $has_multiple = false ) {
+			$settings = array(
+				'question_type'      => $question_type,
+				'question_mark'      => $question_mark,
+				'answer_required'    => 0,
+				'randomize_question' => 0,
+				'show_question_mark' => 0,
+			);
+
+			if ( 'multiple_choice' === $question_type ) {
+				$settings['has_multiple_correct_answer'] = $has_multiple ? '1' : '0';
+			}
+
+			if ( 'image_matching' === $question_type ) {
+				$settings['is_image_matching'] = '1';
+			}
+
+			return $settings;
+		}
+
+		/**
+		 * Build Tutor `tutor_quiz_option` from a LifterLMS quiz.
+		 *
+		 * Missing quiz options cause the course builder to crash when opening a quiz.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int $quiz_id Quiz post ID.
+		 *
+		 * @return array
+		 */
+		private function build_tutor_quiz_option_from_lif( $quiz_id ) {
+			$quiz_option = array(
+				'time_limit'                         => array(
+					'time_value' => 0,
+					'time_type'  => 'minutes',
+				),
+				'hide_quiz_time_display'             => 0,
+				'attempts_allowed'                   => 10,
+				'limit_attempts_allowed'             => '0',
+				'enable_answer_reveal'               => '0',
+				'passing_grade'                      => 80,
+				'max_questions_for_answer'           => 10,
+				'quiz_auto_start'                    => 0,
+				'question_layout_view'               => '',
+				'questions_order'                    => 'sorting',
+				'short_answer_characters_limit'      => 200,
+				'open_ended_answer_characters_limit' => 500,
+				'pass_is_required'                   => 0,
+				'hide_question_number_overview'      => 0,
+				'enable_pagination'                  => '0',
+				'pagination_type'                    => 'shape',
+			);
+
+			if ( ! function_exists( 'llms_get_post' ) ) {
+				return $quiz_option;
+			}
+
+			$quiz = llms_get_post( $quiz_id );
+			if ( ! $quiz || ! method_exists( $quiz, 'get' ) ) {
+				return $quiz_option;
+			}
+
+			$passing = $quiz->get( 'passing_percent' );
+			if ( is_numeric( $passing ) ) {
+				$quiz_option['passing_grade'] = max( 0, min( 100, (int) $passing ) );
+			}
+
+			$time_limit = (int) $quiz->get( 'time_limit' );
+			if ( $time_limit > 0 ) {
+				$quiz_option['time_limit'] = array(
+					'time_value' => $time_limit,
+					'time_type'  => 'minutes',
+				);
+			}
+
+			$allowed_attempts = (int) $quiz->get( 'allowed_attempts' );
+			$limit_attempts   = $quiz->get( 'limit_attempts' );
+			if ( 'yes' === $limit_attempts || $allowed_attempts > 0 ) {
+				$quiz_option['limit_attempts_allowed'] = '1';
+				$quiz_option['attempts_allowed']       = $allowed_attempts > 0 ? $allowed_attempts : 1;
+			}
+
+			if ( 'yes' === $quiz->get( 'show_correct_answer' ) ) {
+				$quiz_option['enable_answer_reveal'] = '1';
+			}
+
+			if ( 'yes' === $quiz->get( 'random_questions' ) ) {
+				$quiz_option['questions_order'] = 'rand';
+			}
+
+			return $quiz_option;
+		}
+
+		/**
+		 * Convert a Lifter course post to Tutor so batching can skip it.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int    $course_id        Course ID.
+		 * @param string $course_post_type Tutor course post type.
 		 *
 		 * @return void
 		 */
-		public function migrate_lif_orders() {
+		private function mark_course_as_tutor( $course_id, $course_post_type ) {
+			wp_update_post(
+				array(
+					'ID'        => $course_id,
+					'post_type' => $course_post_type,
+				)
+			);
+			update_post_meta( $course_id, '_was_lif_course', true );
+		}
 
-			// Lifter LMS  order migrate to tutor earnings
+		/**
+		 * Migrate LifterLMS enrollments and completions in batches.
+		 *
+		 * Runs after course structure migration. Processes student–course pairs
+		 * so large enrollments stay under server timeouts.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return array|false Batch payload, or false on blocking error.
+		 */
+		public function lif_enrollments_migrate() {
+			$this->raise_migration_resource_limits();
+
+			$batch_size = (int) apply_filters( 'tlmt_lif_enrollment_migration_batch_size', self::ENROLLMENT_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ENROLLMENT_BATCH_SIZE;
+			}
+
+			$is_first_batch = ! empty( $_POST['lif_enrollment_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in lif_migrate_all_data_to_tutor().
+
+			return ( new \Themeum\TutorLMSMigrationTool\LIFMigration\Enrollments() )->migrate_batch( $batch_size, (bool) $is_first_batch );
+		}
+
+
+		/**
+		 * Lifter LMS order migrate to WC.
+		 *
+		 * @since 1.0.0
+		 * @since 2.5.0 Added batch processing return payload.
+		 *
+		 * @return array
+		 */
+		public function migrate_lif_orders() {
 			global $wpdb;
 
 			tutor_utils()->checking_nonce();
-			
+
 			Utils::check_course_access();
-			
-			if ( function_exists( 'wc_get_orders' ) ) {
 
-				$wc_orders = wc_get_orders(
-					array(
-						'limit' => -1,  // Retrieve all orders.
-					)
-				);
-				foreach ( $wc_orders as $wc_order ) {
-					$user_id        = $wc_order->get_user_id();
-					$wc_order_items = $wc_order->get_items();
-					$order_status   = $wc_order->get_status();
-					foreach ( $wc_order_items as $item ) {
-						// $product_id = $item->get_id();
-						// $product_id = $item->data['product_id'];
-						$wc_price          = $item->get_total();
-						$order_data        = $item->get_data(); // The Order data
-						$order_id          = $order_data['order_id'];
-						$product_id        = $order_data['product_id'];
-						$course_id         = get_post_meta( $product_id, '_llms_product_id', true );
-						$wc_price_grand    = $item->get_subtotal();
-						$commission_type   = 'percent';
-						$sharing_enabled   = tutor_utils()->get_option( 'enable_revenue_sharing' );
-						$instructor_rate   = $sharing_enabled ? tutor_utils()->get_option( 'earning_instructor_commission' ) : 0;
-						$admin_rate        = $sharing_enabled ? tutor_utils()->get_option( 'earning_admin_commission' ) : 100;
-						$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
-						$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
-						$plans             = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
-						$plan              = '';
-						foreach ( $plans as $plan ) {
-							$plan = $plan ? llms_get_post( $plan ) : false;
+			$this->raise_migration_resource_limits();
 
-						}
-						if ( $plan ) {
-							// Prepare insertable earning data.
-							$earning_data = array(
-								'user_id'                  => $user_id,
-								'course_id'                => $course_id,
-								'order_id'                 => $order_id,
-								'order_status'             => $order_status,
-								'course_price_total'       => $wc_price,
-								'course_price_grand_total' => $wc_price_grand,
+			$total_course_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lif_course'" );
 
-								'instructor_amount'        => $instructor_amount,
-								'instructor_rate'          => $instructor_rate,
-								'admin_amount'             => $admin_amount,
-								'admin_rate'               => $admin_rate,
-
-								'commission_type'          => $commission_type,
-								'process_by'               => 'woocommerce',
-								'created_at'               => gmdate( 'Y-m-d H:i:s', tutor_time() ),
-							);
-
-							$wpdb->insert( $wpdb->prefix . 'tutor_earnings', $earning_data );
-						}
-					}
-				}
+			$batch_size = (int) apply_filters( 'tlmt_lif_order_migration_batch_size', self::ORDER_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ORDER_BATCH_SIZE;
 			}
 
-			global $wpdb;
+			$remaining_total = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed'" );
 
-			$lif_orders = $wpdb->get_results( "SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed' " );
+			$is_first_batch = ! empty( $_POST['lif_order_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				update_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total, false );
+				$this->migrate_lif_wc_order_earnings();
+			}
+
+			$total_orders = (int) get_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total );
+			if ( $total_orders < 1 ) {
+				$total_orders = $remaining_total;
+			}
+
+			if ( $remaining_total < 1 ) {
+				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+				return array(
+					'migrated'           => $total_orders,
+					'total'              => $total_orders,
+					'total_course_count' => $total_course_count,
+					'remaining'          => 0,
+					'has_more'           => false,
+					'batch_size'         => $batch_size,
+				);
+			}
+
+			$lif_orders = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed' ORDER BY ID ASC LIMIT %d",
+					$batch_size
+				)
+			);
 
 			$item_i = (int) get_option( '_tutor_migrated_items_count' );
 			foreach ( $lif_orders as $lif_order ) {
-				$item_i++;
+				++$item_i;
 				update_option( '_tutor_migrated_items_count', $item_i );
 
-				$order_id           = $lif_order->ID;
+				$order_id = $lif_order->ID;
+				$_items   = $this->get_lif_order_items( $order_id );
+
 				$migrate_order_data = array(
 					'ID'          => $order_id,
 					'post_status' => 'wc-completed',
@@ -647,8 +911,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				);
 
 				wp_update_post( $migrate_order_data );
-
-				$_items = $this->get_lif_order_items( $order_id );
 
 				foreach ( $_items as $item ) {
 
@@ -662,7 +924,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					$order_item_id = (int) $wpdb->insert_id;
 
 					$lif_item_metas = $wpdb->get_results(
-						$wpdb->prepare( 
+						$wpdb->prepare(
 							"SELECT meta_key, meta_value 
 							FROM {$wpdb->postmeta}
 							WHERE meta_key in ('_llms_product_id','_llms_order_type','_llms_original_total','_llms_total')  AND post_id = %d",
@@ -698,12 +960,12 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					);
 
 					foreach ( $wc_item_metas as $wc_item_meta_key => $wc_item_meta_value ) {
-						$wc_item_metas = array(
+						$wc_item_meta_row = array(
 							'order_item_id' => $order_item_id,
 							'meta_key'      => $wc_item_meta_key,
 							'meta_value'    => $wc_item_meta_value,
 						);
-						$wpdb->insert( $wpdb->prefix . 'woocommerce_order_itemmeta', $wc_item_metas );
+						$wpdb->insert( $wpdb->prefix . 'woocommerce_order_itemmeta', $wc_item_meta_row );
 					}
 				}
 
@@ -716,40 +978,216 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				update_post_meta( $order_id, '_billing_email', $user_email );
 			}
 
+			$remaining_after = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed'" );
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_orders - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'migrated'           => $migrated_count,
+				'total'              => $total_orders,
+				'total_course_count' => $total_course_count,
+				'remaining'          => $remaining_after,
+				'has_more'           => $has_more,
+				'batch_size'         => $batch_size,
+			);
 		}
 
-		/*
-		* Lifter Review migrate to Tutor
-		*/
+		/**
+		 * Migrate WooCommerce order earnings from Lifter access plans.
+		 *
+		 * Runs once on the first order batch so later batches do not duplicate rows.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return void
+		 */
+		private function migrate_lif_wc_order_earnings() {
+			global $wpdb;
+
+			if ( ! function_exists( 'wc_get_orders' ) ) {
+				return;
+			}
+
+			$wc_orders = wc_get_orders(
+				array(
+					'limit' => -1,
+				)
+			);
+			foreach ( $wc_orders as $wc_order ) {
+				$user_id        = $wc_order->get_user_id();
+				$wc_order_items = $wc_order->get_items();
+				$order_status   = $wc_order->get_status();
+				foreach ( $wc_order_items as $item ) {
+					$wc_price          = $item->get_total();
+					$order_data        = $item->get_data();
+					$order_id          = $order_data['order_id'];
+					$product_id        = $order_data['product_id'];
+					$course_id         = get_post_meta( $product_id, '_llms_product_id', true );
+					$wc_price_grand    = $item->get_subtotal();
+					$commission_type   = 'percent';
+					$sharing_enabled   = tutor_utils()->get_option( 'enable_revenue_sharing' );
+					$instructor_rate   = $sharing_enabled ? tutor_utils()->get_option( 'earning_instructor_commission' ) : 0;
+					$admin_rate        = $sharing_enabled ? tutor_utils()->get_option( 'earning_admin_commission' ) : 100;
+					$instructor_amount = $instructor_rate > 0 ? ( ( $wc_price_grand * $instructor_rate ) / 100 ) : 0;
+					$admin_amount      = $admin_rate > 0 ? ( ( $wc_price_grand * $admin_rate ) / 100 ) : 0;
+					$plans             = wc_get_order_item_meta( $product_id, '_llms_access_plan', false );
+					$plan              = '';
+					foreach ( $plans as $plan ) {
+						$plan = $plan ? llms_get_post( $plan ) : false;
+					}
+					if ( $plan ) {
+						$earning_data = array(
+							'user_id'                  => $user_id,
+							'course_id'                => $course_id,
+							'order_id'                 => $order_id,
+							'order_status'             => $order_status,
+							'course_price_total'       => $wc_price,
+							'course_price_grand_total' => $wc_price_grand,
+							'instructor_amount'        => $instructor_amount,
+							'instructor_rate'          => $instructor_rate,
+							'admin_amount'             => $admin_amount,
+							'admin_rate'               => $admin_rate,
+							'commission_type'          => $commission_type,
+							'process_by'               => 'woocommerce',
+							'created_at'               => gmdate( 'Y-m-d H:i:s', tutor_time() ),
+						);
+
+						$wpdb->insert( $wpdb->prefix . 'tutor_earnings', $earning_data );
+					}
+				}
+			}
+		}
+
+		/**
+		 * Lifter review migrate to Tutor.
+		 *
+		 * @since 1.0.0
+		 * @since 2.5.0 Added batch processing return payload.
+		 *
+		 * @return array
+		 */
 		public function migrate_lif_reviews() {
 			global $wpdb;
 
-			$lif_review_ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type='llms_review';" );
+			tutor_utils()->checking_nonce();
 
-			if ( tutils()->count( $lif_review_ids ) ) {
-				$item_i = (int) get_option( '_tutor_migrated_items_count' );
-				foreach ( $lif_review_ids as $lif_review_id ) {
-					$item_i++;
-					update_option( '_tutor_migrated_items_count', $item_i );
+			Utils::check_course_access();
 
-					$review_migrate_data = array(
-						'comment_approved' => 'approved',
-						'comment_type'     => 'tutor_course_rating',
-						'comment_agent'    => 'TutorLMSPlugin',
-					);
+			$this->raise_migration_resource_limits();
 
-					$wpdb->update( $wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lif_review_id ) );
-					$wpdb->update(
-						$wpdb->commentmeta,
-						array( 'meta_key' => 'tutor_rating' ),
-						array(
-							'comment_id' => $lif_review_id,
-							'meta_key'   => '_lif_rating',
-						)
-					);
-				}
+			$batch_size = (int) apply_filters( 'tlmt_lif_review_migration_batch_size', self::REVIEW_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::REVIEW_BATCH_SIZE;
 			}
 
+			$total_course_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lif_course'" );
+			$remaining_total    = $this->count_pending_lif_reviews();
+
+			$is_first_batch = ! empty( $_POST['lif_review_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				update_option( self::REVIEW_MIGRATION_TOTAL_OPT, $remaining_total, false );
+			}
+
+			$total_reviews = (int) get_option( self::REVIEW_MIGRATION_TOTAL_OPT, $remaining_total );
+			if ( $total_reviews < 1 ) {
+				$total_reviews = $remaining_total;
+			}
+
+			if ( $remaining_total < 1 ) {
+				delete_option( self::REVIEW_MIGRATION_TOTAL_OPT );
+				return array(
+					'migrated'           => $total_reviews,
+					'total'              => $total_reviews,
+					'total_course_count' => $total_course_count,
+					'remaining'          => 0,
+					'has_more'           => false,
+					'batch_size'         => $batch_size,
+				);
+			}
+
+			$lif_review_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT p.ID
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} pm
+						ON p.ID = pm.post_id AND pm.meta_key = %s
+					WHERE p.post_type = 'llms_review'
+						AND pm.meta_id IS NULL
+					ORDER BY p.ID ASC
+					LIMIT %d",
+					self::REVIEW_MIGRATED_META,
+					$batch_size
+				)
+			);
+
+			$item_i = (int) get_option( '_tutor_migrated_items_count' );
+			foreach ( $lif_review_ids as $lif_review_id ) {
+				++$item_i;
+				update_option( '_tutor_migrated_items_count', $item_i );
+
+				$review_migrate_data = array(
+					'comment_approved' => 'approved',
+					'comment_type'     => 'tutor_course_rating',
+					'comment_agent'    => 'TutorLMSPlugin',
+				);
+
+				$wpdb->update( $wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lif_review_id ) );
+				$wpdb->update(
+					$wpdb->commentmeta,
+					array( 'meta_key' => 'tutor_rating' ),
+					array(
+						'comment_id' => $lif_review_id,
+						'meta_key'   => '_lif_rating',
+					)
+				);
+
+				update_post_meta( $lif_review_id, self::REVIEW_MIGRATED_META, 1 );
+			}
+
+			$remaining_after = $this->count_pending_lif_reviews();
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_reviews - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::REVIEW_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'migrated'           => $migrated_count,
+				'total'              => $total_reviews,
+				'total_course_count' => $total_course_count,
+				'remaining'          => $remaining_after,
+				'has_more'           => $has_more,
+				'batch_size'         => $batch_size,
+			);
+		}
+
+		/**
+		 * Count unmigrated Lifter reviews.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @return int
+		 */
+		private function count_pending_lif_reviews() {
+			global $wpdb;
+
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(p.ID)
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} pm
+						ON p.ID = pm.post_id AND pm.meta_key = %s
+					WHERE p.post_type = 'llms_review'
+						AND pm.meta_id IS NULL",
+					self::REVIEW_MIGRATED_META
+				)
+			);
 		}
 
 		/**
