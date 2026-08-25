@@ -484,6 +484,21 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			wp_update_post( $tutor_course );
 			update_post_meta( $course_id, '_was_lif_course', true );
 
+			// Course meta/settings (video, duration, level, Pro settings). Pricing stays below.
+			try {
+				( new \Themeum\TutorLMSMigrationTool\LIFMigration\CourseMeta() )->migrate( (int) $course_id );
+			} catch ( \Throwable $th ) {
+				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+					\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_META,
+					sprintf(
+						/* translators: 1: course id, 2: error message */
+						__( 'Failed to migrate course meta for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+						(int) $course_id,
+						$th->getMessage()
+					)
+				);
+			}
+
 			/**
 			 * Create WC Product and attaching it with course
 			 */
