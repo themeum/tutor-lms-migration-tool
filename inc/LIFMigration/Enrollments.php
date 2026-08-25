@@ -12,6 +12,8 @@ namespace Themeum\TutorLMSMigrationTool\LIFMigration;
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
+use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Runs after course structure migration. Each request processes a limited
  * number of student–course pairs so large sites stay under PHP/proxy timeouts.
+ * Also migrates lesson-level progress for each pair via StudentProgress.
  *
  * @since 2.5.0
  */
@@ -64,7 +67,7 @@ class Enrollments {
 	const BATCH_SIZE = 50;
 
 	/**
-	 * Migrate a batch of LifterLMS enrollments and completions.
+	 * Migrate a batch of LifterLMS enrollments, completions, and lesson progress.
 	 *
 	 * @since 2.5.0
 	 *
@@ -111,6 +114,16 @@ class Enrollments {
 			);
 		}
 
+		try {
+			$progress = StudentProgressFactory::create( MigrationTypes::LIF_TO_TUTOR );
+		} catch ( \Throwable $th ) {
+			ErrorHandler::set_error(
+				ContentTypes::ENROLLMENTS,
+				__( 'Error creating student progress migration object.', 'tutor-lms-migration-tool' )
+			);
+			return false;
+		}
+
 		$students        = $this->get_pending_batch( $batch_size );
 		$item_i          = (int) get_option( '_tutor_migrated_items_count' );
 		$touched_courses = array();
@@ -122,6 +135,7 @@ class Enrollments {
 
 			try {
 				$this->migrate_user_course( $course_id, $user_id );
+				$progress->migrate( $course_id, $user_id );
 				update_user_meta( $user_id, $this->user_meta_key( $course_id ), 1 );
 				update_option( '_tutor_migrated_items_count', $item_i );
 				$touched_courses[ $course_id ] = true;
