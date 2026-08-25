@@ -2,10 +2,10 @@
 Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: LMS, migration, course, elearning, education
-Requires at least: 5.0
+Requires at least: 5.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.0
+Stable tag: 2.5.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -199,7 +199,11 @@ You can find the complete documentation and step-by-step migration guides in our
 
 == Changelog ==
 
-= 2.5.0 - 10 August, 2026 =
+= 2.5.4 - 19 August, 2026 =
+
+Update: WordPress 7.0 compatibility updated.
+
+= 2.5.0 - 18 August, 2026 =
 
 New: Added course taxonomy import support. (LearnDash, LearnPress)
 New: Added course meta import support. (LearnPress)
