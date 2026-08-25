@@ -5,7 +5,7 @@ Tags: LMS, migration, course, elearning, education
 Requires at least: 5.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.4
+Stable tag: 2.6.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -198,6 +198,14 @@ You can find the complete documentation and step-by-step migration guides in our
 4. Error Alert
 
 == Changelog ==
+
+= 2.6.0 - 25 August, 2026 =
+
+New: Added course taxonomy import support. (LifterLMS)
+New: Added course meta import support. (LifterLMS)
+New: Added enrollments section and improved enrollment import. (LifterLMS)
+New: Added student progress migration support. (LifterLMS)
+Update: Improved LifterLMS course, order, and review import with batch processing.
 
 = 2.5.4 - 19 August, 2026 =
 

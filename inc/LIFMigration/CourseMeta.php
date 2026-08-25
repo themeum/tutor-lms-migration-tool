@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.5.0
+ * @since 2.6.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration;
@@ -23,14 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Only maps fields that have a TutorLMS equivalent. Pricing / product attach
  * remains in LIFtoTutorMigration (WC / EDD paths).
  *
- * @since 2.5.0
+ * @since 2.6.0
  */
 class CourseMeta implements PostMeta {
 
 	/**
 	 * Map LifterLMS difficulty term names to Tutor course level slugs.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -46,7 +46,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Current course ID.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var int
 	 */
@@ -55,7 +55,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Migrate course meta for a LifterLMS course post.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $post_id Course post ID.
 	 *
@@ -78,7 +78,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Map Lifter video embed URL to Tutor `_video` meta.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -100,7 +100,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Map Lifter free-text course length to Tutor `_course_duration`.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -123,7 +123,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Map Lifter `course_difficulty` taxonomy to Tutor `_tutor_course_level`.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -156,7 +156,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Map Lifter course prerequisite to Tutor Pro prerequisites meta.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -182,7 +182,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Map Lifter capacity, enrollment window, and content drip into `_tutor_course_settings`.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -252,7 +252,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Parse Lifter free-text length into Tutor hours/minutes duration array.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param string $length Lifter `_llms_length` value.
 	 *
@@ -294,7 +294,7 @@ class CourseMeta implements PostMeta {
 	/**
 	 * Normalize a Lifter date string to `Y-m-d H:i:s` when possible.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param mixed $value Raw meta value.
 	 *

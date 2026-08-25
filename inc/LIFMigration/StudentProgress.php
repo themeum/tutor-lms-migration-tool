@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.5.0
+ * @since 2.6.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration;
@@ -22,14 +22,14 @@ defined( 'ABSPATH' ) || exit;
  * Lifter stores completions in `lifterlms_user_postmeta` as `_is_complete = yes`
  * on the lesson post ID. After course migration those IDs remain Tutor lessons.
  *
- * @since 2.5.0
+ * @since 2.6.0
  */
 class StudentProgress implements StudentProgressInterface {
 
 	/**
 	 * Migrate LifterLMS lesson progress to Tutor LMS for a course.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id The course ID.
 	 * @param int $user_id   Optional user ID. When > 0, only that student's progress is migrated.
@@ -47,7 +47,7 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Migrate completed LifterLMS lessons to Tutor lesson-complete user meta.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   Optional user ID to scope migration.
@@ -86,7 +86,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * Uses `_tutor_course_id_for_lesson` set during course migration so progress
 	 * stays scoped to the Tutor course even after CPT conversion.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   Optional user ID to scope results.
@@ -154,7 +154,7 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * Prefer Lifter `updated_date`, then current tutor time.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param object $row Lifter user postmeta row.
 	 *

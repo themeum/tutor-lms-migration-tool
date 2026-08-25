@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.5.0
+ * @since 2.6.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration;
@@ -24,14 +24,14 @@ defined( 'ABSPATH' ) || exit;
  * number of student–course pairs so large sites stay under PHP/proxy timeouts.
  * Also migrates lesson-level progress for each pair via StudentProgress.
  *
- * @since 2.5.0
+ * @since 2.6.0
  */
 class Enrollments {
 
 	/**
 	 * Post meta marking a course whose enrollments were migrated.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var string
 	 */
@@ -42,7 +42,7 @@ class Enrollments {
 	 *
 	 * Full key: `_tlmt_lif_enroll_user_{course_id}`.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var string
 	 */
@@ -51,7 +51,7 @@ class Enrollments {
 	/**
 	 * Option key for total pending pairs at migration start.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var string
 	 */
@@ -60,7 +60,7 @@ class Enrollments {
 	/**
 	 * Default students processed per AJAX request.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var int
 	 */
@@ -69,7 +69,7 @@ class Enrollments {
 	/**
 	 * Migrate a batch of LifterLMS enrollments, completions, and lesson progress.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int  $batch_size     Max student–course pairs this request.
 	 * @param bool $is_first_batch Whether this is the first AJAX batch.
@@ -181,7 +181,7 @@ class Enrollments {
 	/**
 	 * Migrate enrollment + course completion for one student–course pair.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID.
@@ -266,7 +266,7 @@ class Enrollments {
 	/**
 	 * Insert a Tutor course completion comment.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int    $course_id Course ID.
 	 * @param int    $user_id   User ID.
@@ -308,7 +308,7 @@ class Enrollments {
 	/**
 	 * User meta key for a migrated enrollment pair.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course ID.
 	 *
@@ -321,7 +321,7 @@ class Enrollments {
 	/**
 	 * LifterLMS user postmeta table name.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return string
 	 */
@@ -334,7 +334,7 @@ class Enrollments {
 	/**
 	 * Whether any Tutor courses exist (post-course-migration prerequisite).
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return bool
 	 */
@@ -358,7 +358,7 @@ class Enrollments {
 	/**
 	 * Mark former Lifter courses with no enrollment activity as done.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -401,7 +401,7 @@ class Enrollments {
 	/**
 	 * Count pending student–course enrollment pairs.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @return int
 	 */
@@ -445,7 +445,7 @@ class Enrollments {
 	/**
 	 * Count pending students for a single course.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course ID.
 	 *
@@ -483,7 +483,7 @@ class Enrollments {
 	/**
 	 * Fetch a batch of pending student–course pairs.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $limit Batch size.
 	 *

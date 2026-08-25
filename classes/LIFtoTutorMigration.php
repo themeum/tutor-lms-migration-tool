@@ -14,56 +14,56 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Courses processed per AJAX request.
 		 * Keep small — MAMP FastCGI idle timeout is ~30s.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const COURSE_BATCH_SIZE = 1;
 
 		/**
 		 * Student–course enrollment pairs processed per AJAX request.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const ENROLLMENT_BATCH_SIZE = 50;
 
 		/**
 		 * Orders processed per AJAX request.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const ORDER_BATCH_SIZE = 20;
 
 		/**
 		 * Reviews processed per AJAX request.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const REVIEW_BATCH_SIZE = 50;
 
 		/**
 		 * Option key for total Lifter courses at migration start.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const COURSE_MIGRATION_TOTAL_OPT = '_tlmt_lif_course_migration_total';
 
 		/**
 		 * Option key for total Lifter orders at migration start.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const ORDER_MIGRATION_TOTAL_OPT = '_tlmt_lif_order_migration_total';
 
 		/**
 		 * Option key for total Lifter reviews at migration start.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const REVIEW_MIGRATION_TOTAL_OPT = '_tlmt_lif_review_migration_total';
 
 		/**
 		 * Post meta marking a migrated Lifter review so batches can resume.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 */
 		const REVIEW_MIGRATED_META = '_tlmt_lif_review_migrated';
 
@@ -150,7 +150,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Lifter to tutor data migrate
 		 *
 		 * @since 1.0.0
-		 * @since 2.5.0 Return batch payloads for courses, enrollments, orders, and reviews.
+		 * @since 2.6.0 Return batch payloads for courses, enrollments, orders, and reviews.
 		 *
 		 * @return void
 		 */
@@ -213,7 +213,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * LifterLMS courses without needing a persistent offset.
 		 *
 		 * @since 1.0.0
-		 * @since 2.5.0 Added batch processing return payload.
+		 * @since 2.6.0 Added batch processing return payload.
 		 *
 		 * @return array{
 		 *     migrated: int,
@@ -295,7 +295,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Raise time/memory limits for a migration batch.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @return void
 		 */
@@ -609,7 +609,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Migrate LifterLMS quiz questions and answers into Tutor tables.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @param int $quiz_id Lifter quiz post ID (converted to tutor_quiz).
 		 *
@@ -697,7 +697,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Map a LifterLMS question type to a Tutor question type.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @param string $ques_type Lifter question type slug.
 		 *
@@ -723,7 +723,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Build Tutor `question_settings` for a migrated Lifter question.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @param string     $question_type Tutor question type slug.
 		 * @param int|string $question_mark Question points.
@@ -756,7 +756,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 *
 		 * Missing quiz options cause the course builder to crash when opening a quiz.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @param int $quiz_id Quiz post ID.
 		 *
@@ -828,7 +828,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Convert a Lifter course post to Tutor so batching can skip it.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @param int    $course_id        Course ID.
 		 * @param string $course_post_type Tutor course post type.
@@ -851,7 +851,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Runs after course structure migration. Processes student–course pairs
 		 * so large enrollments stay under server timeouts.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @return array|false Batch payload, or false on blocking error.
 		 */
@@ -873,7 +873,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Lifter LMS order migrate to WC.
 		 *
 		 * @since 1.0.0
-		 * @since 2.5.0 Added batch processing return payload.
+		 * @since 2.6.0 Added batch processing return payload.
 		 *
 		 * @return array
 		 */
@@ -1031,7 +1031,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 *
 		 * Runs once on the first order batch so later batches do not duplicate rows.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @return void
 		 */
@@ -1096,7 +1096,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Lifter review migrate to Tutor.
 		 *
 		 * @since 1.0.0
-		 * @since 2.5.0 Added batch processing return payload.
+		 * @since 2.6.0 Added batch processing return payload.
 		 *
 		 * @return array
 		 */
@@ -1200,7 +1200,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Count unmigrated Lifter reviews.
 		 *
-		 * @since 2.5.0
+		 * @since 2.6.0
 		 *
 		 * @return int
 		 */

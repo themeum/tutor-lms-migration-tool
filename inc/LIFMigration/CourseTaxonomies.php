@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.5.0
+ * @since 2.6.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration;
@@ -22,14 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Lifter uses `course_cat` and `course_tag`.
  * Tutor uses `course-category` and `course-tag`.
  *
- * @since 2.5.0
+ * @since 2.6.0
  */
 class CourseTaxonomies {
 
 	/**
 	 * LifterLMS course category taxonomy.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var string
 	 */
@@ -38,7 +38,7 @@ class CourseTaxonomies {
 	/**
 	 * LifterLMS course tag taxonomy.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var string
 	 */
@@ -47,7 +47,7 @@ class CourseTaxonomies {
 	/**
 	 * Cached map of Lifter term ID => Tutor term ID, keyed by source taxonomy.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @var array<string, array<int, int>>
 	 */
@@ -56,7 +56,7 @@ class CourseTaxonomies {
 	/**
 	 * Migrate course-specific categories and tags for a course.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int $course_id Course post ID.
 	 *
@@ -85,7 +85,7 @@ class CourseTaxonomies {
 	/**
 	 * Migrate terms from a LifterLMS taxonomy to a Tutor taxonomy for one course.
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param int    $course_id       Course ID.
 	 * @param string $source_tax      LifterLMS taxonomy name.
@@ -125,7 +125,7 @@ class CourseTaxonomies {
 	/**
 	 * Ensure a Tutor term exists for the given LifterLMS term (including parents).
 	 *
-	 * @since 2.5.0
+	 * @since 2.6.0
 	 *
 	 * @param \WP_Term $term            LifterLMS term.
 	 * @param string   $source_tax      LifterLMS taxonomy.

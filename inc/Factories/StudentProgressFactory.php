@@ -27,7 +27,7 @@ abstract class StudentProgressFactory {
 	 *
 	 * @since 2.3.0
 	 * @since 2.5.0 Added LearnPress student progress migration.
-	 * @since 2.5.0 Added LifterLMS student progress migration.
+	 * @since 2.6.0 Added LifterLMS student progress migration.
 	 *
 	 * @param string $migration_type Type of migration.
 	 *
