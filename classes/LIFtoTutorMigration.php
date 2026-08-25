@@ -461,6 +461,21 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				}
 			}
 
+			// Migrate categories & tags before the CPT change (Lifter taxonomies are only registered for `course`).
+			try {
+				( new \Themeum\TutorLMSMigrationTool\LIFMigration\CourseTaxonomies() )->migrate( (int) $course_id );
+			} catch ( \Throwable $th ) {
+				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+					\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_TAXONOMIES,
+					sprintf(
+						/* translators: 1: course id, 2: error message */
+						__( 'Failed to migrate taxonomies for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+						(int) $course_id,
+						$th->getMessage()
+					)
+				);
+			}
+
 			// Migrate Course.
 			$tutor_course = array(
 				'ID'        => $course_id,
