@@ -1,5 +1,6 @@
 <?php
 
+use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
 use Tutor\Helpers\QueryHelper;
 
 class Utils {
@@ -95,12 +96,12 @@ class Utils {
 	 * @return int
 	 */
 	public function lifter_subscriptions_count() {
-		if ( ! class_exists( '\Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper' )
-			|| ! \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
+		if ( ! class_exists( Helper::class )
+			|| ! Helper::is_subscription_migration_available() ) {
 			return 0;
 		}
 
-		return count( \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::get_recurring_order_ids() );
+		return count( Helper::get_recurring_order_ids() );
 	}
 	public function lifter_reviews_count() {
 		global $wpdb;

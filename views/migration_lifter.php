@@ -1,4 +1,6 @@
 <?php
+use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -106,8 +108,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 									</label>
 								</div>
 								<?php
-								$lif_subscription_available = class_exists( '\Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper' )
-									&& \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available();
+								$lif_subscription_available = class_exists( Helper::class )
+									&& Helper::is_subscription_migration_available();
 								if ( $lif_subscription_available ) :
 									?>
 								<div id="sectionSubscriptions" class="tutor-py-16" data-available="1">

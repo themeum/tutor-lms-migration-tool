@@ -10,6 +10,8 @@
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
+use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
+use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -347,8 +349,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				delete_option( '_tutor_migrated_items_count' );
 				update_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total, false );
 
-				if ( \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
-					( new \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions() )->reset_map();
+				if ( Helper::is_subscription_migration_available() ) {
+					( new Subscriptions() )->reset_map();
 				}
 			}
 
@@ -1268,7 +1270,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			$this->raise_migration_resource_limits();
 
-			if ( ! \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
+			if ( ! Helper::is_subscription_migration_available() ) {
 				return array(
 					'has_more'  => false,
 					'migrated'  => 0,
@@ -1289,7 +1291,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			}
 
 			try {
-				$result = ( new \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions() )->migrate_subscriptions_batch( $batch_size );
+				$result = ( new Subscriptions() )->migrate_subscriptions_batch( $batch_size );
 				$item_i = (int) get_option( '_tutor_migrated_items_count' );
 				update_option( '_tutor_migrated_items_count', $item_i + (int) $result['migrated_in_batch'] );
 
