@@ -10,6 +10,7 @@
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
+use Themeum\TutorLMSMigrationTool\LIFMigration\Reviews as LIFReviews;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
@@ -88,13 +89,6 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @since 2.6.0
 		 */
 		const REVIEW_MIGRATION_TOTAL_OPT = '_tlmt_lif_review_migration_total';
-
-		/**
-		 * Post meta marking a migrated Lifter review so batches can resume.
-		 *
-		 * @since 2.6.0
-		 */
-		const REVIEW_MIGRATED_META = '_tlmt_lif_review_migrated';
 
 		/**
 		 * Constructor function
@@ -1459,33 +1453,42 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						AND pm.meta_id IS NULL
 					ORDER BY p.ID ASC
 					LIMIT %d",
-					self::REVIEW_MIGRATED_META,
+					LIFReviews::MIGRATED_META,
 					$batch_size
 				)
 			);
 
-			$item_i = (int) get_option( '_tutor_migrated_items_count' );
+			try {
+				$reviews = tlmt_get_review_obj( MigrationTypes::LIF_TO_TUTOR );
+			} catch ( \Throwable $th ) {
+				ErrorHandler::set_error( ContentTypes::COURSE_REVIEWS, __( 'Error creating Lifter review migration object.', 'tutor-lms-migration-tool' ) );
+				return false;
+			}
+
+			$item_i           = (int) get_option( '_tutor_migrated_items_count' );
+			$migration_errors = array();
+
 			foreach ( $lif_review_ids as $lif_review_id ) {
 				++$item_i;
 				update_option( '_tutor_migrated_items_count', $item_i );
 
-				$review_migrate_data = array(
-					'comment_approved' => 'approved',
-					'comment_type'     => 'tutor_course_rating',
-					'comment_agent'    => 'TutorLMSPlugin',
-				);
+				$review_post = get_post( (int) $lif_review_id );
+				if ( ! $review_post ) {
+					continue;
+				}
 
-				$wpdb->update( $wpdb->comments, $review_migrate_data, array( 'comment_ID' => $lif_review_id ) );
-				$wpdb->update(
-					$wpdb->commentmeta,
-					array( 'meta_key' => 'tutor_rating' ),
-					array(
-						'comment_id' => $lif_review_id,
-						'meta_key'   => '_lif_rating',
-					)
-				);
+				try {
+					$reviews->migrate( $review_post );
+				} catch ( \Throwable $th ) {
+					$migration_errors[] = (int) $lif_review_id;
+				}
+			}
 
-				update_post_meta( $lif_review_id, self::REVIEW_MIGRATED_META, 1 );
+			if ( $migration_errors ) {
+				ErrorHandler::set_error(
+					ContentTypes::COURSE_REVIEWS,
+					__( 'Could not migrate reviews: ', 'tutor-lms-migration-tool' ) . implode( ',', $migration_errors )
+				);
 			}
 
 			$remaining_after = $this->count_pending_lif_reviews();
@@ -1524,7 +1527,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						ON p.ID = pm.post_id AND pm.meta_key = %s
 					WHERE p.post_type = 'llms_review'
 						AND pm.meta_id IS NULL",
-					self::REVIEW_MIGRATED_META
+					LIFReviews::MIGRATED_META
 				)
 			);
 		}
