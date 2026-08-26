@@ -328,12 +328,12 @@ class Subscriptions {
 		$orders_map  = array();
 
 		foreach ( $orders_data as $order ) {
-			$source_order_id = (int) ( $order['llms_order_id'] ?? 0 );
-			$meta_data       = $order['meta_data'] ?? array();
-			unset( $order['llms_order_id'], $order['meta_data'], $order['tutor_plan_id'] );
+			$source_id = (int) ( $order['llms_source_id'] ?? $order['llms_order_id'] ?? 0 );
+			$meta_data = $order['meta_data'] ?? array();
+			unset( $order['llms_source_id'], $order['llms_order_id'], $order['meta_data'], $order['tutor_plan_id'] );
 
-			$tutor_order_id                = $this->order_model->create_order( $order );
-			$orders_map[ $source_order_id ] = $tutor_order_id;
+			$tutor_order_id           = $this->order_model->create_order( $order );
+			$orders_map[ $source_id ] = $tutor_order_id;
 
 			if ( ! empty( $meta_data ) ) {
 				$meta_data = array_map(
@@ -351,10 +351,20 @@ class Subscriptions {
 			return false;
 		}
 
+		// Point every order (initial + renewals) at the first subscription order as parent.
+		$first_tutor_order_id  = (int) reset( $orders_map );
+		$active_tutor_order_id = (int) end( $orders_map );
+
+		foreach ( $orders_map as $tutor_order_id ) {
+			QueryHelper::update(
+				'tutor_orders',
+				array( 'parent_id' => $first_tutor_order_id ),
+				array( 'id' => (int) $tutor_order_id )
+			);
+		}
+
 		$merged_orders = $this->mapper->get_map_by_key( self::ORDERS );
 		$this->mapper->set_map_by_key( self::ORDERS, $merged_orders + $orders_map );
-
-		$tutor_order_id = (int) reset( $orders_map );
 
 		unset(
 			$subscription_data['llms_order_id'],
@@ -363,8 +373,8 @@ class Subscriptions {
 		);
 
 		$subscription_data['plan_id']         = $plan_id;
-		$subscription_data['first_order_id']  = $tutor_order_id;
-		$subscription_data['active_order_id'] = $tutor_order_id;
+		$subscription_data['first_order_id']  = $first_tutor_order_id;
+		$subscription_data['active_order_id'] = $active_tutor_order_id;
 
 		if ( empty( $subscription_data['next_payment_date_gmt'] ) ) {
 			$subscription_data['next_payment_date_gmt'] = $subscription_data['end_date_gmt']

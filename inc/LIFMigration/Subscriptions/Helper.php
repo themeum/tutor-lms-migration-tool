@@ -251,6 +251,47 @@ class Helper {
 	}
 
 	/**
+	 * Succeeded Lifter transaction IDs for an order, oldest first.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param int $llms_order_id Lifter order ID.
+	 *
+	 * @return int[]
+	 */
+	public static function get_succeeded_transaction_ids( int $llms_order_id ): array {
+		global $wpdb;
+
+		if ( $llms_order_id < 1 ) {
+			return array();
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT p.ID
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} om
+					ON om.post_id = p.ID AND om.meta_key = '_llms_order_id' AND om.meta_value = %s
+				WHERE p.post_type = 'llms_transaction'
+					AND p.post_status = 'llms-txn-succeeded'
+				ORDER BY p.post_date_gmt ASC, p.ID ASC",
+				(string) $llms_order_id
+			)
+		);
+
+		if ( ! is_array( $ids ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_filter(
+				array_map( 'intval', $ids )
+			)
+		);
+	}
+
+	/**
 	 * Convert a datetime string to GMT MySQL format.
 	 *
 	 * @since 2.6.0

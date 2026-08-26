@@ -190,16 +190,9 @@ class OrderMigrator {
 
 		$course_id = $this->resolve_course_id( $llms_order_id );
 		if ( $course_id < 1 ) {
+			// Membership / non-course products are intentional skips, not migration failures.
 			update_post_meta( $llms_order_id, self::META_MIGRATED_ORDER_ID, 0 );
 			update_post_meta( $llms_order_id, self::META_SKIP_REASON, 'not_course_product' );
-			ErrorHandler::set_error(
-				ContentTypes::ORDERS,
-				sprintf(
-					/* translators: %d: Lifter order ID */
-					__( 'Lifter order #%d skipped: product is not a migratable course.', 'tutor-lms-migration-tool' ),
-					$llms_order_id
-				)
-			);
 			return 0;
 		}
 

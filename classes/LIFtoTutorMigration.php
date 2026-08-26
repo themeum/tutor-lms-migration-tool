@@ -1,4 +1,17 @@
 <?php
+/**
+ * Manage LifterLMS to Tutor migration
+ *
+ * @package TutorLMSMigrationTool
+ * @author Themeum <support@themeum.com>
+ * @link https://themeum.com
+ * @since 1.0.0
+ */
+
+use Themeum\TutorLMSMigrationTool\ContentTypes;
+use Themeum\TutorLMSMigrationTool\ErrorHandler;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -181,41 +194,107 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			try {
 				switch ( $migrate_type ) {
-					case 'courses':
+					case ContentTypes::COURSE:
 						$result = $this->lif_migrate_course_to_tutor();
-						wp_send_json_success( $result );
+						wp_send_json_success(
+							array_merge(
+								array(
+									'step'    => ContentTypes::COURSE,
+									'message' => ! empty( $result['has_more'] )
+										? __( 'Course batch migrated successfully.', 'tutor-lms-migration-tool' )
+										: __( 'Courses migrated successfully.', 'tutor-lms-migration-tool' ),
+								),
+								is_array( $result ) ? $result : array()
+							)
+						);
 						break;
-					case 'enrollments':
+					case ContentTypes::ENROLLMENTS:
 						$result = $this->lif_enrollments_migrate();
 						if ( false === $result ) {
 							wp_send_json_error(
 								array(
-									'step'    => 'enrollments',
-									'message' => \Themeum\TutorLMSMigrationTool\ErrorHandler::get_error_message( \Themeum\TutorLMSMigrationTool\ContentTypes::ENROLLMENTS ),
+									'step'    => ContentTypes::ENROLLMENTS,
+									'message' => ErrorHandler::get_error_message( ContentTypes::ENROLLMENTS ),
 								)
 							);
 						}
-						wp_send_json_success( is_array( $result ) ? $result : array() );
+						wp_send_json_success(
+							array_merge(
+								array(
+									'step'    => ContentTypes::ENROLLMENTS,
+									'message' => ! empty( $result['has_more'] )
+										? __( 'Enrollment batch migrated successfully.', 'tutor-lms-migration-tool' )
+										: __( 'Enrollments migrated successfully.', 'tutor-lms-migration-tool' ),
+								),
+								is_array( $result ) ? $result : array()
+							)
+						);
 						break;
-					case 'orders':
+					case ContentTypes::ORDERS:
 						$result = $this->migrate_lif_orders();
-						wp_send_json_success( is_array( $result ) ? $result : array() );
+						if ( false === $result ) {
+							wp_send_json_error(
+								array(
+									'step'    => ContentTypes::ORDERS,
+									'message' => ErrorHandler::get_error_message( ContentTypes::ORDERS ),
+								)
+							);
+						}
+						wp_send_json_success(
+							array_merge(
+								array(
+									'step'    => ContentTypes::ORDERS,
+									'message' => ! empty( $result['has_more'] )
+										? __( 'Order batch migrated successfully.', 'tutor-lms-migration-tool' )
+										: __( 'Orders migrated successfully.', 'tutor-lms-migration-tool' ),
+								),
+								is_array( $result ) ? $result : array()
+							)
+						);
 						break;
-					case 'subscriptions':
+					case ContentTypes::SUBSCRIPTIONS:
 						$result = $this->lif_subscriptions_migrate();
 						if ( false === $result ) {
 							wp_send_json_error(
 								array(
-									'step'    => 'subscriptions',
-									'message' => \Themeum\TutorLMSMigrationTool\ErrorHandler::get_error_message( \Themeum\TutorLMSMigrationTool\ContentTypes::SUBSCRIPTIONS ),
+									'step'    => ContentTypes::SUBSCRIPTIONS,
+									'message' => ErrorHandler::get_error_message( ContentTypes::SUBSCRIPTIONS ),
 								)
 							);
 						}
-						wp_send_json_success( is_array( $result ) ? $result : array() );
+						wp_send_json_success(
+							array_merge(
+								array(
+									'step'    => ContentTypes::SUBSCRIPTIONS,
+									'message' => ! empty( $result['has_more'] )
+										? __( 'Subscription batch migrated successfully.', 'tutor-lms-migration-tool' )
+										: __( 'Subscriptions migrated successfully.', 'tutor-lms-migration-tool' ),
+								),
+								is_array( $result ) ? $result : array()
+							)
+						);
 						break;
-					case 'reviews':
+					case ContentTypes::COURSE_REVIEWS:
 						$result = $this->migrate_lif_reviews();
-						wp_send_json_success( is_array( $result ) ? $result : array() );
+						if ( false === $result ) {
+							wp_send_json_error(
+								array(
+									'step'    => ContentTypes::COURSE_REVIEWS,
+									'message' => ErrorHandler::get_error_message( ContentTypes::COURSE_REVIEWS ),
+								)
+							);
+						}
+						wp_send_json_success(
+							array_merge(
+								array(
+									'step'    => ContentTypes::COURSE_REVIEWS,
+									'message' => ! empty( $result['has_more'] )
+										? __( 'Review batch migrated successfully.', 'tutor-lms-migration-tool' )
+										: __( 'Reviews migrated successfully.', 'tutor-lms-migration-tool' ),
+								),
+								is_array( $result ) ? $result : array()
+							)
+						);
 						break;
 					default:
 						wp_send_json_error( array( 'message' => __( 'Invalid migration type.', 'tutor-lms-migration-tool' ) ) );
@@ -300,8 +379,22 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			$course_i = (int) get_option( '_tutor_migrated_items_count' );
 			foreach ( $lif_courses as $lif_course ) {
 				++$course_i;
-				$this->migrate_course( $lif_course->ID );
-				update_option( '_tutor_migrated_items_count', $course_i );
+				$course_id = (int) $lif_course->ID;
+				try {
+					$this->migrate_course( $course_id );
+					update_option( '_tutor_migrated_items_count', $course_i );
+				} catch ( \Throwable $th ) {
+					ErrorHandler::set_error(
+						ContentTypes::COURSE,
+						sprintf(
+							/* translators: 1: course id, 2: error message */
+							__( 'Failed to migrate course #%1$d: %2$s', 'tutor-lms-migration-tool' ),
+							$course_id,
+							$th->getMessage()
+						)
+					);
+					error_log( $th->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
 			}
 
 			$remaining_after = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'course'" );
@@ -501,22 +594,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				wp_delete_post( (int) $section_id, true );
 			}
 
-			// Migrate categories & tags before the CPT change (Lifter taxonomies are only registered for `course`).
-			try {
-				( new \Themeum\TutorLMSMigrationTool\LIFMigration\CourseTaxonomies() )->migrate( (int) $course_id );
-			} catch ( \Throwable $th ) {
-				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
-					\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_TAXONOMIES,
-					sprintf(
-						/* translators: 1: course id, 2: error message */
-						__( 'Failed to migrate taxonomies for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
-						(int) $course_id,
-						$th->getMessage()
-					)
-				);
-			}
-
-			// Migrate Course.
+			// Migrate Course CPT first so ActionHandler hooks see Tutor post types.
 			$tutor_course = array(
 				'ID'        => $course_id,
 				'post_type' => $course_post_type,
@@ -524,42 +602,22 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			wp_update_post( $tutor_course );
 			update_post_meta( $course_id, '_was_lif_course', true );
 
-			// Course meta/settings (video, duration, level, Pro settings). Pricing stays below.
-			try {
-				( new \Themeum\TutorLMSMigrationTool\LIFMigration\CourseMeta() )->migrate( (int) $course_id );
-			} catch ( \Throwable $th ) {
-				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
-					\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_META,
-					sprintf(
-						/* translators: 1: course id, 2: error message */
-						__( 'Failed to migrate course meta for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
-						(int) $course_id,
-						$th->getMessage()
-					)
-				);
-			}
+			/**
+			 * Course meta (PostMetaFactory) + taxonomies (ActionHandler).
+			 *
+			 * Term relationships persist after CPT conversion, matching the LD pipeline.
+			 */
+			do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::LIF_TO_TUTOR );
 
 			/**
-			 * Pricing / product attach — native Tutor ecommerce, or WC / EDD.
+			 * Pricing / product attach — native Tutor ecommerce via ProductFactory,
+			 * or WC / EDD inline below.
 			 */
-
 			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
 
 			if ( function_exists( 'tutor_utils' ) && tutor_utils()->is_monetize_by_tutor() ) {
-				try {
-					( new \Themeum\TutorLMSMigrationTool\LIFMigration\Product\NativePricing() )->migrate( (int) $course_id );
-				} catch ( \Throwable $th ) {
-					\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
-						\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_META,
-						sprintf(
-							/* translators: 1: course id, 2: error message */
-							__( 'Failed to migrate native pricing for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
-							(int) $course_id,
-							$th->getMessage()
-						)
-					);
-				}
+				do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LIF_TO_TUTOR );
 			} elseif ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 				global $wpdb;
 				$order_plan_id    = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = %d ", $course_id ) );
@@ -930,7 +988,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @since 2.6.0 Added batch processing return payload.
 		 * @since 2.6.0 Routes to Tutor native orders when monetize_by is tutor.
 		 *
-		 * @return array
+		 * @return array|false Batch payload, or false when the final batch has stored errors.
 		 */
 		public function migrate_lif_orders() {
 			tutor_utils()->checking_nonce();
@@ -969,6 +1027,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			if ( $is_first_batch ) {
 				delete_option( '_tutor_migrated_items_count' );
 				update_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total, false );
+				// Drop stale order errors from prior runs so intentional skips cannot poison this run.
+				$stored_errors = ErrorHandler::get_errors( false );
+				if ( isset( $stored_errors[ ContentTypes::ORDERS ] ) ) {
+					unset( $stored_errors[ ContentTypes::ORDERS ] );
+					update_option(
+						ErrorHandler::MIGRATION_ERR_OPT_NAME,
+						empty( $stored_errors ) ? '' : maybe_serialize( $stored_errors ),
+						false
+					);
+				}
 			}
 
 			$total_orders = (int) get_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total );
@@ -1008,6 +1076,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						\Themeum\TutorLMSMigrationTool\LIFMigration\Orders\OrderMigrator::META_SKIP_REASON,
 						'exception:' . $th->getMessage()
 					);
+					// OrderMigrator already recorded ErrorHandler for create failures.
 				}
 			}
 
@@ -1017,6 +1086,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( ! $has_more ) {
 				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+				$stored_errors = ErrorHandler::get_errors( false );
+				if ( ! empty( $stored_errors[ ContentTypes::ORDERS ] ) ) {
+					return false;
+				}
 			}
 
 			return array(

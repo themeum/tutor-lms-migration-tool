@@ -38,9 +38,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<li class="tutor-nav-item">
 						<a class="tutor-nav-link is-active" href="#" data-tutor-nav-target="tutor-auto-migrate-tab-lf"><?php _e( 'Auto Migrate', 'tutor-lms-migration-tool' ); ?></a>
 					</li>
-					<li class="tutor-nav-item">
-						<a class="tutor-nav-link" href="#" data-tutor-nav-target="tutor-manual-migrate-tab-lf"><?php _e( 'Upload File', 'tutor-lms-migration-tool' ); ?></a>
-					</li>
 					<li class="tutor-nav-item tutor-nav-more tutor-d-none">
 						<a class="tutor-nav-link tutor-nav-more-item" href="#">
 							<span class="tutor-mr-4"><?php _e( 'More', 'tutor-lms-migration-tool' ); ?></span> 
@@ -168,43 +165,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
 								<span id="total_items_migrate_counts" class="tutor-d-none" data-count="<?php echo $items_count; ?>"> </span>
 								<button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary tutor-btn-lg" <?php echo $items_count ? '' : 'disabled'; ?> >
-									<?php _e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div id="tutor-manual-migrate-tab-lf" class="tutor-tab-item">
-					<div class="tutor-tab-item-wrap tutor-p-48">
-						<div class="tutor-migration-upload-area tutor-migration-drag-drop-zone flex-center tutor-px-48 tutor-py-68">
-							<div class="tutor-migration-upload-circle tutor-mb-16 flex-center">
-								<span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
-							</div>
-							<form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
-	                            <?php tutor_nonce_field(); ?>
-								<input type="hidden" name="tutor_action" value="tutor_import_from_xml_lif">
-								<div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
-									<div class="tutor-color-black"><?php _e( 'Drag & Drop XML file here', 'tutor-lms-migration-tool' ); ?></div>
-									or <a href="" class="tutor-color-primary"><?php _e( 'Browse File', 'tutor-lms-migration-tool' ); ?></a>
-								</div>
-								<input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
-								<span class="file-info tutor-fw-medium backup-now-subtile tutor-fs-6"></span>
-							</form>
-						</div>
-					</div>
-					<div class="tutor-px-48 tutor-py-36 tutor-border-top">
-						<div class="tutor-row tutor-align-center">
-							<div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-								<sapn class="backup-now-subtile tutor-fs-7"><?php _e( 'Please take a complete a backup for safety.', 'tutor-lms-migration-tool' ); ?></sapn>
-								<form id="tutor_migration_export_form" method="post" enctype="multipart/form-data">
-									<input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lif">
-									<input type="hidden" name="tutor_action" value="tutor_lif_export_xml">
-									<?php tutor_nonce_field(); ?>
-									<button <?php echo $items_count ? '' : 'disabled'; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black"><?php _e( 'Backup Now', 'tutor-lms-migration-tool' ); ?></button>
-								</form>
-							</div>
-							<div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
-								<button type="submit" id="manual-migrate-now-btn" class="tutor-btn tutor-btn-primary tutor-btn-lg" disabled>
 									<?php _e( 'Migrate Now', 'tutor-lms-migration-tool' ); ?>
 								</button>
 							</div>

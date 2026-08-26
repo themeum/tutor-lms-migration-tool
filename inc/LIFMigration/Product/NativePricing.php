@@ -10,6 +10,7 @@
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration\Product;
 
+use Themeum\TutorLMSMigrationTool\Interfaces\Product;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions;
 use TUTOR\Course;
@@ -21,18 +22,21 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 2.6.0
  */
-class NativePricing {
+class NativePricing implements Product {
 
 	/**
 	 * Migrate Lifter access-plan pricing onto a Tutor course.
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param int $course_id Course post ID (same ID after CPT conversion).
+	 * @param int    $course_id    Course post ID (same ID after CPT conversion).
+	 * @param string $course_title Course title (unused; required by Product interface).
 	 *
 	 * @return void
 	 */
-	public function migrate( int $course_id ): void {
+	public function migrate( int $course_id, string $course_title = '' ): void {
+		unset( $course_title );
+
 		if ( $course_id < 1 || ! function_exists( 'tutor_utils' ) || ! tutor_utils()->is_monetize_by_tutor() ) {
 			return;
 		}
