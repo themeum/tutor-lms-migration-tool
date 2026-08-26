@@ -20,8 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Migrates LifterLMS course settings into Tutor course meta.
  *
- * Only maps fields that have a TutorLMS equivalent. Pricing / product attach
- * remains in LIFtoTutorMigration (WC / EDD paths).
+ * Only maps fields that have a TutorLMS equivalent. Native pricing is handled by
+ * {@see \Themeum\TutorLMSMigrationTool\LIFMigration\Product\NativePricing}; WC / EDD
+ * product attach remains in LIFtoTutorMigration.
  *
  * @since 2.6.0
  */

@@ -411,8 +411,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_subscriptions_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=subscriptions';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_subscription_migration_start=1';
+            if (isFirstBatch && (final_types === 'ld' || final_types === 'lif')) {
+                requestData += '&' + final_types + '_subscription_migration_start=1';
             }
 
             $.ajax({
@@ -423,7 +423,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionSubscriptions').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lif') {
                             subscription_migration_progress_bar(false, 0);
                         } else {
                             subscription_migration_progress_bar();
@@ -437,7 +437,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lif') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         subscription_migration_progress_bar(false, percent);
                     }

@@ -33,6 +33,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		const ORDER_BATCH_SIZE = 20;
 
 		/**
+		 * Subscriptions processed per AJAX request.
+		 *
+		 * @since 2.6.0
+		 */
+		const SUBSCRIPTION_BATCH_SIZE = 5;
+
+		/**
 		 * Reviews processed per AJAX request.
 		 *
 		 * @since 2.6.0
@@ -45,6 +52,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * @since 2.6.0
 		 */
 		const COURSE_MIGRATION_TOTAL_OPT = '_tlmt_lif_course_migration_total';
+
+		/**
+		 * Option key for total Lifter subscriptions at migration start.
+		 *
+		 * @since 2.6.0
+		 */
+		const SUBSCRIPTION_MIGRATION_TOTAL_OPT = '_tlmt_lif_subscriptions_migration_total';
 
 		/**
 		 * Option key for total Lifter orders at migration start.
@@ -187,6 +201,18 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						$result = $this->migrate_lif_orders();
 						wp_send_json_success( is_array( $result ) ? $result : array() );
 						break;
+					case 'subscriptions':
+						$result = $this->lif_subscriptions_migrate();
+						if ( false === $result ) {
+							wp_send_json_error(
+								array(
+									'step'    => 'subscriptions',
+									'message' => \Themeum\TutorLMSMigrationTool\ErrorHandler::get_error_message( \Themeum\TutorLMSMigrationTool\ContentTypes::SUBSCRIPTIONS ),
+								)
+							);
+						}
+						wp_send_json_success( is_array( $result ) ? $result : array() );
+						break;
 					case 'reviews':
 						$result = $this->migrate_lif_reviews();
 						wp_send_json_success( is_array( $result ) ? $result : array() );
@@ -241,6 +267,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			if ( $is_first_batch ) {
 				delete_option( '_tutor_migrated_items_count' );
 				update_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total, false );
+
+				if ( \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
+					( new \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions() )->reset_map();
+				}
 			}
 
 			$total_courses = (int) get_option( self::COURSE_MIGRATION_TOTAL_OPT, $remaining_total );
@@ -348,12 +378,17 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			$course           = new LLMS_Course( $course_id );
 			$sections         = $course->get_sections();
 			$lesson_post_type = tutor()->lesson_post_type;
+			$section_ids      = array();
 
 			$tutor_course = array();
 			$i            = 0;
 			if ( $sections ) {
 				foreach ( $sections as $section ) {
 					$i++;
+					$section_id = (int) ( $section->get( 'id' ) ?? $section->id ?? 0 );
+					if ( $section_id > 0 ) {
+						$section_ids[] = $section_id;
+					}
 					$topic = array(
 						'post_type'    => 'topics',
 						'post_title'   => $section->post->post_title,
@@ -461,6 +496,11 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				}
 			}
 
+			// Lifter section posts are replaced by Tutor topics — remove the orphans.
+			foreach ( array_unique( $section_ids ) as $section_id ) {
+				wp_delete_post( (int) $section_id, true );
+			}
+
 			// Migrate categories & tags before the CPT change (Lifter taxonomies are only registered for `course`).
 			try {
 				( new \Themeum\TutorLMSMigrationTool\LIFMigration\CourseTaxonomies() )->migrate( (int) $course_id );
@@ -500,13 +540,27 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			}
 
 			/**
-			 * Create WC Product and attaching it with course
+			 * Pricing / product attach — native Tutor ecommerce, or WC / EDD.
 			 */
 
 			update_post_meta( $course_id, '_tutor_course_price_type', 'free' );
 			$tutor_monetize_by = tutils()->get_option( 'monetize_by' );
 
-			if ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			if ( function_exists( 'tutor_utils' ) && tutor_utils()->is_monetize_by_tutor() ) {
+				try {
+					( new \Themeum\TutorLMSMigrationTool\LIFMigration\Product\NativePricing() )->migrate( (int) $course_id );
+				} catch ( \Throwable $th ) {
+					\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+						\Themeum\TutorLMSMigrationTool\ContentTypes::COURSE_META,
+						sprintf(
+							/* translators: 1: course id, 2: error message */
+							__( 'Failed to migrate native pricing for course %1$d: %2$s', 'tutor-lms-migration-tool' ),
+							(int) $course_id,
+							$th->getMessage()
+						)
+					);
+				}
+			} elseif ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
 				global $wpdb;
 				$order_plan_id    = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = %d ", $course_id ) );
 				$_llms_price      = get_post_meta( $order_plan_id, '_llms_price', true );
@@ -870,6 +924,112 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 
 		/**
+		 * Lifter LMS order migrate (native Tutor ecommerce or WC).
+		 *
+		 * @since 1.0.0
+		 * @since 2.6.0 Added batch processing return payload.
+		 * @since 2.6.0 Routes to Tutor native orders when monetize_by is tutor.
+		 *
+		 * @return array
+		 */
+		public function migrate_lif_orders() {
+			tutor_utils()->checking_nonce();
+			Utils::check_course_access();
+
+			if ( function_exists( 'tutor_utils' ) && tutor_utils()->is_monetize_by_tutor() ) {
+				return $this->migrate_lif_orders_to_native();
+			}
+
+			return $this->migrate_lif_orders_to_wc();
+		}
+
+		/**
+		 * Migrate Lifter one-time orders into Tutor native ecommerce tables.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @return array
+		 */
+		private function migrate_lif_orders_to_native() {
+			global $wpdb;
+
+			$this->raise_migration_resource_limits();
+
+			$total_course_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_was_lif_course'" );
+
+			$migrator   = new \Themeum\TutorLMSMigrationTool\LIFMigration\Orders\OrderMigrator();
+			$batch_size = (int) apply_filters( 'tlmt_lif_order_migration_batch_size', self::ORDER_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::ORDER_BATCH_SIZE;
+			}
+
+			$remaining_total = $migrator->get_remaining_count();
+
+			$is_first_batch = ! empty( $_POST['lif_order_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				update_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total, false );
+			}
+
+			$total_orders = (int) get_option( self::ORDER_MIGRATION_TOTAL_OPT, $remaining_total );
+			if ( $total_orders < 1 ) {
+				$total_orders = $remaining_total;
+			}
+
+			if ( $remaining_total < 1 ) {
+				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+				return array(
+					'migrated'           => $total_orders,
+					'total'              => $total_orders,
+					'total_course_count' => $total_course_count,
+					'remaining'          => 0,
+					'has_more'           => false,
+					'batch_size'         => $batch_size,
+				);
+			}
+
+			$lif_orders = $migrator->get_batch( $batch_size );
+			$item_i     = (int) get_option( '_tutor_migrated_items_count' );
+
+			foreach ( $lif_orders as $lif_order ) {
+				++$item_i;
+				update_option( '_tutor_migrated_items_count', $item_i );
+
+				try {
+					$migrator->migrate_order( $lif_order );
+				} catch ( \Throwable $th ) {
+					update_post_meta(
+						(int) $lif_order->ID,
+						\Themeum\TutorLMSMigrationTool\LIFMigration\Orders\OrderMigrator::META_MIGRATED_ORDER_ID,
+						0
+					);
+					update_post_meta(
+						(int) $lif_order->ID,
+						\Themeum\TutorLMSMigrationTool\LIFMigration\Orders\OrderMigrator::META_SKIP_REASON,
+						'exception:' . $th->getMessage()
+					);
+				}
+			}
+
+			$remaining_after = $migrator->get_remaining_count();
+			$has_more        = $remaining_after > 0;
+			$migrated_count  = max( 0, $total_orders - $remaining_after );
+
+			if ( ! $has_more ) {
+				delete_option( self::ORDER_MIGRATION_TOTAL_OPT );
+			}
+
+			return array(
+				'migrated'           => $migrated_count,
+				'total'              => $total_orders,
+				'total_course_count' => $total_course_count,
+				'remaining'          => $remaining_after,
+				'has_more'           => $has_more,
+				'batch_size'         => $batch_size,
+			);
+		}
+
+		/**
 		 * Lifter LMS order migrate to WC.
 		 *
 		 * @since 1.0.0
@@ -877,12 +1037,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 *
 		 * @return array
 		 */
-		public function migrate_lif_orders() {
+		private function migrate_lif_orders_to_wc() {
 			global $wpdb;
-
-			tutor_utils()->checking_nonce();
-
-			Utils::check_course_access();
 
 			$this->raise_migration_resource_limits();
 
@@ -1024,6 +1180,84 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				'has_more'           => $has_more,
 				'batch_size'         => $batch_size,
 			);
+		}
+
+		/**
+		 * Migrate Lifter recurring orders to Tutor native subscriptions.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @return array|false Batch payload, or false on blocking error.
+		 */
+		public function lif_subscriptions_migrate() {
+			tutor_utils()->checking_nonce();
+			Utils::check_course_access();
+
+			$this->raise_migration_resource_limits();
+
+			if ( ! \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
+				return array(
+					'has_more'  => false,
+					'migrated'  => 0,
+					'total'     => 0,
+					'remaining' => 0,
+				);
+			}
+
+			$batch_size = (int) apply_filters( 'tlmt_lif_subscription_migration_batch_size', self::SUBSCRIPTION_BATCH_SIZE );
+			if ( $batch_size < 1 ) {
+				$batch_size = self::SUBSCRIPTION_BATCH_SIZE;
+			}
+
+			$is_first_batch = ! empty( $_POST['lif_subscription_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
+			if ( $is_first_batch ) {
+				delete_option( self::SUBSCRIPTION_MIGRATION_TOTAL_OPT );
+				delete_option( '_tutor_migrated_items_count' );
+			}
+
+			try {
+				$result = ( new \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions() )->migrate_subscriptions_batch( $batch_size );
+				$item_i = (int) get_option( '_tutor_migrated_items_count' );
+				update_option( '_tutor_migrated_items_count', $item_i + (int) $result['migrated_in_batch'] );
+
+				if ( $is_first_batch && isset( $result['total'] ) ) {
+					update_option( self::SUBSCRIPTION_MIGRATION_TOTAL_OPT, (int) $result['total'], false );
+				}
+
+				$total     = (int) get_option( self::SUBSCRIPTION_MIGRATION_TOTAL_OPT, $result['total'] ?? 0 );
+				$remaining = (int) ( $result['remaining'] ?? 0 );
+				$has_more  = ! empty( $result['has_more'] );
+				$migrated  = max( 0, $total - $remaining );
+
+				if ( ! empty( $result['errors'] ) ) {
+					\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+						\Themeum\TutorLMSMigrationTool\ContentTypes::SUBSCRIPTIONS,
+						implode( ' ', $result['errors'] )
+					);
+				}
+
+				if ( ! $has_more ) {
+					delete_option( self::SUBSCRIPTION_MIGRATION_TOTAL_OPT );
+					$stored_errors = \Themeum\TutorLMSMigrationTool\ErrorHandler::get_errors( false );
+					if ( ! empty( $stored_errors[ \Themeum\TutorLMSMigrationTool\ContentTypes::SUBSCRIPTIONS ] ) ) {
+						return false;
+					}
+				}
+
+				return array(
+					'has_more'   => $has_more,
+					'migrated'   => $migrated,
+					'total'      => $total,
+					'remaining'  => $remaining,
+					'batch_size' => $batch_size,
+				);
+			} catch ( \Throwable $th ) {
+				\Themeum\TutorLMSMigrationTool\ErrorHandler::set_error(
+					\Themeum\TutorLMSMigrationTool\ContentTypes::SUBSCRIPTIONS,
+					$th->getMessage()
+				);
+				return false;
+			}
 		}
 
 		/**

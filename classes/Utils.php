@@ -62,7 +62,45 @@ class Utils {
 	}
 	public function lifter_orders_count() {
 		global $wpdb;
+
+		if ( function_exists( 'tutor_utils' ) && tutor_utils()->is_monetize_by_tutor() ) {
+			$statuses  = \Themeum\TutorLMSMigrationTool\LIFMigration\Orders\StatusMapper::migratable_single_statuses();
+			$status_in = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT p.ID)
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} ot
+						ON ot.post_id = p.ID AND ot.meta_key = '_llms_order_type' AND ot.meta_value = 'single'
+					WHERE p.post_type = 'llms_order'
+						AND p.post_status IN ({$status_in})",
+					$statuses
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+
+			return $count;
+		}
+
 		return (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'llms_order';" );
+	}
+
+	/**
+	 * Count Lifter recurring course orders eligible for subscription migration.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return int
+	 */
+	public function lifter_subscriptions_count() {
+		if ( ! class_exists( '\Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper' )
+			|| ! \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::is_subscription_migration_available() ) {
+			return 0;
+		}
+
+		return count( \Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper::get_recurring_order_ids() );
 	}
 	public function lifter_reviews_count() {
 		global $wpdb;
