@@ -10,6 +10,7 @@
 
 use Themeum\TutorLMSMigrationTool\ContentTypes;
 use Themeum\TutorLMSMigrationTool\ErrorHandler;
+use Themeum\TutorLMSMigrationTool\LIFMigration\Quizzes\FillInBlanksTransformer;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Reviews as LIFReviews;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Helper;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Subscriptions\Subscriptions;
@@ -372,7 +373,8 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				)
 			);
 
-			$course_i = (int) get_option( '_tutor_migrated_items_count' );
+			$course_i         = (int) get_option( '_tutor_migrated_items_count' );
+			$course_post_type = tutor()->course_post_type;
 			foreach ( $lif_courses as $lif_course ) {
 				++$course_i;
 				$course_id = (int) $lif_course->ID;
@@ -380,6 +382,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					$this->migrate_course( $course_id );
 					update_option( '_tutor_migrated_items_count', $course_i );
 				} catch ( \Throwable $th ) {
+					// Convert CPT so the next batch does not retry this course forever.
+					$this->mark_course_as_tutor( $course_id, $course_post_type );
+					update_post_meta( $course_id, '_tlmt_lif_course_migration_failed', $th->getMessage() );
 					ErrorHandler::set_error(
 						ContentTypes::COURSE,
 						sprintf(
@@ -390,6 +395,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						)
 					);
 					error_log( $th->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					update_option( '_tutor_migrated_items_count', $course_i );
 				}
 			}
 
@@ -614,7 +620,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			if ( function_exists( 'tutor_utils' ) && tutor_utils()->is_monetize_by_tutor() ) {
 				do_action( 'tlmt_attach_product', $course_id, MigrationTypes::LIF_TO_TUTOR );
-			} elseif ( tutils()->has_wc() && $tutor_monetize_by == 'wc' || $tutor_monetize_by == '-1' || $tutor_monetize_by == 'free' ) {
+			} elseif ( tutils()->has_wc() && ( 'wc' === $tutor_monetize_by || '-1' === $tutor_monetize_by || 'free' === $tutor_monetize_by ) ) {
 				global $wpdb;
 				$order_plan_id    = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_llms_product_id' AND meta_value = %d ", $course_id ) );
 				$_llms_price      = get_post_meta( $order_plan_id, '_llms_price', true );
@@ -773,7 +779,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				);
 
 				$question_id = (int) $wpdb->insert_id;
-				if ( $question_id < 1 || ! method_exists( $question, 'get_choices' ) ) {
+				if ( $question_id < 1 ) {
+					continue;
+				}
+
+				if ( 'fill_in_the_blank' === $question_type ) {
+					$this->migrate_lif_fill_in_blank_answer( $question, $question_id );
+					continue;
+				}
+
+				if ( ! method_exists( $question, 'get_choices' ) ) {
 					continue;
 				}
 
@@ -800,6 +815,52 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					);
 				}
 			}
+		}
+
+		/**
+		 * Migrate a Lifter fill-in-the-blank question answer into Tutor tables.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @param object $question    Lifter question object.
+		 * @param int    $question_id Tutor question ID.
+		 *
+		 * @return void
+		 */
+		private function migrate_lif_fill_in_blank_answer( $question, int $question_id ) {
+			global $wpdb;
+
+			$correct_value = '';
+			if ( method_exists( $question, 'get' ) ) {
+				$correct_value = (string) $question->get( 'correct_value' );
+			}
+			if ( '' === $correct_value ) {
+				$correct_value = (string) get_post_meta( (int) $question->id, '_llms_correct_value', true );
+			}
+
+			$passage = '';
+			if ( ! empty( $question->post->post_content ) ) {
+				$passage = (string) $question->post->post_content;
+			} elseif ( ! empty( $question->post->post_title ) ) {
+				$passage = (string) $question->post->post_title;
+			}
+
+			$transformed = ( new FillInBlanksTransformer() )->transform( $passage, $correct_value );
+			if ( ! $transformed ) {
+				return;
+			}
+
+			$wpdb->insert(
+				$wpdb->prefix . 'tutor_quiz_question_answers',
+				array(
+					'belongs_question_id'   => $question_id,
+					'belongs_question_type' => FillInBlanksTransformer::TUTOR_TYPE,
+					'answer_title'          => $transformed['answer_title'],
+					'answer_two_gap_match'  => $transformed['answer_two_gap_match'],
+					'is_correct'            => 1,
+					'answer_order'          => 1,
+				)
+			);
 		}
 
 		/**
@@ -862,6 +923,16 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Build Tutor `tutor_quiz_option` from a LifterLMS quiz.
 		 *
+		 * Maps only settings Tutor already supports:
+		 * - `passing_percent`     → `passing_grade`
+		 * - `limit_time` + `time_limit` → `time_limit` (minutes; switch-gated)
+		 * - `limit_attempts` + `allowed_attempts` → `limit_attempts_allowed` / `attempts_allowed`
+		 * - `show_correct_answer` → `enable_answer_reveal`
+		 * - `random_questions`    → `questions_order`
+		 *
+		 * Lifter has no question-count cap; `max_questions_for_answer` is 0 (unlimited).
+		 * Unmapped (no Tutor equivalent): `disable_retake`, `can_be_resumed`.
+		 *
 		 * Missing quiz options cause the course builder to crash when opening a quiz.
 		 *
 		 * @since 2.6.0
@@ -881,7 +952,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				'limit_attempts_allowed'             => '0',
 				'enable_answer_reveal'               => '0',
 				'passing_grade'                      => 80,
-				'max_questions_for_answer'           => 10,
+				'max_questions_for_answer'           => 0,
 				'quiz_auto_start'                    => 0,
 				'question_layout_view'               => '',
 				'questions_order'                    => 'sorting',
@@ -907,17 +978,24 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$quiz_option['passing_grade'] = max( 0, min( 100, (int) $passing ) );
 			}
 
+			// Lifter stores a default time_limit value even when the switch is off.
 			$time_limit = (int) $quiz->get( 'time_limit' );
-			if ( $time_limit > 0 ) {
+			$limit_time = method_exists( $quiz, 'has_time_limit' )
+				? $quiz->has_time_limit()
+				: ( 'yes' === $quiz->get( 'limit_time' ) );
+			if ( $limit_time && $time_limit > 0 ) {
 				$quiz_option['time_limit'] = array(
 					'time_value' => $time_limit,
 					'time_type'  => 'minutes',
 				);
 			}
 
+			// Lifter stores a default allowed_attempts value even when the switch is off.
 			$allowed_attempts = (int) $quiz->get( 'allowed_attempts' );
-			$limit_attempts   = $quiz->get( 'limit_attempts' );
-			if ( 'yes' === $limit_attempts || $allowed_attempts > 0 ) {
+			$limit_attempts   = method_exists( $quiz, 'has_attempt_limit' )
+				? $quiz->has_attempt_limit()
+				: ( 'yes' === $quiz->get( 'limit_attempts' ) );
+			if ( $limit_attempts ) {
 				$quiz_option['limit_attempts_allowed'] = '1';
 				$quiz_option['attempts_allowed']       = $allowed_attempts > 0 ? $allowed_attempts : 1;
 			}

@@ -199,13 +199,18 @@ You can find the complete documentation and step-by-step migration guides in our
 
 == Changelog ==
 
-= 2.6.0 - 25 August, 2026 =
+= 2.6.0 - 27 August, 2026 =
 
 New: Added course taxonomy import support. (LifterLMS)
 New: Added course meta import support. (LifterLMS)
 New: Added enrollments section and improved enrollment import. (LifterLMS)
 New: Added student progress migration support. (LifterLMS)
-Update: Improved LifterLMS course, order, and review import with batch processing.
+New: Added support for fill-in-the-blanks quiz questions. (LifterLMS)
+New: Added course reviews migration support. (LifterLMS)
+New: Added subscription migration support for recurring LifterLMS orders. (LifterLMS)
+New: Added native Tutor LMS order migration support. (LifterLMS)
+Update: Improved LifterLMS course, order, review, and subscription import with batch processing.
+Update: Improved student progress import to include quiz attempts. (LifterLMS)
 
 = 2.5.4 - 19 August, 2026 =
 

@@ -221,36 +221,39 @@ class Enrollments {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		if ( $completion_row && ! tutils()->is_enrolled( $course_id, $user_id ) ) {
+		// Completion-only Lifter rows still need a Tutor enrollment so access is preserved.
+		if ( ! tutils()->is_enrolled( $course_id, $user_id ) && ( $enrollment_row || $completion_row ) ) {
+			$date_source = $enrollment_row ? $enrollment_row : $completion_row;
+			$order_time  = strtotime( (string) ( $date_source->updated_date ?? '' ) );
+			if ( $order_time <= 0 ) {
+				$order_time = tutor_time();
+			}
+
+			$title = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date_i18n( get_option( 'date_format' ), $order_time ) . ' @ ' . date_i18n( get_option( 'time_format' ), $order_time );
+
+			$enrollment_id = wp_insert_post(
+				array(
+					'post_type'   => 'tutor_enrolled',
+					'post_title'  => $title,
+					'post_status' => 'completed',
+					'post_author' => $user_id,
+					'post_parent' => $course_id,
+				)
+			);
+
+			if ( $enrollment_id ) {
+				update_user_meta( $user_id, '_is_tutor_student', $order_time );
+			}
+		}
+
+		if ( tutor_utils()->is_completed_course( $course_id, $user_id, false ) ) {
+			return;
+		}
+
+		if ( $completion_row ) {
 			$this->insert_course_completion( $course_id, $user_id );
-		}
-
-		if ( ! $enrollment_row || tutils()->is_enrolled( $course_id, $user_id ) ) {
 			return;
 		}
-
-		$order_time = strtotime( (string) $enrollment_row->updated_date );
-		if ( $order_time <= 0 ) {
-			$order_time = tutor_time();
-		}
-
-		$title = __( 'Course Enrolled', 'tutor' ) . ' &ndash; ' . date_i18n( get_option( 'date_format' ), $order_time ) . ' @ ' . date_i18n( get_option( 'time_format' ), $order_time );
-
-		$enrollment_id = wp_insert_post(
-			array(
-				'post_type'   => 'tutor_enrolled',
-				'post_title'  => $title,
-				'post_status' => 'completed',
-				'post_author' => $user_id,
-				'post_parent' => $course_id,
-			)
-		);
-
-		if ( ! $enrollment_id ) {
-			return;
-		}
-
-		update_user_meta( $user_id, '_is_tutor_student', $order_time );
 
 		if ( ! class_exists( 'LLMS_Student' ) ) {
 			return;
