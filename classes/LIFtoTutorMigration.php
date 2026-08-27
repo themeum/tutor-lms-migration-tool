@@ -800,21 +800,60 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$answer_order = 0;
 				foreach ( $answer_items as $answer_item ) {
 					++$answer_order;
-					$choice  = $answer_item->get( 'choice' );
-					$correct = $answer_item->get( 'correct' );
-
 					$wpdb->insert(
 						$wpdb->prefix . 'tutor_quiz_question_answers',
-						array(
-							'belongs_question_id'   => $question_id,
-							'belongs_question_type' => $question_type,
-							'answer_title'          => $choice,
-							'is_correct'            => true === $correct ? 1 : 0,
-							'answer_order'          => $answer_order,
-						)
+						$this->build_tutor_answer_from_lif_choice( $answer_item, $question_type, $question_id, $answer_order )
 					);
 				}
 			}
+		}
+
+		/**
+		 * Build Tutor answer row fields from a Lifter question choice.
+		 *
+		 * Picture choices store an attachment array in `choice` (`{ id, src, … }`).
+		 * Those map to Tutor multiple-choice answers with `image_id` + `answer_view_format`.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @param object $answer_item   Lifter LLMS_Question_Choice.
+		 * @param string $question_type Tutor question type slug.
+		 * @param int    $question_id   Tutor question ID.
+		 * @param int    $answer_order  Answer order.
+		 *
+		 * @return array
+		 */
+		private function build_tutor_answer_from_lif_choice( $answer_item, $question_type, $question_id, $answer_order ) {
+			$choice_type = method_exists( $answer_item, 'get' ) ? (string) $answer_item->get( 'choice_type' ) : 'text';
+			$choice      = method_exists( $answer_item, 'get' ) ? $answer_item->get( 'choice' ) : '';
+			$correct     = method_exists( $answer_item, 'is_correct' )
+				? (bool) $answer_item->is_correct()
+				: (bool) ( method_exists( $answer_item, 'get' ) ? $answer_item->get( 'correct' ) : false );
+
+			$answer_title       = '';
+			$image_id           = 0;
+			$answer_view_format = 'text';
+
+			if ( 'image' === $choice_type || is_array( $choice ) ) {
+				$image_id = is_array( $choice ) ? absint( $choice['id'] ?? 0 ) : 0;
+				if ( $image_id > 0 ) {
+					$answer_view_format = 'image';
+					$alt                = (string) get_post_meta( $image_id, '_wp_attachment_image_alt', true );
+					$answer_title       = '' !== trim( $alt ) ? $alt : (string) get_the_title( $image_id );
+				}
+			} elseif ( is_scalar( $choice ) ) {
+				$answer_title = (string) $choice;
+			}
+
+			return array(
+				'belongs_question_id'   => $question_id,
+				'belongs_question_type' => $question_type,
+				'answer_title'          => $answer_title,
+				'image_id'              => $image_id,
+				'answer_view_format'    => $answer_view_format,
+				'is_correct'            => $correct ? 1 : 0,
+				'answer_order'          => $answer_order,
+			);
 		}
 
 		/**
@@ -876,7 +915,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 			$map = array(
 				'true_false'     => 'true_false',
 				'choice'         => 'multiple_choice',
-				'picture_choice' => 'image_matching',
+				'picture_choice' => 'multiple_choice',
 				'blank'          => 'fill_in_the_blank',
 				'short_answer'   => 'short_answer',
 				'long_answer'    => 'short_answer',
@@ -2014,7 +2053,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 														$question_type = 'multiple_choice';
 													}
 													if ( $ques_type === 'picture_choice' ) {
-														$question_type = 'image_matching';
+														$question_type = 'multiple_choice';
 													}
 													if ( $ques_type === 'blank' ) {
 														$question_type = 'fill_in_the_blank';
