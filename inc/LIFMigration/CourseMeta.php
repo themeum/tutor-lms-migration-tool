@@ -85,18 +85,12 @@ class CourseMeta implements PostMeta {
 	 * @return void
 	 */
 	private function migrate_video() {
-		$video_embed = (string) get_post_meta( $this->course_id, '_llms_video_embed', true );
-		$video_embed = trim( $video_embed );
-
-		if ( '' === $video_embed || ! function_exists( 'tlmt_get_video_source_by_url' ) ) {
+		$video_embed = tlmt_get_lifter_video_embed( $this->course_id );
+		if ( '' === $video_embed ) {
 			return;
 		}
 
-		update_post_meta(
-			$this->course_id,
-			'_video',
-			tlmt_get_video_source_by_url( $video_embed )
-		);
+		tlmt_migrate_video_meta( $this->course_id, $video_embed );
 	}
 
 	/**

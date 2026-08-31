@@ -581,11 +581,15 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 							update_post_meta( $lesson_id, 'tutor_quiz_option', $quiz_option );
 						}
 
-						$_lif_preview = get_post_meta( $lesson_id, '_is_preview', true );
+						$_lif_preview = get_post_meta( $lesson_id, '_llms_free_lesson', true );
 						if ( 'yes' === $_lif_preview ) {
 							update_post_meta( $lesson_id, '_is_preview', 1 );
 						} else {
 							delete_post_meta( $lesson_id, '_is_preview' );
+						}
+
+						if ( $lesson_id && tutor()->lesson_post_type === $lesson['post_type'] ) {
+							do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::LIF_TO_TUTOR );
 						}
 					}
 				}
@@ -1826,6 +1830,10 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 								);
 							}
 
+							if ( tutor()->lesson_post_type === $item_data['post_type'] ) {
+								do_action( 'tlmt_lesson_migrated', $item_id, MigrationTypes::LIF_TO_TUTOR );
+							}
+
 							if ( isset( $item->questions ) && is_object( $item->questions ) && count( $item->questions ) ) {
 								foreach ( $item->questions as $question ) {
 									$answers = $question->answers;
@@ -2019,7 +2027,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 										$xml .= "<post_author>{$lesson->post_author}</post_author>\n";
 										$xml .= "<post_date>{$lesson->post_date}</post_date>\n";
 										$xml .= "<post_title>{$lesson->post->post_title}</post_title>\n";
-										$xml .= "<post_content>{$this->xml_cdata($lesson->get_video())}</post_content>\n";
+										$xml .= "<post_content>{$this->xml_cdata($lesson->post->post_content)}</post_content>\n";
 										$xml .= "<post_parent>{$course_id}</post_parent>\n";
 
 										$xml .= $this->start_element( 'item_meta' );
@@ -2028,7 +2036,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 										if ( is_array( $item_metas ) && count( $item_metas ) ) {
 											foreach ( $item_metas as $item_meta ) {
-												$xml .= "<{$item_meta->meta_key}> {$this->xml_cdata($item_meta->meta_key)} </{$item_meta->meta_key}>\n";
+												$xml .= "<{$item_meta->meta_key}>{$this->xml_cdata($item_meta->meta_value)}</{$item_meta->meta_key}>\n";
 											}
 										}
 
