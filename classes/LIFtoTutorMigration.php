@@ -489,7 +489,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 						'post_title'   => $section->post->post_title,
 						'post_content' => $section->post->post_content,
 						'post_status'  => 'publish',
-						'post_author'  => $course->get_author,
+						'post_author'  => (int) $course->get( 'author' ),
 						'post_parent'  => $course_id,
 						'menu_order'   => $i,
 						'items'        => array(),
