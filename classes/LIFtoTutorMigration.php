@@ -1239,7 +1239,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				$batch_size = self::ORDER_BATCH_SIZE;
 			}
 
-			$remaining_total = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed'" );
+			$remaining_total = (int) $wpdb->get_var(
+				"SELECT COUNT(p.ID)
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} ot
+					ON ot.post_id = p.ID AND ot.meta_key = '_llms_order_type' AND ot.meta_value = 'single'
+				WHERE p.post_type = 'llms_order' AND p.post_status = 'llms-completed'"
+			);
 
 			$is_first_batch = ! empty( $_POST['lif_order_migration_start'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified upstream.
 			if ( $is_first_batch ) {
@@ -1267,7 +1273,13 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 
 			$lif_orders = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed' ORDER BY ID ASC LIMIT %d",
+					"SELECT p.*
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} ot
+						ON ot.post_id = p.ID AND ot.meta_key = '_llms_order_type' AND ot.meta_value = 'single'
+					WHERE p.post_type = 'llms_order' AND p.post_status = 'llms-completed'
+					ORDER BY p.ID ASC
+					LIMIT %d",
 					$batch_size
 				)
 			);
@@ -1289,6 +1301,9 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 				wp_update_post( $migrate_order_data );
 
 				foreach ( $_items as $item ) {
+					if ( empty( $item->wc_product_id ) ) {
+						continue;
+					}
 
 					$item_data = array(
 						'order_item_name' => $item->name,
@@ -1299,33 +1314,14 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					$wpdb->insert( $wpdb->prefix . 'woocommerce_order_items', $item_data );
 					$order_item_id = (int) $wpdb->insert_id;
 
-					$lif_item_metas = $wpdb->get_results(
-						$wpdb->prepare(
-							"SELECT meta_key, meta_value 
-							FROM {$wpdb->postmeta}
-							WHERE meta_key in ('_llms_product_id','_llms_order_type','_llms_original_total','_llms_total')  AND post_id = %d",
-							$item->id
-						)
-					);
-
-					$lif_formatted_metas = array();
-					foreach ( $lif_item_metas as $item_meta ) {
-						$lif_formatted_metas[ $item_meta->meta_key ] = $item_meta->meta_value;
-					}
-
-					$_course_id = tutils()->array_get( '_llms_product_id', $lif_formatted_metas );
-					$_quantity  = tutils()->array_get( '_llms_order_type', $lif_formatted_metas );
-					$_subtotal  = tutils()->array_get( '_llms_original_total', $lif_formatted_metas );
-					$_total     = tutils()->array_get( '_llms_total', $lif_formatted_metas );
-
 					$wc_item_metas = array(
-						'_product_id'        => $_course_id,
+						'_product_id'        => (int) $item->wc_product_id,
 						'_variation_id'      => 0,
-						'_qty'               => $_quantity,
+						'_qty'               => (int) $item->quantity,
 						'_tax_class'         => '',
-						'_line_subtotal'     => $_subtotal,
+						'_line_subtotal'     => $item->subtotal,
 						'_line_subtotal_tax' => 0,
-						'_line_total'        => $_total,
+						'_line_total'        => $item->total,
 						'_line_tax'          => 0,
 						'_line_tax_data'     => maybe_serialize(
 							array(
@@ -1345,16 +1341,43 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 					}
 				}
 
-				update_post_meta( $order_id, '_customer_user', get_post_meta( $order_id, '_user_id', true ) );
-				update_post_meta( $order_id, '_customer_ip_address', get_post_meta( $order_id, '_user_ip_address', true ) );
-				update_post_meta( $order_id, '_customer_user_agent', get_post_meta( $order_id, '_user_agent', true ) );
+				$buyer_id = (int) get_post_meta( $order_id, '_llms_user_id', true );
+				if ( $buyer_id < 1 ) {
+					$buyer_id = (int) $lif_order->post_author;
+				}
 
-				$user_email = $wpdb->get_var( $wpdb->prepare( "SELECT user_email from {$wpdb->users} WHERE ID = %d ", $lif_order->post_author ) );
-				update_post_meta( $order_id, '_billing_address_index', $user_email );
-				update_post_meta( $order_id, '_billing_email', $user_email );
+				update_post_meta( $order_id, '_customer_user', $buyer_id );
+				update_post_meta( $order_id, '_customer_ip_address', get_post_meta( $order_id, '_llms_user_ip_address', true ) );
+
+				$billing_email = (string) get_post_meta( $order_id, '_llms_billing_email', true );
+				if ( '' === $billing_email && $buyer_id > 0 ) {
+					$user = get_userdata( $buyer_id );
+					if ( $user ) {
+						$billing_email = $user->user_email;
+					}
+				}
+
+				update_post_meta( $order_id, '_billing_address_index', $billing_email );
+				update_post_meta( $order_id, '_billing_email', $billing_email );
+
+				$order_total = get_post_meta( $order_id, '_llms_total', true );
+				if ( '' !== $order_total && null !== $order_total ) {
+					update_post_meta( $order_id, '_order_total', $order_total );
+				}
+
+				$order_currency = (string) get_post_meta( $order_id, '_llms_currency', true );
+				if ( '' !== $order_currency ) {
+					update_post_meta( $order_id, '_order_currency', $order_currency );
+				}
 			}
 
-			$remaining_after = (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'llms_order' AND post_status = 'llms-completed'" );
+			$remaining_after = (int) $wpdb->get_var(
+				"SELECT COUNT(p.ID)
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} ot
+					ON ot.post_id = p.ID AND ot.meta_key = '_llms_order_type' AND ot.meta_value = 'single'
+				WHERE p.post_type = 'llms_order' AND p.post_status = 'llms-completed'"
+			);
 			$has_more        = $remaining_after > 0;
 			$migrated_count  = max( 0, $total_orders - $remaining_after );
 
@@ -1654,24 +1677,100 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		}
 
 		/**
-		 * Order function
+		 * Build WooCommerce line items from a Lifter one-time order.
 		 *
-		 * @param [type] $order_id for getting order.
-		 * @return $query
+		 * Lifter stores product/totals on the order post itself (not child line items).
+		 *
+		 * @since 1.0.0
+		 * @since 2.6.1 Fixed product ID, quantity, and meta resolution for WC migration.
+		 *
+		 * @param int $order_id Lifter order post ID.
+		 *
+		 * @return array<int, object>
 		 */
 		public function get_lif_order_items( $order_id ) {
+			$order_id = (int) $order_id;
+			if ( $order_id < 1 || 'llms_order' !== get_post_type( $order_id ) ) {
+				return array();
+			}
+
+			$course_id = (int) get_post_meta( $order_id, '_llms_product_id', true );
+			if ( $course_id < 1 ) {
+				return array();
+			}
+
+			$plan_id       = (int) get_post_meta( $order_id, '_llms_plan_id', true );
+			$wc_product_id = $this->resolve_wc_product_id_for_lif_course( $course_id, $plan_id );
+
+			$product_title = (string) get_post_meta( $order_id, '_llms_product_title', true );
+			if ( '' === $product_title ) {
+				$product_title = get_the_title( $course_id );
+			}
+
+			$subtotal = get_post_meta( $order_id, '_llms_original_total', true );
+			$total    = get_post_meta( $order_id, '_llms_total', true );
+
+			if ( '' === $subtotal || null === $subtotal ) {
+				$subtotal = $total;
+			}
+
+			return array(
+				(object) array(
+					'id'            => $order_id,
+					'name'          => $product_title,
+					'course_id'     => $course_id,
+					'wc_product_id' => $wc_product_id,
+					'quantity'      => 1,
+					'subtotal'      => $subtotal,
+					'total'         => $total,
+				),
+			);
+		}
+
+		/**
+		 * Resolve the WooCommerce product ID linked to a migrated Lifter course.
+		 *
+		 * @since 2.6.1
+		 *
+		 * @param int $course_id Lifter/Tutor course post ID.
+		 * @param int $plan_id   Lifter access plan ID from the order.
+		 *
+		 * @return int WooCommerce product ID, or 0 when not found.
+		 */
+		private function resolve_wc_product_id_for_lif_course( int $course_id, int $plan_id = 0 ): int {
+			if ( $course_id < 1 ) {
+				return 0;
+			}
+
+			$product_id = (int) get_post_meta( $course_id, '_tutor_course_product_id', true );
+			if ( $product_id > 0 ) {
+				return $product_id;
+			}
+
+			if ( $plan_id > 0 ) {
+				$wc_pid = (int) get_post_meta( $plan_id, '_llms_wc_pid', true );
+				if ( $wc_pid > 0 ) {
+					return $wc_pid;
+				}
+			}
+
 			global $wpdb;
 
-			$results = $wpdb->get_results( $wpdb->prepare(
-				"SELECT orders.id as order_id, 
-				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_id') as course_id,
-				(SELECT meta_value as course_id FROM $wpdb->postmeta WHERE post_id=orders.id AND meta_key='_llms_product_title') as course_title
-				FROM $wpdb->posts as orders
-				WHERE orders.post_type='llms_order' AND id = %d ",
-				$order_id
-			) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wc_pid = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT pm_wc.meta_value
+					FROM {$wpdb->postmeta} pm_product
+					INNER JOIN {$wpdb->postmeta} pm_wc
+						ON pm_wc.post_id = pm_product.post_id AND pm_wc.meta_key = '_llms_wc_pid'
+					WHERE pm_product.meta_key = '_llms_product_id'
+						AND pm_product.meta_value = %d
+					LIMIT 1",
+					$course_id
+				)
+			);
 
-			return $results;
+			return (int) $wc_pid;
 		}
 
 
