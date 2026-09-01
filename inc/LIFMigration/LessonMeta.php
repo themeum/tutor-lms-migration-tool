@@ -5,7 +5,7 @@
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
  * @link https://themeum.com
- * @since 2.6.1
+ * @since 2.6.0
  */
 
 namespace Themeum\TutorLMSMigrationTool\LIFMigration;
@@ -19,14 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Migrates LifterLMS lesson settings into Tutor lesson meta.
  *
- * @since 2.6.1
+ * @since 2.6.0
  */
 class LessonMeta implements PostMeta {
 
 	/**
 	 * Current lesson ID.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @var int
 	 */
@@ -35,7 +35,7 @@ class LessonMeta implements PostMeta {
 	/**
 	 * Migrate lesson meta for a LifterLMS lesson post.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @param int $post_id Lesson post ID.
 	 *
@@ -55,7 +55,7 @@ class LessonMeta implements PostMeta {
 	/**
 	 * Map Lifter video embed URL to Tutor `_video` meta.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */
@@ -71,7 +71,7 @@ class LessonMeta implements PostMeta {
 	/**
 	 * Map Lifter free lesson flag to Tutor preview meta.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @return void
 	 */

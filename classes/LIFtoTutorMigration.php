@@ -1682,7 +1682,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		 * Lifter stores product/totals on the order post itself (not child line items).
 		 *
 		 * @since 1.0.0
-		 * @since 2.6.1 Fixed product ID, quantity, and meta resolution for WC migration.
+		 * @since 2.6.0 Fixed product ID, quantity, and meta resolution for WC migration.
 		 *
 		 * @param int $order_id Lifter order post ID.
 		 *
@@ -1730,7 +1730,7 @@ if ( ! class_exists( 'LIFtoTutorMigration' ) ) {
 		/**
 		 * Resolve the WooCommerce product ID linked to a migrated Lifter course.
 		 *
-		 * @since 2.6.1
+		 * @since 2.6.0
 		 *
 		 * @param int $course_id Lifter/Tutor course post ID.
 		 * @param int $plan_id   Lifter access plan ID from the order.

@@ -422,7 +422,7 @@ if ( ! function_exists( 'tlmt_get_lifter_video_embed' ) ) {
 	 *
 	 * Supports both legacy `_llms_video_embed` and Lifter 3.0+ `_video_embed` keys.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @param int $post_id Post ID.
 	 *
@@ -444,7 +444,7 @@ if ( ! function_exists( 'tlmt_migrate_video_meta' ) ) {
 	/**
 	 * Map a video URL/embed to Tutor `_video` post meta.
 	 *
-	 * @since 2.6.1
+	 * @since 2.6.0
 	 *
 	 * @param int    $post_id   Post ID.
 	 * @param string $video_url Video URL, shortcode, or embed code.
