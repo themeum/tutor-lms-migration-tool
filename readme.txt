@@ -3,9 +3,9 @@ Contributors: themeum
 Donate link: https://www.themeum.com
 Tags: LMS, migration, course, elearning, education
 Requires at least: 5.3
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.5.4
+Stable tag: 2.6.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -198,6 +198,16 @@ You can find the complete documentation and step-by-step migration guides in our
 4. Error Alert
 
 == Changelog ==
+
+= 2.6.0 - 01 September, 2026 =
+
+New: Added support for importing LifterLMS course taxonomies, metadata, and reviews.
+New: Introduced a dedicated Enrollments section for migrating LifterLMS enrollment data.
+New: Added support for migrating learner progress from LifterLMS to Tutor LMS.
+New: Added support for migrating Fill in the Blanks quiz questions from LifterLMS.
+New: Added subscription migration support for recurring LifterLMS orders.
+New: Added support for migrating LifterLMS eCommerce orders to native Tutor LMS eCommerce orders.
+Update: Improved LifterLMS course, order, review, and subscription imports with batch processing for better migration performance.
 
 = 2.5.4 - 19 August, 2026 =
 

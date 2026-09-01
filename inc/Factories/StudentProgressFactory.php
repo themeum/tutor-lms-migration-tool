@@ -13,6 +13,7 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\LDMigration\StudentProgress as LDStudentProgress;
+use Themeum\TutorLMSMigrationTool\LIFMigration\StudentProgress as LIFStudentProgress;
 use Themeum\TutorLMSMigrationTool\LPMigration\StudentProgress as LPStudentProgress;
 use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
 
@@ -26,6 +27,7 @@ abstract class StudentProgressFactory {
 	 *
 	 * @since 2.3.0
 	 * @since 2.5.0 Added LearnPress student progress migration.
+	 * @since 2.6.0 Added LifterLMS student progress migration.
 	 *
 	 * @param string $migration_type Type of migration.
 	 *
@@ -39,6 +41,8 @@ abstract class StudentProgressFactory {
 				return new LDStudentProgress();
 			case MigrationTypes::LP_TO_TUTOR:
 				return new LPStudentProgress();
+			case MigrationTypes::LIF_TO_TUTOR:
+				return new LIFStudentProgress();
 			default:
 				break;
 		}

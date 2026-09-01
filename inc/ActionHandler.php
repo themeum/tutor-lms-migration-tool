@@ -11,9 +11,10 @@
 namespace Themeum\TutorLMSMigrationTool;
 
 use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
-use Themeum\TutorLMSMigrationTool\LDMigration\CourseTaxonomies;
+use Themeum\TutorLMSMigrationTool\LDMigration\CourseTaxonomies as LDCourseTaxonomies;
 use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
 use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Subscriptions;
+use Themeum\TutorLMSMigrationTool\LIFMigration\CourseTaxonomies as LIFCourseTaxonomies;
 use TUTOR\Course;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -103,7 +104,7 @@ class ActionHandler {
 		$content_type = null;
 
 		if ( $post_type ) {
-			if ( tutor()->course_post_type === $post_type || 'sfwd-courses' === $post_type ) {
+			if ( tutor()->course_post_type === $post_type || 'sfwd-courses' === $post_type || 'course' === $post_type ) {
 				$content_type = ContentTypes::COURSE_META;
 			} elseif ( tutor()->lesson_post_type === $post_type || 'sfwd-lessons' === $post_type ) {
 				$content_type = ContentTypes::LESSON_META;
@@ -116,9 +117,10 @@ class ActionHandler {
 	}
 
 	/**
-	 * Migrate LearnDash course categories and tags to Tutor taxonomies.
+	 * Migrate course categories and tags to Tutor taxonomies.
 	 *
 	 * @since 2.5.0
+	 * @since 2.6.0 Added LifterLMS course taxonomy migration.
 	 *
 	 * @param int    $course_id      Course ID.
 	 * @param string $migration_type Migration type.
@@ -126,12 +128,16 @@ class ActionHandler {
 	 * @return void
 	 */
 	public function migrate_course_taxonomies( $course_id, $migration_type ) {
-		if ( MigrationTypes::LD_TO_TUTOR !== $migration_type ) {
+		if ( MigrationTypes::LD_TO_TUTOR === $migration_type ) {
+			$migrator = new LDCourseTaxonomies();
+		} elseif ( MigrationTypes::LIF_TO_TUTOR === $migration_type ) {
+			$migrator = new LIFCourseTaxonomies();
+		} else {
 			return;
 		}
 
 		try {
-			( new CourseTaxonomies() )->migrate( (int) $course_id );
+			$migrator->migrate( (int) $course_id );
 		} catch ( \Throwable $th ) {
 			$this->update_migration_error(
 				ContentTypes::COURSE_TAXONOMIES,

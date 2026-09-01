@@ -14,6 +14,7 @@ use Themeum\TutorLMSMigrationTool\Interfaces\Product;
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\EDDProduct as LD_EDD_Product;
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\TutorProduct as LD_Tutor_Product;
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\WCProduct as LD_WC_Product;
+use Themeum\TutorLMSMigrationTool\LIFMigration\Product\NativePricing as LIF_Tutor_Product;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -25,6 +26,7 @@ abstract class ProductFactory {
 	 * Create product objects based on migration and monetization type.
 	 *
 	 * @since 2.3.0
+	 * @since 2.6.0 Added LifterLMS native Tutor product migration.
 	 *
 	 * @param string $monetization_type the monetization type such as tutor, wc etc.
 	 * @param string $migration_type    the migration type such as ld_to_tutor.
@@ -44,6 +46,11 @@ abstract class ProductFactory {
 				}
 				if ( 'tutor' === $monetization_type ) {
 					return new LD_Tutor_Product();
+				}
+				break;
+			case MigrationTypes::LIF_TO_TUTOR:
+				if ( 'tutor' === $monetization_type ) {
+					return new LIF_Tutor_Product();
 				}
 				break;
 			default:

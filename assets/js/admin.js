@@ -55,6 +55,9 @@ jQuery(document).ready(function ($) {
      * Since v.1.4.6
      */
     var checkProgress;
+    function isBatchedMigrationVendor(vendor) {
+        return vendor === 'ld' || vendor === 'lp' || vendor === 'lif';
+    }
     function get_live_progress_course_migrating_info(final_types = 'lp') {
         $.ajax({
             url: ajaxurl,
@@ -140,11 +143,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_courses_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=courses';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_course_migration_start=1';
-            }
-            if (isFirstBatch && final_types === 'lp') {
-                requestData += '&lp_course_migration_start=1';
+            if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
+                requestData += '&' + final_types + '_course_migration_start=1';
             }
 
             $.ajax({
@@ -157,7 +157,7 @@ jQuery(document).ready(function ($) {
                         $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionCourse').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld' || final_types === 'lp') {
+                        if (isBatchedMigrationVendor(final_types)) {
                             migration_progress_bar(false, 0);
                         } else {
                             migration_progress_bar();
@@ -171,7 +171,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
+                    if (isBatchedMigrationVendor(final_types) && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         migration_progress_bar(false, percent);
                     }
@@ -236,11 +236,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_enrollments_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=enrollments';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_enrollment_migration_start=1';
-            }
-            if (isFirstBatch && final_types === 'lp') {
-                requestData += '&lp_enrollment_migration_start=1';
+            if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
+                requestData += '&' + final_types + '_enrollment_migration_start=1';
             }
 
             $.ajax({
@@ -251,7 +248,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionEnrollments').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld' || final_types === 'lp') {
+                        if (isBatchedMigrationVendor(final_types)) {
                             enrollment_migration_progress_bar(false, 0);
                         } else {
                             enrollment_migration_progress_bar();
@@ -265,7 +262,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
+                    if (isBatchedMigrationVendor(final_types) && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         enrollment_migration_progress_bar(false, percent);
                     }
@@ -321,11 +318,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_orders_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=orders';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_order_migration_start=1';
-            }
-            if (isFirstBatch && final_types === 'lp') {
-                requestData += '&lp_order_migration_start=1';
+            if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
+                requestData += '&' + final_types + '_order_migration_start=1';
             }
 
             $.ajax({
@@ -336,7 +330,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld' || final_types === 'lp') {
+                        if (isBatchedMigrationVendor(final_types)) {
                             order_migration_progress_bar(false, 0);
                         } else {
                             order_migration_progress_bar();
@@ -350,7 +344,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
+                    if (isBatchedMigrationVendor(final_types) && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         order_migration_progress_bar(false, percent);
                     }
@@ -417,8 +411,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_subscriptions_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=subscriptions';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_subscription_migration_start=1';
+            if (isFirstBatch && (final_types === 'ld' || final_types === 'lif')) {
+                requestData += '&' + final_types + '_subscription_migration_start=1';
             }
 
             $.ajax({
@@ -429,7 +423,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionSubscriptions').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld') {
+                        if (final_types === 'ld' || final_types === 'lif') {
                             subscription_migration_progress_bar(false, 0);
                         } else {
                             subscription_migration_progress_bar();
@@ -443,7 +437,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if (final_types === 'ld' && payload.total > 0) {
+                    if ((final_types === 'ld' || final_types === 'lif') && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         subscription_migration_progress_bar(false, percent);
                     }
@@ -524,11 +518,8 @@ jQuery(document).ready(function ($) {
 
         function migrate_reviews_batch(isFirstBatch) {
             var requestData = $formData + '&migrate_type=reviews';
-            if (isFirstBatch && final_types === 'ld') {
-                requestData += '&ld_review_migration_start=1';
-            }
-            if (isFirstBatch && final_types === 'lp') {
-                requestData += '&lp_review_migration_start=1';
+            if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
+                requestData += '&' + final_types + '_review_migration_start=1';
             }
 
             $.ajax({
@@ -539,7 +530,7 @@ jQuery(document).ready(function ($) {
                     if (isFirstBatch) {
                         get_live_progress_course_migrating_info(final_types);
                         $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
-                        if (final_types === 'ld' || final_types === 'lp') {
+                        if (isBatchedMigrationVendor(final_types)) {
                             reviews_migration_progress_bar(false, 0);
                         } else {
                             reviews_migration_progress_bar();
@@ -553,7 +544,7 @@ jQuery(document).ready(function ($) {
                     }
 
                     var payload = data.data || {};
-                    if ((final_types === 'ld' || final_types === 'lp') && payload.total > 0) {
+                    if (isBatchedMigrationVendor(final_types) && payload.total > 0) {
                         var percent = (Number(payload.migrated) / Number(payload.total)) * 100;
                         reviews_migration_progress_bar(false, percent);
                     }

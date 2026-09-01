@@ -416,6 +416,58 @@ if ( ! function_exists( 'set_product_thumbnail' ) ) {
 	}
 }
 
+if ( ! function_exists( 'tlmt_get_lifter_video_embed' ) ) {
+	/**
+	 * Get LifterLMS video embed URL from post meta.
+	 *
+	 * Supports both legacy `_llms_video_embed` and Lifter 3.0+ `_video_embed` keys.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param int $post_id Post ID.
+	 *
+	 * @return string
+	 */
+	function tlmt_get_lifter_video_embed( int $post_id ): string {
+		foreach ( array( '_video_embed', '_llms_video_embed' ) as $meta_key ) {
+			$video_embed = trim( (string) get_post_meta( $post_id, $meta_key, true ) );
+			if ( '' !== $video_embed ) {
+				return $video_embed;
+			}
+		}
+
+		return '';
+	}
+}
+
+if ( ! function_exists( 'tlmt_migrate_video_meta' ) ) {
+	/**
+	 * Map a video URL/embed to Tutor `_video` post meta.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param int    $post_id   Post ID.
+	 * @param string $video_url Video URL, shortcode, or embed code.
+	 *
+	 * @return void
+	 */
+	function tlmt_migrate_video_meta( int $post_id, string $video_url ): void {
+		$video_url = trim( $video_url );
+		if ( '' === $video_url || ! function_exists( 'tlmt_get_video_source_by_url' ) ) {
+			return;
+		}
+
+		$video_info = tlmt_get_video_source_by_url( $video_url );
+
+		if ( function_exists( 'tutor_utils' ) ) {
+			tutor_utils()->update_video( $post_id, $video_info );
+			return;
+		}
+
+		update_post_meta( $post_id, '_video', maybe_serialize( $video_info ) );
+	}
+}
+
 if ( ! function_exists( 'tlmt_get_video_source_by_url' ) ) {
 	/**
 	 * Get video source by url
@@ -435,7 +487,11 @@ if ( ! function_exists( 'tlmt_get_video_source_by_url' ) ) {
 		$source_external_url = '';
 		$source_html5        = '';
 
-		if ( preg_match( '/youtube\.com\/watch\?v=([^\&\s]+)/', $url, $matches ) || preg_match( '/youtu\.be\/([^\&\s]+)/', $url, $matches ) ) {
+		if ( preg_match( '/youtube\.com\/watch\?v=([^\&\s]+)/', $url, $matches )
+			|| preg_match( '/youtu\.be\/([^\&\s]+)/', $url, $matches )
+			|| preg_match( '/youtube\.com\/embed\/([^\&\s?\/]+)/', $url, $matches )
+			|| preg_match( '/youtube\.com\/v\/([^\&\s?\/]+)/', $url, $matches )
+		) {
 			$source         = 'youtube';
 			$source_youtube = $url;
 		} elseif ( preg_match( '/vimeo\.com\/(\d+)/', $url, $matches ) ) {
