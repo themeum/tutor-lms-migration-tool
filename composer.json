@@ -17,5 +17,8 @@
             "email": "support@themeum.com"
         }
     ],
-    "require": {}
+    "require": {},
+    "scripts": {
+        "build": "composer i --no-dev && wp dist-archive . ."
+    }
 }

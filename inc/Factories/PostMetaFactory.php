@@ -17,6 +17,8 @@ use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\AssignmentMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\LessonMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\QuizMeta;
+use Themeum\TutorLMSMigrationTool\LIFMigration\CourseMeta as LifCourseMeta;
+use Themeum\TutorLMSMigrationTool\LIFMigration\LessonMeta as LifLessonMeta;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 
 /**
@@ -48,6 +50,16 @@ abstract class PostMetaFactory {
 						return new QuizMeta();
 					case ContentTypes::ASSIGNMENT_META:
 						return new AssignmentMeta();
+					default:
+						break;
+				}
+				break;
+			case MigrationTypes::LIF_TO_TUTOR:
+				switch ( $meta_type ) {
+					case ContentTypes::COURSE_META:
+						return new LifCourseMeta();
+					case ContentTypes::LESSON_META:
+						return new LifLessonMeta();
 					default:
 						break;
 				}

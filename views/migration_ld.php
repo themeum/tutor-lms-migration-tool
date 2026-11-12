@@ -50,16 +50,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php esc_html_e( 'Auto Migrate', 'tutor-lms-migration-tool' ); ?>
 						</a>
 					</li>
-					<li class="tutor-nav-item">
-						<div class="tutor-d-flex tutor-align-center">
-						<a class="tutor-nav-link" data-tutor-nav-target="" style="cursor: default; padding-right: 8px;">
-							<?php esc_html_e( 'Upload File', 'tutor-lms-migration-tool' ); ?>
-						</a>
-						<span class="tutor-rounded-pill tutor-border tutor-px-8" style="border-radius: 10px;">
-							<?php esc_html_e( 'Coming soon', 'tutor-lms-migration-tool' ); ?>
-						</span>
-						</div>
-					</li>
 					<li class="tutor-nav-item tutor-nav-more tutor-d-none">
 						<a class="tutor-nav-link tutor-nav-more-item" href="#">
 							<span class="tutor-mr-4"><?php esc_html_e( 'More', 'tutor-lms-migration-tool' ); ?></span> 
@@ -93,6 +83,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 									</label>
 								</div>
+								<div id="sectionEnrollments" class="tutor-py-16">
+									<label for="enrollments">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Enrollments', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php esc_html_e( 'Migrate student enrollments, course completions, and learning progress to Tutor LMS in student batches.', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
 								<div id="sectionOrders" class="tutor-py-16">
 									<label for="sales-data">
 										<div class="lp-migration-singlebox">
@@ -106,6 +114,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
 													<?php esc_html_e( 'Migrate revenue and sales data to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
 												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
+								<?php
+								$ld_subscription_available = class_exists( '\Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper' )
+									&& \Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper::is_subscription_migration_available();
+								$woo_subscription_note     = class_exists( '\Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper' )
+									&& \Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper::is_woo_subscription_path_available();
+								?>
+								<div id="sectionSubscriptions" class="tutor-py-16" data-available="<?php echo $ld_subscription_available ? '1' : '0'; ?>">
+									<label for="subscriptions">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Subscriptions', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php if ( $ld_subscription_available ) : ?>
+														<?php esc_html_e( 'Migrate LearnDash recurring plans and active subscribers to Tutor Native subscriptions.', 'tutor-lms-migration-tool' ); ?>
+													<?php else : ?>
+														<?php esc_html_e( 'Requires Tutor Pro Subscriptions addon with Native Payment enabled. Live gateway billing is not transferred.', 'tutor-lms-migration-tool' ); ?>
+													<?php endif; ?>
+												</div>
+												<?php if ( $woo_subscription_note ) : ?>
+													<div class="tutor-color-muted tutor-fs-7 tutor-fw-normal tutor-pb-16">
+														<?php esc_html_e( 'WooCommerce Subscriptions detected: after this migration, use Tools → WooCommerce to Native to convert WC subscription products and subscribers.', 'tutor-lms-migration-tool' ); ?>
+													</div>
+												<?php endif; ?>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>
 										</div>
@@ -238,24 +279,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <div class="lp-migration-modal-wrap">
 	<div class="lp-migration-modal">
-		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
+		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-48 tutor-px-32 tutor-text-center">
 			<div class="lp-migration-modal-icon">
 				<img src="<?php echo esc_url( TLMT_URL . 'assets/img/yes_no.svg' ); ?>" alt="export">
 			</div>
-			<div class="migration-modal-btn-group flex-center tutor-flex-column">
-				<div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
-					<?php esc_html_e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
-					<br>
-					<?php esc_html_e( 'LearnDash to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+			<div class="migration-modal-btn-group migration-modal-consent-group flex-center tutor-flex-column">
+				<div class="migration-modal-title tutor-fs-5 tutor-fw-medium tutor-color-black">
+					<?php
+					printf(
+						/* translators: %s: Source LMS name */
+						esc_html__( 'Migrate from %s to Tutor LMS', 'tutor-lms-migration-tool' ),
+						esc_html__( 'LearnDash', 'tutor-lms-migration-tool' )
+					);
+					?>
 				</div>
-				<div class="tutor-d-flex">
-					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
-						<span> <?php esc_html_e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
+				<?php
+				$source_lms     = __( 'LearnDash', 'tutor-lms-migration-tool' );
+				$deletion_items = array(
+					__( 'Courses, lessons, and quizzes', 'tutor-lms-migration-tool' ),
+					__( 'Course orders and metadata', 'tutor-lms-migration-tool' ),
+					__( 'Course reviews and ratings, etc.', 'tutor-lms-migration-tool' ),
+				);
+				require __DIR__ . '/components/migration-deletion-consent.php';
+				?>
+				<div class="migration-modal-actions tutor-d-flex">
+					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg">
+						<span><?php esc_html_e( 'Cancel', 'tutor-lms-migration-tool' ); ?></span>
 					</a>
-					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg">
-						<?php
-							esc_html_e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' );
-						?>
+					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg" aria-disabled="true">
+						<?php esc_html_e( 'Start Migration', 'tutor-lms-migration-tool' ); ?>
 					</a>
 				</div>
 			</div>

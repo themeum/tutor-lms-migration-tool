@@ -10,6 +10,7 @@ build/
 .history
 .docz/
 .DS_Store
+phpcs.xml
 .phpcs.cache
 .phpunit.result.cache
 php-errors.log

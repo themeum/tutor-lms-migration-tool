@@ -32,24 +32,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </div>
             </div>
 
-            <div class="tutor-migration-tab">
-                <ul class="tutor-nav">
-                    <li class="tutor-nav-item">
-                        <a class="tutor-nav-link is-active" href="#" data-tutor-nav-target="tutor-auto-migrate-tab"><?php _e('Auto Migrate','tutor-lms-migration-tool'); ?></a>
-                    </li>
-                    <li class="tutor-nav-item">
-                        <a class="tutor-nav-link" href="#" data-tutor-nav-target="tutor-manual-migrate-tab"><?php _e('Upload File','tutor-lms-migration-tool'); ?></a>
-                    </li>
-                    <li class="tutor-nav-item tutor-nav-more tutor-d-none">
-                        <a class="tutor-nav-link tutor-nav-more-item" href="#">
-                            <span class="tutor-mr-4"><?php _e('More','tutor-lms-migration-tool'); ?></span> 
-                            <span class="tutor-nav-more-icon tutor-icon-times"></span>
-                        </a>
-                        <ul class="tutor-nav-more-list tutor-dropdown"></ul>
-                    </li>
-                </ul>
-            </div>
-
             <div class="tutor-migration-tab-item">
                 <div id="tutor-auto-migrate-tab" class="tutor-tab-item is-active">
                     <div class="tutor-tab-item-wrap tutor-pt-32 tutor-pb-40 tutor-px-48">
@@ -67,6 +49,24 @@ if ( ! defined( 'ABSPATH' ) ) {
                                                 <div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title"><?php _e('Courses','tutor-lms-migration-tool'); ?></div>
                                                 <div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
                                                     <?php _e('Transfer courses, lessons, quizzes, assignments, etc to Tutor LMS.','tutor-lms-migration-tool'); ?>
+                                                </div>
+                                                <div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div id="sectionEnrollments" class="tutor-py-16">
+                                    <label for="enrollments">
+                                        <div class="lp-migration-singlebox">
+                                            <div class="lp-migration-singlebox-checkbox">
+                                                <span class="j-spinner"></span>
+                                            </div>
+                                            <div class="lp-migration-singlebox-desc">
+                                                <div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+                                                    <?php esc_html_e( 'Enrollments', 'tutor-lms-migration-tool' ); ?>
+                                                </div>
+                                                <div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+                                                    <?php esc_html_e( 'Migrate student enrollments, course completions, and learning progress to Tutor LMS in student batches.', 'tutor-lms-migration-tool' ); ?>
                                                 </div>
                                                 <div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
                                             </div>
@@ -123,43 +123,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
                                 <span id="total_items_migrate_counts" class="tutor-d-none" data-count="<?php echo $items_count; ?>"> </span>
                                 <button type="submit" class="migrate-now-btn tutor-btn tutor-btn-primary tutor-btn-lg" <?php echo $items_count ? '' : 'disabled'; ?> >
-                                    <?php _e('Migrate Now','tutor-lms-migration-tool'); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="tutor-manual-migrate-tab" class="tutor-tab-item">
-                    <div class="tutor-tab-item-wrap tutor-p-48">
-                        <div class="tutor-migration-upload-area tutor-migration-drag-drop-zone flex-center tutor-px-48 tutor-py-68">
-                            <div class="tutor-migration-upload-circle tutor-mb-16 flex-center">
-                                <span class="tutor-fs-3 tutor-fw-medium tutor-color-primary tutor-icon-import"></span>
-                            </div>
-                            <form id="tutor-manual-migrate-form" method="post" enctype="multipart/form-data">
-	                            <?php tutor_nonce_field(); ?>
-                                <input type="hidden" name="tutor_action" value="tutor_import_from_xml">
-                                <div id="tutor-migration-browse-file-link" class="tutor-fs-5 tutor-fw-medium"> 
-                                    <div class="tutor-color-black"><?php _e('Drag & Drop XML file here','tutor-lms-migration-tool'); ?></div>
-                                    or <a href="" class="tutor-color-primary"><?php _e('Browse File','tutor-lms-migration-tool'); ?></a>
-                                </div>
-                                <input id="tutor-migration-browse-file" name="tutor_import_file" hidden type="file" accept=".xml" required>
-                                <span class="file-info tutor-fw-medium backup-now-subtile tutor-fs-6"></span>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="tutor-px-48 tutor-py-36 tutor-border-top">
-                        <div class="tutor-row tutor-align-center">
-                            <div class="tutor-col-md-8 tutor-d-flex tutor-flex-wrap">
-                                <sapn class="backup-now-subtile tutor-fs-7"><?php _e('Please take a complete a backup for safety.','tutor-lms-migration-tool'); ?></sapn>
-                                <form id="tutor_migration_export_form" method="post" enctype="multipart/form-data">
-                                    <input type="hidden" id="tutor_migration_vendor" name="tutor_migration_vendor" value="lp">
-                                    <input type="hidden" name="tutor_action" value="tutor_lp_export_xml">
-                                    <?php tutor_nonce_field(); ?>
-                                    <button <?php echo $items_count ? '' : 'disabled'; ?> type="submit" class="backup-now-btn tutor-fs-7 tutor-fw-medium tutor-color-black"><?php _e('Backup Now','tutor-lms-migration-tool'); ?></button>
-                                </form>
-                            </div>
-                            <div class="migrate-now-btn-wrapper tutor-col-md-4 tutor-d-flex tutor-justify-end">
-                                <button type="submit" id="manual-migrate-now-btn" class="tutor-btn tutor-btn-primary tutor-btn-lg" disabled>
                                     <?php _e('Migrate Now','tutor-lms-migration-tool'); ?>
                                 </button>
                             </div>
@@ -232,26 +195,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="lp-migration-modal-wrap">
 
 	<div class="lp-migration-modal">
-        <div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-60 tutor-text-center">
+		<div class="lp-migration-alert lp-import flex-center tutor-flex-column tutor-py-48 tutor-px-32 tutor-text-center">
 			<div class="lp-migration-modal-icon">
-				<img src="<?php echo TLMT_URL . 'assets/img/yes_no.svg'; ?>" alt="export">
+				<img src="<?php echo esc_url( TLMT_URL . 'assets/img/yes_no.svg' ); ?>" alt="export">
 			</div>
-			<div class="migration-modal-btn-group flex-center tutor-flex-column">
-                <div class="tutor-fs-5 tutor-fw-normal tutor-color-black tutor-mb-32 tutor-mt-16">
-					<?php _e( 'Are you sure you want to migrate from', 'tutor-lms-migration-tool' ); ?>
-                    <br>
-                    <?php _e( 'LearnPress to Tutor LMS?', 'tutor-lms-migration-tool' ); ?>
+			<div class="migration-modal-btn-group migration-modal-consent-group flex-center tutor-flex-column">
+				<div class="migration-modal-title tutor-fs-5 tutor-fw-medium tutor-color-black">
+					<?php
+					printf(
+						/* translators: %s: Source LMS name */
+						esc_html__( 'Migrate from %s to Tutor LMS', 'tutor-lms-migration-tool' ),
+						esc_html__( 'LearnPress', 'tutor-lms-migration-tool' )
+					);
+					?>
 				</div>
-                <div class="tutor-d-flex">
-                    <a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg tutor-mr-24">
-                        <span> <?php _e( 'No, Maybe Later!', 'tutor-lms-migration-tool' ); ?></span>
-                    </a>
-                    <a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-md">
-                        <span>
-                            <?php _e( 'Yes, Let’s Start', 'tutor-lms-migration-tool' ); ?>
-                        </span>
-                    </a>
-                </div>
+				<?php
+				$source_lms     = __( 'LearnPress', 'tutor-lms-migration-tool' );
+				$deletion_items = array(
+					__( 'Courses, lessons, and quizzes', 'tutor-lms-migration-tool' ),
+					__( 'Course orders and metadata', 'tutor-lms-migration-tool' ),
+					__( 'Course reviews and ratings, etc.', 'tutor-lms-migration-tool' ),
+				);
+				require __DIR__ . '/components/migration-deletion-consent.php';
+				?>
+				<div class="migration-modal-actions tutor-d-flex">
+					<a href="#" class="migration-later-btn tutor-btn tutor-btn-outline-primary tutor-btn-lg">
+						<span><?php esc_html_e( 'Cancel', 'tutor-lms-migration-tool' ); ?></span>
+					</a>
+					<a href="#" class="migration-start-btn tutor-btn tutor-btn-primary tutor-btn-lg" aria-disabled="true">
+						<span><?php esc_html_e( 'Start Migration', 'tutor-lms-migration-tool' ); ?></span>
+					</a>
+				</div>
 			</div>
 			<div class="modal-close migration-modal-close">
 				<span class="modal-close-line migration-modal-close-line-one"></span>

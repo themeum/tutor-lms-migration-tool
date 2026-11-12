@@ -17,14 +17,17 @@ namespace Themeum\TutorLMSMigrationTool;
  */
 abstract class ContentTypes {
 
-	const COURSE          = 'courses';
-	const COURSE_META     = 'course_meta';
-	const COURSE_REVIEWS  = 'reviews';
-	const COURSE_PROGRESS = 'course_progress';
+	const COURSE            = 'courses';
+	const COURSE_META       = 'course_meta';
+	const COURSE_TAXONOMIES = 'course_taxonomies';
+	const COURSE_REVIEWS    = 'reviews';
+	const COURSE_PROGRESS   = 'course_progress';
+	const ENROLLMENTS       = 'enrollments';
 
-	const SALES       = 'sales';
-	const ORDERS      = 'orders';
-	const WC_PRODUCTS = 'wc_products';
+	const SALES         = 'sales';
+	const ORDERS        = 'orders';
+	const SUBSCRIPTIONS = 'subscriptions';
+	const WC_PRODUCTS   = 'wc_products';
 
 	const LESSON      = 'lesson';
 	const LESSON_META = 'lesson_meta';

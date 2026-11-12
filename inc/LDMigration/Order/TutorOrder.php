@@ -65,12 +65,15 @@ class TutorOrder implements Order {
 	 */
 	public function migrate( $order, $course_id ) {
 		$course_data = get_post_meta( $course_id, '_sfwd-courses', true );
+		$price       = ( is_array( $course_data ) && isset( $course_data['sfwd-courses_course_price'] ) )
+			? $course_data['sfwd-courses_course_price']
+			: 0;
 
 		$args = $this->get_payment_payloads( $order );
 
 		$item = array(
 			'item_id'        => $course_id,
-			'regular_price'  => $course_data['sfwd-courses_course_price'],
+			'regular_price'  => $price,
 			'sale_price'     => null,
 			'discount_price' => null,
 		);
@@ -165,10 +168,10 @@ class TutorOrder implements Order {
 		global $wpdb;
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE wp_posts, wp_postmeta
-				FROM wp_posts
-				INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
-				WHERE ID = '%d' ",
+				"DELETE p, pm
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				WHERE p.ID = %d",
 				$order_id
 			)
 		);

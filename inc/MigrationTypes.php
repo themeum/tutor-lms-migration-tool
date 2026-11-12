@@ -20,4 +20,7 @@ abstract class MigrationTypes {
 	const LD_TO_TUTOR  = 'learndash_to_tutor';
 	const LP_TO_TUTOR  = 'learnpress_to_tutor';
 	const LIF_TO_TUTOR = 'lifter_to_tutor';
+
+	// sales data migration types.
+	const WC_TO_NATIVE = 'woocommerce_to_native';
 }
