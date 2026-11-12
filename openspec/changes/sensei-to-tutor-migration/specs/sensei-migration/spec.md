@@ -14,7 +14,7 @@ The system SHALL register a dedicated Sensei LMS migration tab under the Tutor L
 - **THEN** the Sensei LMS Migration subpage is visible with total course, order, review, and enrollment counts
 
 #### Scenario: Unauthorized access attempt
-- **WHEN** a user without `manage_options` or `publish_tutor_courses` attempts to access the Sensei migration screen or trigger AJAX endpoints
+- **WHEN** a user without `manage_options` attempts to access the Sensei migration screen or trigger AJAX endpoints
 - **THEN** the request is rejected with a JSON authorization error
 
 ### Requirement: Sensei Teacher to Tutor Instructor Role Conversion
