@@ -2,11 +2,11 @@
 
 ## 1. Feature 1: UI Scaffolding, Discovery & Teacher Role Conversion
 
-- [ ] 1.1 Register Sensei LMS constant in `inc/MigrationTypes.php` (`SENSEI_TO_TUTOR = 'sensei_to_tutor'`) and hook Sensei tool page in `classes/TutorLMSMigrationTool.php` and verify menu tab appears under `admin.php?page=tutor-tools` when Sensei is active.
-- [ ] 1.2 Implement Sensei item counting methods in `classes/Utils.php` (`sensei_course_count`, `sensei_orders_count`, `sensei_reviews_count`) and verify counts match actual Sensei database records via WP-CLI or unit test.
-- [ ] 1.3 Create Sensei migration view template in `views/migration_sensei.php` following Tutor LMS design tokens (progress bars, spinners, action buttons) and verify visual rendering matches Tutor design standards.
-- [ ] 1.4 Implement Sensei teacher role migration in `tutor-lms-migration-tool.php` and `classes/Utils.php` (converting role `teacher` to `tutor_instructor` with approved status on login and bulk conversion method) and verify role transition.
-- [ ] 1.5 Conduct security audit for Feature 1 (validate nonces with `tutor_utils()->checking_nonce()`, ensure `current_user_can('manage_options')` checks, sanitize inputs) and verify LearnDash, LearnPress, and LifterLMS screens remain unaffected.
+- [x] 1.1 Register Sensei LMS constant in `inc/MigrationTypes.php` (`SENSEI_TO_TUTOR = 'sensei_to_tutor'`) and hook Sensei tool page in `classes/TutorLMSMigrationTool.php` and verify menu tab appears under `admin.php?page=tutor-tools` when Sensei is active.
+- [x] 1.2 Implement Sensei item counting methods in `classes/Utils.php` (`sensei_course_count`, `sensei_orders_count`, `sensei_reviews_count`) and verify counts match actual Sensei database records via WP-CLI or unit test.
+- [x] 1.3 Create Sensei migration view template in `views/migration_sensei.php` following Tutor LMS design tokens (progress bars, spinners, action buttons) and verify visual rendering matches Tutor design standards.
+- [x] 1.4 Implement Sensei teacher role migration in `tutor-lms-migration-tool.php` and `classes/Utils.php` (converting role `teacher` to `tutor_instructor` with approved status on login and bulk conversion method) and verify role transition.
+- [x] 1.5 Conduct security audit for Feature 1 (validate nonces with `tutor_utils()->checking_nonce()`, ensure `current_user_can('manage_options')` checks, sanitize inputs) and verify LearnDash, LearnPress, and LifterLMS screens remain unaffected.
 
 ## 2. Feature 2: Course & Module-to-Topic Hierarchy Migration
 

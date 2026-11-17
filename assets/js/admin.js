@@ -75,6 +75,10 @@ jQuery(document).ready(function ($) {
             final_types = 'lif';
             migration_vendor = 'lif';
         }
+        if($that.attr('action') == 'sensei_migrate_all_data_to_tutor') {
+            final_types = 'sensei';
+            migration_vendor = 'sensei';
+        }
 
         $.ajax({
             url: ajaxurl,
@@ -121,14 +125,14 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             data: $formData + '&migrate_type=orders',
             beforeSend: function (XMLHttpRequest) {
-                get_live_progress_course_migrating_info();
+                get_live_progress_course_migrating_info(final_types);
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_spin');
                 order_migration_progress_bar(final_types);
             },
             success: function (data) {
                 $('#sectionOrders').find('.j-spinner').addClass('tmtl_done');
                 order_migration_progress_bar(true);
-                migrate_reviews($formData);
+                migrate_reviews($formData, final_types);
             },
             complete: function () {
                 clearTimeout(countReviewsProgress);
@@ -156,13 +160,13 @@ jQuery(document).ready(function ($) {
             countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, cmplete);
         }
     }
-    function migrate_reviews($formData) {
+    function migrate_reviews($formData, final_types = 'lp') {
         $.ajax({
             url: ajaxurl,
             type: 'POST',
             data: $formData + '&migrate_type=reviews',
             beforeSend: function (XMLHttpRequest) {
-                get_live_progress_course_migrating_info();
+                get_live_progress_course_migrating_info(final_types);
                 $('#sectionReviews').find('.j-spinner').addClass('tmtl_spin');
                 reviews_migration_progress_bar();
             },

@@ -74,9 +74,124 @@ class Utils {
      * @return void
      */
     public static function check_course_access(){
-        if ( ! current_user_can( 'publish_tutor_courses' ) ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
 	        wp_send_json( array( 'success'=> false, 'message' => tutor_utils()->error_message() ) );
         }
     }
+
+	/**
+	 * Sensei LMS functions.
+	 */
+	public function sensei_course_count() {
+		global $wpdb;
+		return (int) $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'course' AND post_status = 'publish';" );
+	}
+
+	public function sensei_orders_count() {
+		global $wpdb;
+		if ( function_exists( 'WC' ) || class_exists( 'WooCommerce' ) ) {
+			$product_ids = $wpdb->get_col(
+				"SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_course_woocommerce_product' AND meta_value != '' AND meta_value != '0'"
+			);
+			if ( ! empty( $product_ids ) ) {
+				$placeholders         = implode( ',', array_fill( 0, count( $product_ids ), '%d' ) );
+				$order_items_table    = $wpdb->prefix . 'woocommerce_order_items';
+				$order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+				$table_exists         = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_items_table ) );
+				if ( $table_exists ) {
+					return (int) $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT COUNT(DISTINCT oi.order_id)
+							FROM {$order_items_table} oi
+							INNER JOIN {$order_itemmeta_table} oim ON oi.order_item_id = oim.order_item_id
+							WHERE oim.meta_key IN ('_product_id', '_variation_id')
+							AND oim.meta_value IN ($placeholders)",
+							$product_ids
+						)
+					);
+				}
+			}
+		}
+		return 0;
+	}
+
+	public function sensei_reviews_count() {
+		global $wpdb;
+		return (int) $wpdb->get_var(
+			"SELECT COUNT(c.comment_ID)
+			FROM {$wpdb->comments} c
+			INNER JOIN {$wpdb->posts} p ON c.comment_post_ID = p.ID
+			WHERE p.post_type = 'course'
+			AND c.comment_type NOT LIKE 'sensei_%'
+			AND c.comment_approved = '1'"
+		);
+	}
+
+	/**
+	 * Sensei teacher role slug.
+	 *
+	 * @return string
+	 */
+	public static function get_sensei_teacher_role() {
+		return 'teacher';
+	}
+
+	/**
+	 * Convert a Sensei teacher into an approved Tutor instructor.
+	 *
+	 * @param int|\WP_User $user User ID or WP_User.
+	 * @return bool True when conversion ran.
+	 */
+	public static function convert_sensei_teacher_to_tutor_instructor( $user ) {
+		if ( ! ( $user instanceof \WP_User ) ) {
+			$user = new \WP_User( (int) $user );
+		}
+
+		if ( ! $user->exists() ) {
+			return false;
+		}
+
+		$teacher_role = self::get_sensei_teacher_role();
+		if ( ! in_array( $teacher_role, (array) $user->roles, true ) ) {
+			return false;
+		}
+
+		$user->remove_role( $teacher_role );
+
+		if ( function_exists( 'tutor_utils' ) ) {
+			tutor_utils()->add_instructor_role( $user->ID );
+			return true;
+		}
+
+		$user->add_role( 'tutor_instructor' );
+		update_user_meta( $user->ID, '_is_tutor_instructor', time() );
+		update_user_meta( $user->ID, '_tutor_instructor_status', 'approved' );
+		update_user_meta( $user->ID, '_tutor_instructor_approved', time() );
+
+		return true;
+	}
+
+	/**
+	 * Convert all Sensei teachers to Tutor instructors.
+	 *
+	 * @return int Number of users converted.
+	 */
+	public static function convert_all_sensei_teachers_to_tutor_instructors() {
+		$users = get_users(
+			array(
+				'role'   => self::get_sensei_teacher_role(),
+				'fields' => 'ID',
+			)
+		);
+
+		$converted = 0;
+		foreach ( $users as $user_id ) {
+			if ( self::convert_sensei_teacher_to_tutor_instructor( $user_id ) ) {
+				++$converted;
+			}
+		}
+
+		return $converted;
+	}
 
 }

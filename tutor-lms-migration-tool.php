@@ -154,4 +154,21 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 			2
 		);
 	}
+
+	// Migrate Sensei Teacher to Tutor Instructor.
+	$sensei_migration_history = $utils->fetch_history( 'sensei' );
+
+	if ( count( $sensei_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function( $user_login, $user ) {
+				// We want $user.
+				if ( in_array( 'teacher', (array) $user->roles, true ) ) {
+					Utils::convert_sensei_teacher_to_tutor_instructor( $user );
+				}
+			},
+			10,
+			2
+		);
+	}
 }

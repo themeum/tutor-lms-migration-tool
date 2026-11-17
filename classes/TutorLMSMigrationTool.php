@@ -223,6 +223,9 @@ final class TutorLMSMigrationTool {
 		if ( is_plugin_active( 'lifterlms/lifterlms.php' ) ) {
 			$this->classes[] = 'LIFtoTutorMigration';
 		}
+		if ( is_plugin_active( 'sensei-lms/sensei-lms.php' ) || class_exists( 'Sensei_Main' ) || defined( 'SENSEI_LMS_VERSION' ) ) {
+			$this->classes[] = 'SenseiToTutorMigration';
+		}
 	}
 
 	/**
@@ -273,12 +276,14 @@ final class TutorLMSMigrationTool {
 	public function plugin_action_links( $actions ) {
 		if ( defined( 'LP_PLUGIN_FILE' ) ) {
 			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lp">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
+		} elseif ( defined( 'LEARNDASH_VERSION' ) ) {
+			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_ld">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
+		} elseif ( defined( 'LLMS_VERSION' ) ) {
+			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_lif">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
+		} elseif ( defined( 'SENSEI_LMS_VERSION' ) || class_exists( 'Sensei_Main' ) ) {
+			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_sensei">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
 		} else {
-			if ( defined( 'LEARNDASH_VERSION' ) ) {
-				$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=migration_ld">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
-			} else {
-				$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=tutor_pages">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
-			}
+			$actions['settings'] = '<a href="admin.php?page=tutor-tools&sub_page=tutor_pages">' . __( 'Settings', 'tutor-lms-migration-tool' ) . '</a>';
 		}
 		return $actions;
 	}
