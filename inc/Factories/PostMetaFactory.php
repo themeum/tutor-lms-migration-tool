@@ -18,6 +18,8 @@ use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\CourseMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\LessonMeta;
 use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\QuizMeta;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\CourseMeta as SenseiCourseMeta;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\LessonMeta as SenseiLessonMeta;
 
 /**
  * Create the post meta objects based on migration type and meta type
@@ -48,6 +50,16 @@ abstract class PostMetaFactory {
 						return new QuizMeta();
 					case ContentTypes::ASSIGNMENT_META:
 						return new AssignmentMeta();
+					default:
+						break;
+				}
+				break;
+			case MigrationTypes::SENSEI_TO_TUTOR:
+				switch ( $meta_type ) {
+					case ContentTypes::COURSE_META:
+						return new SenseiCourseMeta();
+					case ContentTypes::LESSON_META:
+						return new SenseiLessonMeta();
 					default:
 						break;
 				}

@@ -10,11 +10,11 @@
 
 ## 2. Feature 2: Course & Module-to-Topic Hierarchy Migration
 
-- [ ] 2.1 Implement `inc/SenseiMigration/CourseTaxonomies.php` to migrate `course-category` and `lesson-tag` into Tutor course categories and tags and verify taxonomy term relationships in database.
-- [ ] 2.2 Implement `inc/SenseiMigration/CourseMeta.php` conforming to `Interfaces\PostMeta` for course prerequisites, video embeds, and featured status, and register it in `inc/Factories/PostMetaFactory.php`.
-- [ ] 2.3 Implement Sensei module extractor transforming `module` taxonomy terms to `topics` post objects parented to the migrated course and verify menu order preservation.
-- [ ] 2.4 Add courses batch AJAX endpoint in `classes/SenseiToTutorMigration.php` and batch loop runner in `assets/js/admin.js` and verify courses migrate in chunked batches with real-time UI progress updates.
-- [ ] 2.5 Conduct security audit for Feature 2 (audit SQL `$wpdb->prepare`, sanitize all POST parameters, verify post ownership capabilities) and verify regression safety for existing LMS course migrators.
+- [x] 2.1 Implement `inc/SenseiMigration/CourseTaxonomies.php` to migrate `course-category` and `lesson-tag` into Tutor course categories and tags and verify taxonomy term relationships in database.
+- [x] 2.2 Implement `inc/SenseiMigration/CourseMeta.php` conforming to `Interfaces\PostMeta` for course prerequisites, video embeds, and featured status, and register it in `inc/Factories/PostMetaFactory.php`.
+- [x] 2.3 Implement Sensei module extractor transforming `module` taxonomy terms to `topics` post objects parented to the migrated course and verify menu order preservation.
+- [x] 2.4 Add courses batch AJAX endpoint in `classes/SenseiToTutorMigration.php` and batch loop runner in `assets/js/admin.js` and verify courses migrate in chunked batches with real-time UI progress updates.
+- [x] 2.5 Conduct security audit for Feature 2 (audit SQL `$wpdb->prepare`, sanitize all POST parameters, verify post ownership capabilities) and verify regression safety for existing LMS course migrators.
 
 ## 3. Feature 3: Lesson & Lesson Metadata Migration
 

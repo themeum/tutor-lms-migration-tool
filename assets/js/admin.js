@@ -80,10 +80,43 @@ jQuery(document).ready(function ($) {
             migration_vendor = 'sensei';
         }
 
+        function run_sensei_course_batch() {
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: $formData + '&migrate_type=courses&batch=1&batch_size=10',
+                success: function (response) {
+                    if (response && response.success && response.data && response.data.has_more) {
+                        run_sensei_course_batch();
+                    } else {
+                        $('#sectionCourse').find('.j-spinner').addClass('tmtl_done');
+                        migration_progress_bar(true);
+                        clearTimeout(countReviewsProgress);
+                        clearTimeout(checkProgress);
+                        clearTimeout(countProgress);
+                        $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
+                        $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+                        migrate_orders($formData, final_types);
+                    }
+                },
+                error: function () {
+                    $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
+                    clearTimeout(countReviewsProgress);
+                    clearTimeout(checkProgress);
+                    clearTimeout(countProgress);
+                }
+            });
+        }
+
+        var courseReqData = $formData + '&migrate_type=courses';
+        if (final_types === 'sensei') {
+            courseReqData += '&batch=1&batch_size=10';
+        }
+
         $.ajax({
             url: ajaxurl,
             type: 'POST',
-            data: $formData + '&migrate_type=courses',
+            data: courseReqData,
             beforeSend: function (XMLHttpRequest) {
                 migrateBtn.attr('disabled', 'disabled');
                 $('.tutor-progress').attr('style', '--tutor-progress : 0% ').hide().attr('data-percent', 0);
@@ -92,16 +125,22 @@ jQuery(document).ready(function ($) {
                 migration_progress_bar();
             },
             success: function (data) {
+                if (final_types === 'sensei' && data && data.success && data.data && data.data.has_more) {
+                    run_sensei_course_batch();
+                    return;
+                }
                 $('#sectionCourse').find('.j-spinner').addClass('tmtl_done');
                 migration_progress_bar(true);
                 migrate_orders($formData, final_types);
             },
             complete: function () {
-                clearTimeout(countReviewsProgress);
-                clearTimeout(checkProgress);
-                clearTimeout(countProgress);
-                $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
-                $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+                if (final_types !== 'sensei') {
+                    clearTimeout(countReviewsProgress);
+                    clearTimeout(checkProgress);
+                    clearTimeout(countProgress);
+                    $('#sectionCourse').find('.j-spinner').removeClass('tmtl_spin');
+                    $.post(ajaxurl, { action: 'tlmt_reset_migrated_items_count' });
+                }
             }
         });
     });
