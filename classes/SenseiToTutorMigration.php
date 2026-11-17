@@ -8,8 +8,14 @@
  * @since 2.3.0
  */
 
+use Themeum\TutorLMSMigrationTool\Factories\OrderFactory;
+use Themeum\TutorLMSMigrationTool\Factories\ProductFactory;
+use Themeum\TutorLMSMigrationTool\Factories\ReviewFactory;
+use Themeum\TutorLMSMigrationTool\Factories\StudentProgressFactory;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\SenseiMigration\CourseTaxonomies;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\Enrollments;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\Quizzes\QuizMigrator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -219,6 +225,9 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			$modules             = $this->get_course_modules( $course_id );
 			$topic_order         = 0;
 			$migrated_lesson_ids = array();
+			$migrated_quiz_ids   = array();
+			$quiz_migrator       = new QuizMigrator();
+			$last_topic_id       = 0;
 
 			// 1. Module to Topic transformation
 			if ( ! empty( $modules ) ) {
@@ -244,8 +253,9 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 						continue;
 					}
 
-					$lessons      = $this->get_module_lessons_for_course( $course_id, (int) $module_term->term_id );
-					$lesson_order = 0;
+					$last_topic_id = (int) $topic_id;
+					$lessons       = $this->get_module_lessons_for_course( $course_id, (int) $module_term->term_id );
+					$lesson_order  = 0;
 
 					foreach ( $lessons as $lesson ) {
 						$lesson_id             = (int) $lesson->ID;
@@ -269,6 +279,14 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 						update_post_meta( $lesson_id, '_tutor_course_id_for_lesson', $course_id );
 
 						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::SENSEI_TO_TUTOR );
+
+						// Migrate lesson quiz if present
+						$quiz_id = $this->get_lesson_quiz_id( $lesson_id );
+						if ( $quiz_id > 0 ) {
+							$migrated_quiz_ids[] = $quiz_id;
+							$lesson_order++;
+							$quiz_migrator->migrate( $quiz_id, $topic_id, $course_id, $lesson_id, $lesson_order );
+						}
 					}
 				}
 			}
@@ -290,7 +308,8 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				);
 
 				if ( $default_topic_id && ! is_wp_error( $default_topic_id ) ) {
-					$orphan_order = 0;
+					$last_topic_id = (int) $default_topic_id;
+					$orphan_order  = 0;
 					foreach ( $orphan_lessons as $orphan_lesson ) {
 						$orphan_id = (int) $orphan_lesson->ID;
 						$orphan_order++;
@@ -312,6 +331,42 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 						update_post_meta( $orphan_id, '_tutor_course_id_for_lesson', $course_id );
 
 						do_action( 'tlmt_lesson_migrated', $orphan_id, MigrationTypes::SENSEI_TO_TUTOR );
+
+						// Migrate orphan lesson quiz if present
+						$quiz_id = $this->get_lesson_quiz_id( $orphan_id );
+						if ( $quiz_id > 0 ) {
+							$migrated_quiz_ids[] = $quiz_id;
+							$orphan_order++;
+							$quiz_migrator->migrate( $quiz_id, $default_topic_id, $course_id, $orphan_id, $orphan_order );
+						}
+					}
+				}
+			}
+
+			// 3. Standalone quizzes directly under the course
+			$standalone_quizzes = $this->get_standalone_quizzes_for_course( $course_id, $migrated_quiz_ids );
+			if ( ! empty( $standalone_quizzes ) ) {
+				$target_topic_id = $last_topic_id;
+				if ( ! $target_topic_id ) {
+					$target_topic_id = wp_insert_post(
+						array(
+							'post_type'    => 'topics',
+							'post_title'   => __( 'Quizzes', 'tutor-lms-migration-tool' ),
+							'post_content' => '',
+							'post_status'  => 'publish',
+							'post_author'  => $course->post_author,
+							'post_parent'  => $course_id,
+							'menu_order'   => ++$topic_order,
+						)
+					);
+				}
+
+				if ( $target_topic_id && ! is_wp_error( $target_topic_id ) ) {
+					$quiz_order = 100;
+					foreach ( $standalone_quizzes as $standalone_quiz ) {
+						$s_id = (int) $standalone_quiz->ID;
+						$quiz_order++;
+						$quiz_migrator->migrate( $s_id, (int) $target_topic_id, $course_id, 0, $quiz_order );
 					}
 				}
 			}
@@ -332,7 +387,20 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			// 5. Fire course migrated hook for PostMetaFactory CourseMeta
 			do_action( 'tlmt_course_migrated', $course_id, MigrationTypes::SENSEI_TO_TUTOR );
 
-			// 6. Mark course as migrated from Sensei
+			// 6. Monetization Product Attachment
+			$monetize_by      = function_exists( 'tutils' ) ? tutils()->get_option( 'monetize_by' ) : 'wc';
+			$product_migrator = ProductFactory::create( MigrationTypes::SENSEI_TO_TUTOR, $monetize_by );
+			$product_migrator->attach( $course_id );
+
+			// 7. Student Enrollments
+			$enrollments = new Enrollments();
+			$enrollments->migrate_course_enrollments( $course_id );
+
+			// 8. Student Progress (Lesson completions + Quiz attempts)
+			$progress_migrator = StudentProgressFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
+			$progress_migrator->migrate( $course_id );
+
+			// 9. Mark course as migrated from Sensei
 			update_post_meta( $course_id, '_was_sensei_course', true );
 
 			return true;
@@ -494,7 +562,72 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 		}
 
 		/**
-		 * Scaffold order migration handler
+		 * Get quiz ID associated with a lesson.
+		 *
+		 * @param int $lesson_id Lesson post ID.
+		 * @return int Quiz post ID or 0.
+		 */
+		private function get_lesson_quiz_id( int $lesson_id ): int {
+			$quiz_id = (int) get_post_meta( $lesson_id, '_lesson_quiz', true );
+			if ( $quiz_id > 0 ) {
+				return $quiz_id;
+			}
+
+			$quizzes = get_posts(
+				array(
+					'post_type'      => array( 'quiz', tutor()->quiz_post_type ),
+					'post_status'    => 'any',
+					'posts_per_page' => 1,
+					'meta_query'     => array(
+						array(
+							'key'   => '_quiz_lesson',
+							'value' => $lesson_id,
+						),
+					),
+				)
+			);
+
+			if ( ! empty( $quizzes ) ) {
+				return (int) $quizzes[0]->ID;
+			}
+
+			return 0;
+		}
+
+		/**
+		 * Get standalone quizzes associated with a course.
+		 *
+		 * @param int   $course_id Course post ID.
+		 * @param array $already_migrated_ids Quiz IDs already migrated.
+		 * @return array
+		 */
+		private function get_standalone_quizzes_for_course( int $course_id, array $already_migrated_ids ): array {
+			$quizzes = get_posts(
+				array(
+					'post_type'      => array( 'quiz', tutor()->quiz_post_type ),
+					'post_status'    => 'any',
+					'posts_per_page' => -1,
+					'meta_query'     => array(
+						array(
+							'key'   => '_quiz_course',
+							'value' => $course_id,
+						),
+					),
+				)
+			);
+
+			$standalone = array();
+			foreach ( $quizzes as $quiz ) {
+				if ( ! in_array( (int) $quiz->ID, $already_migrated_ids, true ) ) {
+					$standalone[] = $quiz;
+				}
+			}
+
+			return $standalone;
+		}
+
+		/**
+		 * Sensei orders migration handler
 		 *
 		 * @return void
 		 */
@@ -502,27 +635,49 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
+			$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
+			$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : 50;
+
+			$order_migrator = OrderFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
+			$result         = $order_migrator->migrate( $offset, $limit );
+
 			wp_send_json_success(
 				array(
-					'step'     => 'orders',
-					'migrated' => 0,
+					'step'      => 'orders',
+					'migrated'  => $result['migrated'],
+					'remaining' => $result['remaining'],
+					'has_more'  => $result['has_more'],
 				)
 			);
 		}
 
 		/**
-		 * Scaffold reviews migration handler
+		 * Sensei reviews migration handler
 		 *
 		 * @return void
 		 */
 		public function migrate_sensei_reviews() {
+			global $wpdb;
+
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
+			$review_migrator = ReviewFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
+			$migrated        = $review_migrator->migrate( 0 );
+
+			$total_courses = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = %s",
+					tutor()->course_post_type
+				)
+			);
+
 			wp_send_json_success(
 				array(
-					'step'     => 'reviews',
-					'migrated' => 0,
+					'step'             => 'reviews',
+					'migrated'         => $migrated,
+					'totalCourseCount' => $total_courses > 0 ? $total_courses : 1,
+					'failed'           => array(),
 				)
 			);
 		}

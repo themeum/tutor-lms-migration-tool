@@ -25,28 +25,28 @@
 
 ## 4. Feature 4: Quiz & Question Types Migration
 
-- [ ] 4.1 Implement `inc/SenseiMigration/Quizzes/QuizMigrator.php` converting Sensei `quiz` posts to `tutor_quiz` posts parented by topics or lessons with passing grade, time limit, and retry settings, and verify quiz metadata.
-- [ ] 4.2 Implement `inc/SenseiMigration/Quizzes/QuestionMigrator.php` mapping Sensei questions to `wp_tutor_quiz_questions` for `multiple-choice`, `boolean`, `single-line`, and `multi-line` types and verify question insertion.
-- [ ] 4.3 Implement `inc/SenseiMigration/Quizzes/FillInBlanksTransformer.php` transforming Sensei gap-fill brackets into Tutor LMS `fill_in_the_blank` answer format and verify blank parsing.
-- [ ] 4.4 Implement `file-upload` question type migration and insert question answer options into `wp_tutor_quiz_question_answers` and verify quizzes load and function properly in Tutor course builder.
-- [ ] 4.5 Conduct security audit for Feature 4 (parameterize all question answer SQL inserts, sanitize question title/content, escape outputs) and verify regression safety for existing quiz migrators.
+- [x] 4.1 Implement `inc/SenseiMigration/Quizzes/QuizMigrator.php` converting Sensei `quiz` posts to `tutor_quiz` posts parented by topics or lessons with passing grade, time limit, and retry settings, and verify quiz metadata.
+- [x] 4.2 Implement `inc/SenseiMigration/Quizzes/QuestionMigrator.php` mapping Sensei questions to `wp_tutor_quiz_questions` for `multiple-choice`, `boolean`, `single-line`, and `multi-line` types and verify question insertion.
+- [x] 4.3 Implement `inc/SenseiMigration/Quizzes/FillInBlanksTransformer.php` transforming Sensei gap-fill brackets into Tutor LMS `fill_in_the_blank` answer format and verify blank parsing.
+- [x] 4.4 Implement `file-upload` question type migration and insert question answer options into `wp_tutor_quiz_question_answers` and verify quizzes load and function properly in Tutor course builder.
+- [x] 4.5 Conduct security audit for Feature 4 (parameterize all question answer SQL inserts, sanitize question title/content, escape outputs) and verify regression safety for existing quiz migrators.
 
 ## 5. Feature 5: Student Enrollments & Progress Migration
 
-- [ ] 5.1 Implement `inc/SenseiMigration/Enrollments.php` to migrate course enrollments into `tutor_enrolled` posts in batches of 50 and verify student course access.
-- [ ] 5.2 Implement `inc/SenseiMigration/StudentProgress.php` conforming to `Interfaces\StudentProgress` and register in `inc/Factories/StudentProgressFactory.php` with dual-source support (tables + legacy comments) and verify lesson completion comments.
-- [ ] 5.3 Implement student quiz submission and attempt migration into `wp_tutor_quiz_attempts` and `wp_tutor_quiz_attempt_answers` and verify student grade reports.
-- [ ] 5.4 Connect enrollment and progress batch AJAX actions in `assets/js/admin.js` and `classes/SenseiToTutorMigration.php` and verify progress bar animates accurately from 0% to 100%.
-- [ ] 5.5 Conduct security audit for Feature 5 (validate student user IDs, verify authorization for progress endpoints, protect against user impersonation) and verify regression safety for LD/LP/LIF enrollments.
+- [x] 5.1 Implement `inc/SenseiMigration/Enrollments.php` to migrate course enrollments into `tutor_enrolled` posts in batches of 50 and verify student course access.
+- [x] 5.2 Implement `inc/SenseiMigration/StudentProgress.php` conforming to `Interfaces\StudentProgress` and register in `inc/Factories/StudentProgressFactory.php` with dual-source support (tables + legacy comments) and verify lesson completion comments.
+- [x] 5.3 Implement student quiz submission and attempt migration into `wp_tutor_quiz_attempts` and `wp_tutor_quiz_attempt_answers` and verify student grade reports.
+- [x] 5.4 Connect enrollment and progress batch AJAX actions in `assets/js/admin.js` and `classes/SenseiToTutorMigration.php` and verify progress bar animates accurately from 0% to 100%.
+- [x] 5.5 Conduct security audit for Feature 5 (validate student user IDs, verify authorization for progress endpoints, protect against user impersonation) and verify regression safety for LD/LP/LIF enrollments.
 
 ## 6. Feature 6: Monetization, Orders & WooCommerce Linking
 
-- [ ] 6.1 Implement `inc/SenseiMigration/Product/WCProduct.php` conforming to `Interfaces\Product` and register in `inc/Factories/ProductFactory.php` to map Sensei WooCommerce products (`_course_woocommerce_product`) to Tutor course meta.
-- [ ] 6.2 Implement `inc/SenseiMigration/Product/NativePricing.php` for Tutor native pricing configuration when Tutor monetization is active.
-- [ ] 6.3 Implement `inc/SenseiMigration/Orders/OrderMigrator.php`, `inc/SenseiMigration/Orders/StatusMapper.php`, and `inc/SenseiMigration/Orders/PaymentMethodMapper.php` registered in `inc/Factories/OrderFactory.php` to migrate single course orders into `tutor_orders` without duplicate enrollment triggers.
-- [ ] 6.4 Implement `inc/SenseiMigration/Reviews.php` registered in `inc/Factories/ReviewFactory.php` to migrate course reviews to `tutor_course_rating`.
-- [ ] 6.5 Integrate orders and reviews steps into `classes/SenseiToTutorMigration.php` and `assets/js/admin.js` and verify end-to-end multi-step migration sequence (`courses` -> `enrollments` -> `orders` -> `reviews`).
-- [ ] 6.6 Conduct security audit for Feature 6 (validate price conversions, verify checkout access capabilities, sanitize product IDs) and verify zero interference with WooCommerce orders and payments.
+- [x] 6.1 Implement `inc/SenseiMigration/Product/WCProduct.php` conforming to `Interfaces\Product` and register in `inc/Factories/ProductFactory.php` to map Sensei WooCommerce products (`_course_woocommerce_product`) to Tutor course meta.
+- [x] 6.2 Implement `inc/SenseiMigration/Product/NativePricing.php` for Tutor native pricing configuration when Tutor monetization is active.
+- [x] 6.3 Implement `inc/SenseiMigration/Orders/OrderMigrator.php`, `inc/SenseiMigration/Orders/StatusMapper.php`, and `inc/SenseiMigration/Orders/PaymentMethodMapper.php` registered in `inc/Factories/OrderFactory.php` to migrate single course orders into `tutor_orders` without duplicate enrollment triggers.
+- [x] 6.4 Implement `inc/SenseiMigration/Reviews.php` registered in `inc/Factories/ReviewFactory.php` to migrate course reviews to `tutor_course_rating`.
+- [x] 6.5 Integrate orders and reviews steps into `classes/SenseiToTutorMigration.php` and `assets/js/admin.js` and verify end-to-end multi-step migration sequence (`courses` -> `enrollments` -> `orders` -> `reviews`).
+- [x] 6.6 Conduct security audit for Feature 6 (validate price conversions, verify checkout access capabilities, sanitize product IDs) and verify zero interference with WooCommerce orders and payments.
 
 ## 7. Comprehensive Integration, Regression & Acceptance Verification
 
