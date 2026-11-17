@@ -5,7 +5,7 @@ Tags: lms, migration, course, elearning, education
 Requires at least: 5.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 2.2.2
+Stable tag: 2.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ Move all your course, quiz, order data information and everything else from your
 == Description ==
 Migrate to [Tutor LMS](https://www.themeum.com/product/tutor-lms/) for a better, richer, and smarter [eLearning](https://wordpress.org/plugins/tutor/) experience. 
 
-If you are using the LearnDash, LearnPress, or LifterLMS plugin and want to migrate to Tutor LMS, this plugin can help you migrate without losing your valuable data (Courses, Lessons, Quizzes, Sales Data, Reviews, Students, Instructors, Course Enrollment and Course Complete Status).
+If you are using the LearnDash, LearnPress, LifterLMS, or Sensei LMS plugin and want to migrate to Tutor LMS, this plugin can help you migrate without losing your valuable data (Courses, Lessons, Quizzes, Sales Data, Reviews, Students, Instructors, Course Enrollment and Course Complete Status).
 
 No need to hassle with complicated migration settings when you can use Tutor LMS Migration Tool with its easy user interface. With its simple one-click auto migration settings you can have all the information from your old LMS plugin transferred without any database error.
 
@@ -27,6 +27,7 @@ Currently Tutor LMS Migration support migration options from
 * LearnPress
 * LearnDash
 * LifterLMS
+* Sensei LMS
 
 = Pre-requisites =
 
@@ -111,6 +112,16 @@ We will add others LMS migration to this plugin, so you can migrate it. Or if yo
 4. Error Alert
 
 == Changelog ==
+
+= 2.3.0 - 17 November, 2026 =
+
+* New: Sensei LMS to Tutor LMS migration support added.
+* New: Sensei courses, modules, and taxonomies (course-category, tags) migration to Tutor LMS courses, topics, and categories.
+* New: Sensei lessons and metadata (duration, preview status, video embeds) migration.
+* New: Sensei quizzes and question types (multiple-choice, true/false, gap-fill/fill-in-the-blank, open-ended) migration.
+* New: Sensei student course enrollments and student progress (lesson completion, quiz attempts) migration.
+* New: Sensei WooCommerce monetization, order records, and course reviews migration.
+* New: Sensei teacher role migration to Tutor LMS approved instructors.
 
 = 2.2.2 - 29 August, 2024 =
 

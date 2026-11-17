@@ -57,3 +57,14 @@ This will open up a page showing all the available plugins in WordPress. In the 
 To install Tutor LMS Migration Tool manually, you need to download the plugin and upload it to your webserver via any FTP application.
 
 The WordPress codex contains [instructions on how to do this here](https://codex.wordpress.org/Managing_Plugins#Manual_Plugin_Installation).
+
+#### Changelog
+
+##### 2.3.0 - 17 November, 2026
+* New: Sensei LMS to Tutor LMS migration support added.
+* New: Sensei courses, modules, and taxonomies (course-category, tags) migration to Tutor LMS courses, topics, and categories.
+* New: Sensei lessons and metadata (duration, preview status, video embeds) migration.
+* New: Sensei quizzes and question types (multiple-choice, true/false, gap-fill/fill-in-the-blank, open-ended) migration.
+* New: Sensei student course enrollments and student progress (lesson completion, quiz attempts) migration.
+* New: Sensei WooCommerce monetization, order records, and course reviews migration.
+* New: Sensei teacher role migration to Tutor LMS approved instructors.
