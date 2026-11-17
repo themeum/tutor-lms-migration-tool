@@ -39,8 +39,9 @@ class NativePricing implements Product {
 			$price         = get_post_meta( $product_id, '_price', true );
 
 			if ( ! empty( $price ) && is_numeric( $price ) && (float) $price > 0 ) {
+				$effective_regular = (float) $regular_price ? (float) $regular_price : (float) $price;
 				update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
-				update_post_meta( $course_id, '_course_price', (float) $regular_price ?: (float) $price );
+				update_post_meta( $course_id, '_course_price', $effective_regular );
 				if ( ! empty( $sale_price ) && is_numeric( $sale_price ) ) {
 					update_post_meta( $course_id, '_course_sale_price', (float) $sale_price );
 				}

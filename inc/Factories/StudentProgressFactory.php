@@ -40,6 +40,6 @@ abstract class StudentProgressFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid migration type for student progress', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid migration type for student progress', 'tutor-lms-migration-tool' ) );
 	}
 }

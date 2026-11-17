@@ -40,6 +40,6 @@ abstract class OrderFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid migration type for orders', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid migration type for orders', 'tutor-lms-migration-tool' ) );
 	}
 }

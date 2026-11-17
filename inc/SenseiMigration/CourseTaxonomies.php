@@ -168,7 +168,7 @@ class CourseTaxonomies {
 		if ( is_wp_error( $result ) ) {
 			$by_name = term_exists( $term->name, $destination_tax );
 			if ( $by_name ) {
-				$tutor_term_id = (int) ( is_array( $by_name ) ? $by_name['term_id'] : $by_name );
+				$tutor_term_id                                       = (int) ( is_array( $by_name ) ? $by_name['term_id'] : $by_name );
 				self::$term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
 				return $tutor_term_id;
 			}
@@ -176,7 +176,7 @@ class CourseTaxonomies {
 			return 0;
 		}
 
-		$tutor_term_id = (int) $result['term_id'];
+		$tutor_term_id                                       = (int) $result['term_id'];
 		self::$term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
 
 		return $tutor_term_id;

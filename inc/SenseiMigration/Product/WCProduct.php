@@ -42,11 +42,11 @@ class WCProduct implements Product {
 			return 0;
 		}
 
-		// Configure Tutor course monetization meta
+		// Configure Tutor course monetization meta.
 		update_post_meta( $course_id, '_tutor_course_price_type', 'paid' );
 		update_post_meta( $course_id, '_tutor_course_product_id', $product_id );
 
-		// Mark product as a Tutor-compatible product for future checkout auto-enrollment
+		// Mark product as a Tutor-compatible product for future checkout auto-enrollment.
 		update_post_meta( $product_id, '_tutor_product', 'yes' );
 
 		return $product_id;

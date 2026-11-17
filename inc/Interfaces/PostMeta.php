@@ -22,5 +22,4 @@ interface PostMeta {
 	 * @return void
 	 */
 	public function migrate( int $post_id );
-
 }

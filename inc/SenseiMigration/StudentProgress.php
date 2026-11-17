@@ -71,8 +71,9 @@ class StudentProgress implements StudentProgressInterface {
 		$migrated_count = 0;
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 
-		// Primary source: Sensei comments-based lesson progress
-		$format_ids  = implode( ',', array_map( 'intval', $lessons ) );
+		// Primary source: Sensei comments-based lesson progress.
+		$format_ids = implode( ',', array_map( 'intval', $lessons ) );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$completions = $wpdb->get_results(
 			"SELECT comment_ID, comment_post_ID AS lesson_id, user_id, comment_date AS completed_at
 			FROM {$wpdb->comments}
@@ -81,6 +82,7 @@ class StudentProgress implements StudentProgressInterface {
 			AND comment_approved IN ('complete', 'passed', '1', 'approved')
 			AND user_id > 0" . $user_clause
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( ! empty( $completions ) ) {
 			foreach ( $completions as $row ) {
@@ -89,7 +91,7 @@ class StudentProgress implements StudentProgressInterface {
 				$cdate = ! empty( $row->completed_at ) ? $row->completed_at : current_time( 'mysql' );
 
 				if ( $this->mark_lesson_complete( $lid, $course_id, $uid, $cdate ) ) {
-					$migrated_count++;
+					++$migrated_count;
 				}
 			}
 		}
@@ -118,7 +120,7 @@ class StudentProgress implements StudentProgressInterface {
 			return false;
 		}
 
-		// Check if already completed
+		// Check if already completed.
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT comment_ID FROM {$wpdb->comments}
@@ -134,7 +136,7 @@ class StudentProgress implements StudentProgressInterface {
 		$time = ! empty( $completed_at ) ? strtotime( $completed_at ) : time();
 		$date = ! empty( $completed_at ) ? $completed_at : current_time( 'mysql' );
 
-		// Mark lesson complete in Tutor LMS user meta
+		// Mark lesson complete in Tutor LMS user meta.
 		update_user_meta( $user_id, '_tutor_completed_lesson_id_' . $lesson_id, $time );
 
 		if ( $exists ) {
@@ -197,7 +199,9 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $quizzes ) );
 
-		// Query Sensei quiz status comments
+		// Query Sensei quiz status comments.
+		$format_ids = implode( ',', array_map( 'intval', $quizzes ) );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$attempts = $wpdb->get_results(
 			"SELECT comment_ID, comment_post_ID AS quiz_id, user_id, comment_date AS attempt_date
 			FROM {$wpdb->comments}
@@ -205,6 +209,7 @@ class StudentProgress implements StudentProgressInterface {
 			AND comment_post_ID IN ({$format_ids})
 			AND user_id > 0" . $user_clause
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( ! empty( $attempts ) ) {
 			foreach ( $attempts as $row ) {
@@ -213,7 +218,7 @@ class StudentProgress implements StudentProgressInterface {
 				$attempt_date = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
 
 				if ( $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, (int) $row->comment_ID ) ) {
-					$migrated_count++;
+					++$migrated_count;
 				}
 			}
 		}
@@ -234,7 +239,7 @@ class StudentProgress implements StudentProgressInterface {
 	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', int $comment_id = 0 ): bool {
 		global $wpdb;
 
-		// Calculate total questions and marks for this quiz
+		// Calculate total questions and marks for this quiz.
 		$questions_data = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT COUNT(question_id) AS total_q, COALESCE(SUM(question_mark), 0) AS total_m
@@ -258,7 +263,7 @@ class StudentProgress implements StudentProgressInterface {
 			}
 		}
 
-		// Passmark threshold
+		// Passmark threshold.
 		$passmark = 80;
 		$opts     = get_post_meta( $quiz_id, 'tutor_quiz_option', true );
 		if ( ! empty( $opts['passing_grade'] ) ) {
@@ -272,20 +277,20 @@ class StudentProgress implements StudentProgressInterface {
 		$inserted = $wpdb->insert(
 			$wpdb->prefix . 'tutor_quiz_attempts',
 			array(
-				'course_id'                 => $course_id,
-				'quiz_id'                   => $quiz_id,
-				'user_id'                   => $user_id,
-				'total_questions'           => $total_questions,
-				'total_answered_questions'  => $total_questions,
-				'total_marks'               => $total_marks > 0 ? $total_marks : 100.00,
-				'earned_marks'              => $earned_marks,
-				'attempt_info'              => maybe_serialize( array() ),
-				'attempt_status'            => 'attempt_ended',
-				'attempt_ip'                => '',
-				'attempt_started_at'        => $date,
-				'attempt_ended_at'          => $date,
-				'is_manually_reviewed'      => 0,
-				'result'                    => $result,
+				'course_id'                => $course_id,
+				'quiz_id'                  => $quiz_id,
+				'user_id'                  => $user_id,
+				'total_questions'          => $total_questions,
+				'total_answered_questions' => $total_questions,
+				'total_marks'              => $total_marks > 0 ? $total_marks : 100.00,
+				'earned_marks'             => $earned_marks,
+				'attempt_info'             => maybe_serialize( array() ),
+				'attempt_status'           => 'attempt_ended',
+				'attempt_ip'               => '',
+				'attempt_started_at'       => $date,
+				'attempt_ended_at'         => $date,
+				'is_manually_reviewed'     => 0,
+				'result'                   => $result,
 			),
 			array( '%d', '%d', '%d', '%d', '%d', '%f', '%f', '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
 		);

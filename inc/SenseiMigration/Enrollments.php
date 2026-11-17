@@ -48,14 +48,14 @@ class Enrollments {
 				continue;
 			}
 
-			// Validate user exists
+			// Validate user exists.
 			if ( ! get_userdata( $user_id ) ) {
 				continue;
 			}
 
 			$enrolled = $this->enroll_student( $course_id, $user_id, $enrolled_at );
 			if ( $enrolled ) {
-				$migrated++;
+				++$migrated;
 			}
 		}
 
@@ -91,7 +91,7 @@ class Enrollments {
 			}
 
 			if ( $this->enroll_student( $course_id, $user_id, $enrolled_at ) ) {
-				$migrated++;
+				++$migrated;
 			}
 		}
 
@@ -109,7 +109,7 @@ class Enrollments {
 	public function enroll_student( int $course_id, int $user_id, string $enrolled_at = '' ): bool {
 		global $wpdb;
 
-		// Check database directly to prevent duplicate rows without polluting TutorCache
+		// Check database directly to prevent duplicate rows without polluting TutorCache.
 		$existing_id = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'tutor_enrolled' AND post_author = %d AND post_parent = %d AND post_status = 'completed' LIMIT 1",
@@ -124,10 +124,13 @@ class Enrollments {
 
 		$enrolled_date = ! empty( $enrolled_at ) ? $enrolled_at : current_time( 'mysql' );
 
+		/* translators: %s: Course title */
+		$enroll_title = sprintf( __( 'Course Enrolled - %s', 'tutor-lms-migration-tool' ), get_the_title( $course_id ) );
+
 		$enroll_id = wp_insert_post(
 			array(
 				'post_type'   => 'tutor_enrolled',
-				'post_title'  => sprintf( __( 'Course Enrolled - %s', 'tutor-lms-migration-tool' ), get_the_title( $course_id ) ),
+				'post_title'  => $enroll_title,
 				'post_status' => 'completed',
 				'post_author' => $user_id,
 				'post_parent' => $course_id,
@@ -140,7 +143,7 @@ class Enrollments {
 			update_post_meta( $enroll_id, '_tutor_enrolled_by', 'sensei_migration' );
 			update_user_meta( $user_id, '_is_tutor_student', $enrolled_date );
 
-			// Invalidate runtime cache if set previously
+			// Invalidate runtime cache if set previously.
 			if ( class_exists( '\Tutor\Cache\TutorCache' ) ) {
 				\Tutor\Cache\TutorCache::set( "tutor_is_enrolled_{$course_id}_{$user_id}_1", false );
 				\Tutor\Cache\TutorCache::set( "tutor_is_enrolled_{$course_id}_{$user_id}_", false );
@@ -180,9 +183,10 @@ class Enrollments {
 			return $results;
 		}
 
-		// 2. Custom table fallback if sensei_course_enrolment table exists
+		// 2. Custom table fallback if sensei_course_enrolment table exists.
 		$enrolment_table = $wpdb->prefix . 'sensei_course_enrolment';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $enrolment_table ) ) === $enrolment_table ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 			$table_results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT user_id, course_id, created_at AS enrolled_at
@@ -194,6 +198,7 @@ class Enrollments {
 					$limit
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 			if ( ! empty( $table_results ) ) {
 				return $table_results;
 			}

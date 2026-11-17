@@ -50,9 +50,9 @@
 
 ## 7. Comprehensive Integration, Regression & Acceptance Verification
 
-- [ ] 7.1 Execute full end-to-end migration on sample Sensei LMS course datasets and verify complete course, lesson, quiz, student, and enrollment fidelity in Tutor LMS.
-- [ ] 7.2 Run regression test suite across LearnDash, LearnPress, and LifterLMS migrator workflows and verify zero regressions or broken functionality.
-- [ ] 7.3 Run PHPCS against WordPress Coding Standards (WPCS) and VIP Go security standards across all modified and newly created files and verify 0 errors.
+- [x] 7.1 Execute full end-to-end migration on sample Sensei LMS course datasets and verify complete course, lesson, quiz, student, and enrollment fidelity in Tutor LMS.
+- [x] 7.2 Run regression test suite across LearnDash, LearnPress, and LifterLMS migrator workflows and verify zero regressions or broken functionality.
+- [x] 7.3 Run PHPCS against WordPress Coding Standards (WPCS) and VIP Go security standards across all modified and newly created files and verify 0 errors.
 
 ## Workflow follow-up
 

@@ -57,12 +57,12 @@ class QuestionMigrator {
 
 		foreach ( $questions as $question ) {
 			$question_id = (int) $question->ID;
-			$order++;
+			++$order;
 
 			$sensei_type = $this->get_sensei_question_type( $question_id );
 			$grade       = $this->get_question_grade( $question_id );
 
-			// Map type and determine single vs multi-choice
+			// Map type and determine single vs multi-choice.
 			$right_answers = (array) get_post_meta( $question_id, '_question_right_answer', true );
 			$wrong_answers = (array) get_post_meta( $question_id, '_question_wrong_answers', true );
 
@@ -91,7 +91,7 @@ class QuestionMigrator {
 			$tutor_question_id = (int) $wpdb->insert_id;
 			$this->migrate_answers( $question, $tutor_question_id, $tutor_type, $sensei_type, $right_answers, $wrong_answers );
 
-			$migrated_count++;
+			++$migrated_count;
 		}
 
 		return $migrated_count;
@@ -148,6 +148,11 @@ class QuestionMigrator {
 		$types = wp_get_post_terms( $question_id, 'question-type' );
 		if ( ! is_wp_error( $types ) && ! empty( $types ) ) {
 			return $types[0]->slug;
+		}
+
+		$meta_type = get_post_meta( $question_id, '_question_type', true );
+		if ( ! empty( $meta_type ) ) {
+			return (string) $meta_type;
 		}
 
 		return 'multiple-choice';
@@ -241,7 +246,7 @@ class QuestionMigrator {
 				);
 
 				foreach ( $options as $opt ) {
-					$ans_order++;
+					++$ans_order;
 					$wpdb->insert(
 						$wpdb->prefix . 'tutor_quiz_question_answers',
 						array(
@@ -267,7 +272,7 @@ class QuestionMigrator {
 					if ( '' === trim( (string) $ans_title ) ) {
 						continue;
 					}
-					$ans_order++;
+					++$ans_order;
 					$wpdb->insert(
 						$wpdb->prefix . 'tutor_quiz_question_answers',
 						array(
@@ -290,7 +295,7 @@ class QuestionMigrator {
 					if ( '' === trim( (string) $ans_title ) ) {
 						continue;
 					}
-					$ans_order++;
+					++$ans_order;
 					$wpdb->insert(
 						$wpdb->prefix . 'tutor_quiz_question_answers',
 						array(
@@ -311,7 +316,8 @@ class QuestionMigrator {
 
 			case 'fill_in_the_blank':
 				$right_val   = (string) get_post_meta( $question_id, '_question_right_answer', true );
-				$transformed = $this->blanks_transformer->transform( $right_val, $question->post_content ?: $question->post_title );
+				$text_source = $question->post_content ? $question->post_content : $question->post_title;
+				$transformed = $this->blanks_transformer->transform( $right_val, $text_source );
 
 				$wpdb->insert(
 					$wpdb->prefix . 'tutor_quiz_question_answers',

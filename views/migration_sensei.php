@@ -161,20 +161,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<tr>
 								<td>
 									<div class="tutor-migration-history-time tutor-fs-6 tutor-pl-24 tutor-fw-normal">
-										<?php 
-											echo esc_html( tutor_get_formated_date( get_option( 'date_format' ), $tutor_history->created_at ) ); 
-											echo ', ' . esc_html( date( 'h:i A', strtotime( $tutor_history->created_at ) ) ); 
-										?> 
-									</div>
+										<?php
+											echo esc_html( tutor_get_formated_date( get_option( 'date_format' ), $tutor_history->created_at ) );
+											echo ', ' . esc_html( gmdate( 'h:i A', strtotime( $tutor_history->created_at ) ) );
+										?>
+																			</div>
 								</td>
 								<td>
-									<?php 
+									<?php
 										$migration_type_class = '';
-										if ( 'Imported' === $tutor_history->migration_type ) {
-											$migration_type_class = 'success';
-										} elseif ( 'Exported' === $tutor_history->migration_type ) {
-											$migration_type_class = 'warning';
-										}
+									if ( 'Imported' === $tutor_history->migration_type ) {
+										$migration_type_class = 'success';
+									} elseif ( 'Exported' === $tutor_history->migration_type ) {
+										$migration_type_class = 'warning';
+									}
 									?>
 									<div class="tutor-d-flex tutor-justify-end tutor-pr-32">
 										<span class="tutor-badge-label label-<?php echo esc_attr( $migration_type_class ); ?>">

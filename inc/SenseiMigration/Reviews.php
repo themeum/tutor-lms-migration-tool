@@ -32,7 +32,8 @@ class Reviews implements Review {
 
 		$course_clause = $course_id > 0 ? $wpdb->prepare( ' AND c.comment_post_ID = %d', $course_id ) : '';
 
-		// Query comments on courses that have a rating meta or are reviews
+		// Query comments on courses that have a rating meta or are reviews.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$review_ids = $wpdb->get_col(
 			"SELECT DISTINCT c.comment_ID
 			FROM {$wpdb->comments} c
@@ -42,6 +43,7 @@ class Reviews implements Review {
 			WHERE c.comment_type IN ('review', 'comment', 'sensei_review')
 			AND c.user_id > 0" . $course_clause
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( empty( $review_ids ) ) {
 			return 0;
@@ -51,7 +53,7 @@ class Reviews implements Review {
 		foreach ( $review_ids as $comment_id ) {
 			$cid = (int) $comment_id;
 
-			// Extract rating value
+			// Extract rating value.
 			$raw_rating = get_comment_meta( $cid, 'rating', true );
 			if ( empty( $raw_rating ) ) {
 				$raw_rating = get_comment_meta( $cid, '_rating', true );
@@ -62,7 +64,7 @@ class Reviews implements Review {
 
 			$rating = is_numeric( $raw_rating ) ? max( 1, min( 5, (int) $raw_rating ) ) : 5;
 
-			// Update comment to Tutor rating type
+			// Update comment to Tutor rating type.
 			$wpdb->update(
 				$wpdb->comments,
 				array(
@@ -77,10 +79,10 @@ class Reviews implements Review {
 
 			clean_comment_cache( $cid );
 
-			// Save tutor_rating comment meta
+			// Save tutor_rating comment meta.
 			update_comment_meta( $cid, 'tutor_rating', $rating );
 
-			$migrated++;
+			++$migrated;
 		}
 
 		return $migrated;

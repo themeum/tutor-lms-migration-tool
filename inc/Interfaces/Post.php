@@ -25,5 +25,4 @@ interface Post {
 	 * @return void
 	 */
 	public function migrate( WP_Post $post, int $parent_post_id );
-
 }

@@ -107,7 +107,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 		 *
 		 * @return void
 		 */
-		public function _get_sensei_live_progress_course_migrating_info() {
+		public function _get_sensei_live_progress_course_migrating_info() { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
@@ -162,7 +162,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
-			$is_batch   = isset( $_POST['batch'] ) && '1' === (string) $_POST['batch'];
+			$is_batch   = isset( $_POST['batch'] ) && '1' === (string) sanitize_text_field( wp_unslash( $_POST['batch'] ) );
 			$batch_size = isset( $_POST['batch_size'] ) ? max( 1, (int) $_POST['batch_size'] ) : 10;
 
 			$limit_clause = $is_batch ? $wpdb->prepare( ' LIMIT %d', $batch_size ) : '';
@@ -180,7 +180,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				foreach ( $courses as $course_row ) {
 					$course_id = (int) $course_row->ID;
 					$this->migrate_course( $course_id );
-					$migrated_count++;
+					++$migrated_count;
 					update_option( '_tutor_migrated_items_count', $migrated_count );
 				}
 			}
@@ -236,7 +236,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 						continue;
 					}
 
-					$topic_order++;
+					++$topic_order;
 					$topic_id = wp_insert_post(
 						array(
 							'post_type'    => 'topics',
@@ -260,7 +260,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 					foreach ( $lessons as $lesson ) {
 						$lesson_id             = (int) $lesson->ID;
 						$migrated_lesson_ids[] = $lesson_id;
-						$lesson_order++;
+						++$lesson_order;
 
 						$wpdb->update(
 							$wpdb->posts,
@@ -280,11 +280,11 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::SENSEI_TO_TUTOR );
 
-						// Migrate lesson quiz if present
+						// Migrate lesson quiz if present.
 						$quiz_id = $this->get_lesson_quiz_id( $lesson_id );
 						if ( $quiz_id > 0 ) {
 							$migrated_quiz_ids[] = $quiz_id;
-							$lesson_order++;
+							++$lesson_order;
 							$quiz_migrator->migrate( $quiz_id, $topic_id, $course_id, $lesson_id, $lesson_order );
 						}
 					}
@@ -294,7 +294,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			// 2. Unassigned / orphan lessons fallback to "General" topic
 			$orphan_lessons = $this->get_orphan_lessons_for_course( $course_id, $migrated_lesson_ids );
 			if ( ! empty( $orphan_lessons ) ) {
-				$topic_order++;
+				++$topic_order;
 				$default_topic_id = wp_insert_post(
 					array(
 						'post_type'    => 'topics',
@@ -312,7 +312,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 					$orphan_order  = 0;
 					foreach ( $orphan_lessons as $orphan_lesson ) {
 						$orphan_id = (int) $orphan_lesson->ID;
-						$orphan_order++;
+						++$orphan_order;
 
 						$wpdb->update(
 							$wpdb->posts,
@@ -332,11 +332,11 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 						do_action( 'tlmt_lesson_migrated', $orphan_id, MigrationTypes::SENSEI_TO_TUTOR );
 
-						// Migrate orphan lesson quiz if present
+						// Migrate orphan lesson quiz if present.
 						$quiz_id = $this->get_lesson_quiz_id( $orphan_id );
 						if ( $quiz_id > 0 ) {
 							$migrated_quiz_ids[] = $quiz_id;
-							$orphan_order++;
+							++$orphan_order;
 							$quiz_migrator->migrate( $quiz_id, $default_topic_id, $course_id, $orphan_id, $orphan_order );
 						}
 					}
@@ -365,7 +365,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 					$quiz_order = 100;
 					foreach ( $standalone_quizzes as $standalone_quiz ) {
 						$s_id = (int) $standalone_quiz->ID;
-						$quiz_order++;
+						++$quiz_order;
 						$quiz_migrator->migrate( $s_id, (int) $target_topic_id, $course_id, 0, $quiz_order );
 					}
 				}
@@ -434,7 +434,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				$ordered_modules   = array();
 				$unordered_modules = array();
 				foreach ( $modules as $module ) {
-					$order_key = array_search( $module->term_id, $order );
+					$order_key = array_search( (int) $module->term_id, array_map( 'intval', $order ), true );
 					if ( false !== $order_key ) {
 						$ordered_modules[ $order_key ] = $module;
 					} else {

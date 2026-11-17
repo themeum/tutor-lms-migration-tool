@@ -40,6 +40,6 @@ abstract class ReviewFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid migration type for reviews', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid migration type for reviews', 'tutor-lms-migration-tool' ) );
 	}
 }

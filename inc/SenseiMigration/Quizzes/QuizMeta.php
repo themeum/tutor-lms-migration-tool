@@ -32,7 +32,10 @@ class QuizMeta implements PostMeta {
 			return;
 		}
 
-		$passmark     = get_post_meta( $post_id, '_quiz_passmark', true );
+		$passmark = get_post_meta( $post_id, '_quiz_passmark', true );
+		if ( '' === $passmark || false === $passmark ) {
+			$passmark = get_post_meta( $post_id, '_pass_percentage', true );
+		}
 		$enable_reset = get_post_meta( $post_id, '_enable_quiz_reset', true );
 		$random_order = get_post_meta( $post_id, '_random_question_order', true );
 		$time_limit   = get_post_meta( $post_id, '_quiz_time_limit', true );

@@ -57,7 +57,10 @@ class QuizMigrator {
 			return 0;
 		}
 
-		$passmark     = get_post_meta( $sensei_quiz_id, '_quiz_passmark', true );
+		$passmark = get_post_meta( $sensei_quiz_id, '_quiz_passmark', true );
+		if ( '' === $passmark || false === $passmark ) {
+			$passmark = get_post_meta( $sensei_quiz_id, '_pass_percentage', true );
+		}
 		$enable_reset = get_post_meta( $sensei_quiz_id, '_enable_quiz_reset', true );
 		$random_order = get_post_meta( $sensei_quiz_id, '_random_question_order', true );
 		$time_limit   = get_post_meta( $sensei_quiz_id, '_quiz_time_limit', true );
@@ -104,10 +107,10 @@ class QuizMigrator {
 
 		update_post_meta( $sensei_quiz_id, '_was_sensei_quiz', true );
 
-		// Migrate questions & answer options
+		// Migrate questions & answer options.
 		$this->question_migrator->migrate( $sensei_quiz_id, $sensei_quiz_id );
 
-		// Fire hook
+		// Fire hook.
 		do_action( 'tlmt_quiz_migrated', $sensei_quiz_id, MigrationTypes::SENSEI_TO_TUTOR );
 
 		return $sensei_quiz_id;
