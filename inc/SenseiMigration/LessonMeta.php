@@ -34,6 +34,7 @@ class LessonMeta implements PostMeta {
 
 		$this->migrate_video_and_duration( $post_id );
 		$this->migrate_preview( $post_id );
+		$this->migrate_complexity( $post_id );
 	}
 
 	/**
@@ -74,7 +75,7 @@ class LessonMeta implements PostMeta {
 				$video['source_vimeo'] = esc_url_raw( $raw_video );
 			} else {
 				$video['source']          = 'embedded';
-				$video['source_embedded'] = $raw_video;
+				$video['source_embedded'] = $this->sanitize_embedded_video( $raw_video );
 			}
 		}
 
@@ -113,5 +114,60 @@ class LessonMeta implements PostMeta {
 		} else {
 			delete_post_meta( $post_id, '_is_preview' );
 		}
+	}
+
+	/**
+	 * Migrate lesson complexity
+	 *
+	 * @param int $post_id Lesson post ID.
+	 * @return void
+	 */
+	private function migrate_complexity( int $post_id ) {
+		$complexity = get_post_meta( $post_id, '_lesson_complexity', true );
+		if ( empty( $complexity ) ) {
+			return;
+		}
+
+		$complexity_map = array(
+			'easy'         => 'beginner',
+			'intermediate' => 'intermediate',
+			'medium'       => 'intermediate',
+			'hard'         => 'expert',
+			'expert'       => 'expert',
+		);
+
+		$normalized   = strtolower( trim( (string) $complexity ) );
+		$mapped_level = isset( $complexity_map[ $normalized ] ) ? $complexity_map[ $normalized ] : 'all_levels';
+
+		update_post_meta( $post_id, '_lesson_complexity', sanitize_text_field( $complexity ) );
+
+		$course_id = (int) get_post_meta( $post_id, '_tutor_course_id_for_lesson', true );
+		if ( $course_id > 0 ) {
+			$existing_level = get_post_meta( $course_id, '_tutor_course_level', true );
+			if ( empty( $existing_level ) ) {
+				update_post_meta( $course_id, '_tutor_course_level', $mapped_level );
+			}
+		}
+	}
+
+	/**
+	 * Sanitize embedded video markup, allowing safe iframes while stripping script tags.
+	 *
+	 * @param string $raw_video Video HTML.
+	 * @return string
+	 */
+	private function sanitize_embedded_video( string $raw_video ): string {
+		$allowed_html           = wp_kses_allowed_html( 'post' );
+		$allowed_html['iframe'] = array(
+			'src'             => true,
+			'width'           => true,
+			'height'          => true,
+			'frameborder'     => true,
+			'allowfullscreen' => true,
+			'title'           => true,
+			'allow'           => true,
+		);
+
+		return wp_kses( $raw_video, $allowed_html );
 	}
 }

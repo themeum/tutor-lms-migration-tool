@@ -18,10 +18,10 @@
 
 ## 3. Feature 3: Lesson & Lesson Metadata Migration
 
-- [ ] 3.1 Implement `inc/SenseiMigration/LessonMeta.php` conforming to `Interfaces\PostMeta` for duration (`_lesson_length`), complexity, preview status (`_lesson_preview` to `_is_preview`), and video embeds, and verify meta migration.
-- [ ] 3.2 Wire lesson hierarchy mapping inside `classes/SenseiToTutorMigration.php` parenting lessons to their corresponding Tutor topic posts and verify correct ordering within each topic.
-- [ ] 3.3 Implement unassigned/orphan lesson handling placing lessons without a module into a designated fallback topic and verify no lessons are lost.
-- [ ] 3.4 Conduct security audit for Feature 3 (sanitize post fields, escape HTML embeds, prevent ID spoofing) and verify existing lesson migration logic in LD/LP/LIF remains untouched.
+- [x] 3.1 Implement `inc/SenseiMigration/LessonMeta.php` conforming to `Interfaces\PostMeta` for duration (`_lesson_length`), complexity, preview status (`_lesson_preview` to `_is_preview`), and video embeds, and verify meta migration.
+- [x] 3.2 Wire lesson hierarchy mapping inside `classes/SenseiToTutorMigration.php` parenting lessons to their corresponding Tutor topic posts and verify correct ordering within each topic.
+- [x] 3.3 Implement unassigned/orphan lesson handling placing lessons without a module into a designated fallback topic and verify no lessons are lost.
+- [x] 3.4 Conduct security audit for Feature 3 (sanitize post fields, escape HTML embeds, prevent ID spoofing) and verify existing lesson migration logic in LD/LP/LIF remains untouched.
 
 ## 4. Feature 4: Quiz & Question Types Migration
 

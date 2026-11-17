@@ -69,7 +69,7 @@ class CourseMeta implements PostMeta {
 			$video['source_vimeo'] = esc_url_raw( $raw_video );
 		} else {
 			$video['source']          = 'embedded';
-			$video['source_embedded'] = $raw_video;
+			$video['source_embedded'] = $this->sanitize_embedded_video( $raw_video );
 		}
 
 		update_post_meta( $post_id, '_video', $video );
@@ -118,5 +118,26 @@ class CourseMeta implements PostMeta {
 		if ( 'featured' === $featured || 'yes' === $featured || 'on' === $featured ) {
 			update_post_meta( $post_id, '_tutor_is_featured', 'yes' );
 		}
+	}
+
+	/**
+	 * Sanitize embedded video markup, allowing safe iframes while stripping script tags.
+	 *
+	 * @param string $raw_video Video HTML.
+	 * @return string
+	 */
+	private function sanitize_embedded_video( string $raw_video ): string {
+		$allowed_html           = wp_kses_allowed_html( 'post' );
+		$allowed_html['iframe'] = array(
+			'src'             => true,
+			'width'           => true,
+			'height'          => true,
+			'frameborder'     => true,
+			'allowfullscreen' => true,
+			'title'           => true,
+			'allow'           => true,
+		);
+
+		return wp_kses( $raw_video, $allowed_html );
 	}
 }

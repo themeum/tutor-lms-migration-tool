@@ -421,12 +421,20 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			$order_key = '_order_module_' . $module_term_id;
 			usort(
 				$lessons,
-				function ( $a, $b ) use ( $order_key ) {
+				function ( $a, $b ) use ( $order_key, $course_id ) {
 					$order_a = get_post_meta( $a->ID, $order_key, true );
 					$order_b = get_post_meta( $b->ID, $order_key, true );
 
 					if ( '' !== $order_a && '' !== $order_b && (int) $order_a !== (int) $order_b ) {
 						return (int) $order_a <=> (int) $order_b;
+					}
+
+					$course_order_key = '_order_' . $course_id;
+					$course_order_a   = get_post_meta( $a->ID, $course_order_key, true );
+					$course_order_b   = get_post_meta( $b->ID, $course_order_key, true );
+
+					if ( '' !== $course_order_a && '' !== $course_order_b && (int) $course_order_a !== (int) $course_order_b ) {
+						return (int) $course_order_a <=> (int) $course_order_b;
 					}
 
 					return (int) $a->menu_order <=> (int) $b->menu_order;
@@ -466,6 +474,21 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 					$orphans[] = $lesson;
 				}
 			}
+
+			$order_key = '_order_' . $course_id;
+			usort(
+				$orphans,
+				function ( $a, $b ) use ( $order_key ) {
+					$order_a = get_post_meta( $a->ID, $order_key, true );
+					$order_b = get_post_meta( $b->ID, $order_key, true );
+
+					if ( '' !== $order_a && '' !== $order_b && (int) $order_a !== (int) $order_b ) {
+						return (int) $order_a <=> (int) $order_b;
+					}
+
+					return (int) $a->menu_order <=> (int) $b->menu_order;
+				}
+			);
 
 			return $orphans;
 		}
