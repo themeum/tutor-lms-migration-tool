@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="tutor-lms-migration-tool">
+    <description>WordPress Coding Standards for Tutor LMS Migration Tool.</description>
+
+    <rule ref="WordPress">
+        <!-- Excluded to comply with PSR-4 autoload standard -->
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <!-- Database migration queries bypass object cache by design -->
+        <exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
+        <exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>
+        <exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_query"/>
+        <exclude name="WordPress.DB.SlowDBQuery.slow_db_query_tax_query"/>
+        <!-- Nonce verification is handled by tutor_utils()->checking_nonce() -->
+        <exclude name="WordPress.Security.NonceVerification.Missing"/>
+    </rule>
+
+    <!-- Exclude third-party vendor directories -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+</ruleset>
