@@ -40,7 +40,7 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
-	 * Migrate lesson completions for a course.
+	 * Migrate lesson completions for a course from Sensei 4.x progress table.
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID (optional).
@@ -48,6 +48,11 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	public function migrate_lesson_completions( int $course_id, int $user_id = 0 ): int {
 		global $wpdb;
+
+		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) !== $progress_table ) {
+			return 0;
+		}
 
 		$lessons = get_posts(
 			array(
@@ -70,16 +75,16 @@ class StudentProgress implements StudentProgressInterface {
 
 		$migrated_count = 0;
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
+		$format_ids     = implode( ',', array_map( 'intval', $lessons ) );
 
-		// Primary source: Sensei comments-based lesson progress.
-		$format_ids = implode( ',', array_map( 'intval', $lessons ) );
+		// Sensei 4.x: lesson completion stored in sensei_lms_progress where type = 'lesson' and status = 'complete'.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$completions = $wpdb->get_results(
-			"SELECT comment_ID, comment_post_ID AS lesson_id, user_id, comment_date AS completed_at
-			FROM {$wpdb->comments}
-			WHERE comment_type = 'sensei_lesson_status'
-			AND comment_post_ID IN ({$format_ids})
-			AND comment_approved IN ('complete', 'passed', '1', 'approved')
+			"SELECT post_id AS lesson_id, user_id, COALESCE(completed_at, updated_at, created_at) AS completed_at
+			FROM {$progress_table}
+			WHERE type = 'lesson'
+			AND post_id IN ({$format_ids})
+			AND status = 'complete'
 			AND user_id > 0" . $user_clause
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
@@ -167,7 +172,7 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
-	 * Migrate quiz attempts from Sensei to Tutor LMS.
+	 * Migrate quiz attempts from Sensei 4.x submissions table to Tutor LMS.
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID (optional).
@@ -175,6 +180,11 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	public function migrate_quiz_attempts( int $course_id, int $user_id = 0 ): int {
 		global $wpdb;
+
+		$submissions_table = $wpdb->prefix . 'sensei_lms_quiz_submissions';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table ) ) !== $submissions_table ) {
+			return 0;
+		}
 
 		$quizzes = get_posts(
 			array(
@@ -199,14 +209,12 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $quizzes ) );
 
-		// Query Sensei quiz status comments.
-		$format_ids = implode( ',', array_map( 'intval', $quizzes ) );
+		// Query Sensei 4.x quiz submissions table.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$attempts = $wpdb->get_results(
-			"SELECT comment_ID, comment_post_ID AS quiz_id, user_id, comment_date AS attempt_date
-			FROM {$wpdb->comments}
-			WHERE comment_type IN ('sensei_quiz_status', 'sensei_lesson_status')
-			AND comment_post_ID IN ({$format_ids})
+			"SELECT id, quiz_id, user_id, final_grade, created_at AS attempt_date
+			FROM {$submissions_table}
+			WHERE quiz_id IN ({$format_ids})
 			AND user_id > 0" . $user_clause
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
@@ -216,8 +224,9 @@ class StudentProgress implements StudentProgressInterface {
 				$qid          = (int) $row->quiz_id;
 				$uid          = (int) $row->user_id;
 				$attempt_date = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
+				$grade        = null !== $row->final_grade ? (float) $row->final_grade : 0.0;
 
-				if ( $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, (int) $row->comment_ID ) ) {
+				if ( $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, $grade ) ) {
 					++$migrated_count;
 				}
 			}
@@ -233,11 +242,25 @@ class StudentProgress implements StudentProgressInterface {
 	 * @param int    $course_id    Course ID.
 	 * @param int    $user_id      Student User ID.
 	 * @param string $attempt_date Date string.
-	 * @param int    $comment_id   Sensei source comment ID (optional).
+	 * @param float  $grade        Grade percentage from Sensei submission (0-100).
 	 * @return bool
 	 */
-	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', int $comment_id = 0 ): bool {
+	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', float $grade = 0.0 ): bool {
 		global $wpdb;
+
+		// Check for existing attempt to ensure idempotency.
+		$existing_attempt = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT attempt_id FROM {$wpdb->prefix}tutor_quiz_attempts WHERE quiz_id = %d AND user_id = %d AND course_id = %d LIMIT 1",
+				$quiz_id,
+				$user_id,
+				$course_id
+			)
+		);
+
+		if ( $existing_attempt ) {
+			return true;
+		}
 
 		// Calculate total questions and marks for this quiz.
 		$questions_data = $wpdb->get_row(
@@ -251,17 +274,6 @@ class StudentProgress implements StudentProgressInterface {
 
 		$total_questions = ! empty( $questions_data ) ? (int) $questions_data->total_q : 0;
 		$total_marks     = ! empty( $questions_data ) ? (float) $questions_data->total_m : 0.00;
-
-		$grade = 0.00;
-		if ( $comment_id > 0 ) {
-			$raw_grade = get_comment_meta( $comment_id, 'grade', true );
-			if ( '' === $raw_grade ) {
-				$raw_grade = get_comment_meta( $comment_id, 'quiz_grade', true );
-			}
-			if ( is_numeric( $raw_grade ) ) {
-				$grade = (float) $raw_grade;
-			}
-		}
 
 		// Passmark threshold.
 		$passmark = 80;

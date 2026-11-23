@@ -48,11 +48,11 @@ Key architectural and functional additions:
   - Automatic role migration hook on `wp_login` in `tutor-lms-migration-tool.php` when Sensei migration history exists.
   - Static utility method `Utils::convert_all_sensei_teachers_to_tutor_instructors()` for bulk conversion during migration.
 
-- **Student & Progress Map**:
-  - Dual-source compatibility: supports both modern Sensei tables (`wp_sensei_lms_progress`, `wp_sensei_lms_quiz_submissions`, `wp_sensei_lms_quiz_grades`) and legacy comment-based records (`sensei_course_status`, `sensei_lesson_status`, `sensei_quiz_submission`).
+- **Student & Progress Map (Sensei 4.x+)**:
+  - Direct custom table integration targeting Sensei 4.x+ (`wp_sensei_lms_progress`, `wp_sensei_lms_quiz_submissions`), removing legacy pre-4.0 comments-based fallbacks.
   - Student course enrollments $\rightarrow$ Tutor LMS `tutor_enrolled` posts (`post_parent=course_id`, `post_author=student_id`, `post_status='completed'`), recording enrollment date and meta tag `_tutor_enrolled_by = 'sensei_migration'`.
-  - Lesson completion records $\rightarrow$ Tutor `wp_comments` records with `comment_type = 'tutor_lesson_completed'`, linking user and lesson ID with completion timestamps.
-  - Quiz attempt history $\rightarrow$ Tutor `wp_tutor_quiz_attempts` and `wp_tutor_quiz_attempt_answers`, capturing total marks, earned score, pass/fail status, and student response records.
+  - Lesson completion records $\rightarrow$ Tutor `wp_comments` records with `comment_type = 'tutor_lesson_completed'`, linking user and lesson ID with completion timestamps from `wp_sensei_lms_progress` (`type = 'lesson'`).
+  - Quiz attempt history $\rightarrow$ Tutor `wp_tutor_quiz_attempts`, capturing total marks, earned score, pass/fail status, and final grade directly from `wp_sensei_lms_quiz_submissions`.
 
 - **Sales Data Map**:
   - Dual monetization mode handling:

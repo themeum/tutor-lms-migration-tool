@@ -33,9 +33,9 @@
 
 ## 5. Feature 5: Student Enrollments & Progress Migration
 
-- [x] 5.1 Implement `inc/SenseiMigration/Enrollments.php` to migrate course enrollments into `tutor_enrolled` posts in batches of 50 and verify student course access.
-- [x] 5.2 Implement `inc/SenseiMigration/StudentProgress.php` conforming to `Interfaces\StudentProgress` and register in `inc/Factories/StudentProgressFactory.php` with dual-source support (tables + legacy comments) and verify lesson completion comments.
-- [x] 5.3 Implement student quiz submission and attempt migration into `wp_tutor_quiz_attempts` and `wp_tutor_quiz_attempt_answers` and verify student grade reports.
+- [x] 5.1 Implement `inc/SenseiMigration/Enrollments.php` to migrate course enrollments from Sensei 4.x `sensei_lms_progress` table into `tutor_enrolled` posts in batches of 50 and verify student course access.
+- [x] 5.2 Implement `inc/SenseiMigration/StudentProgress.php` conforming to `Interfaces\StudentProgress` and register in `inc/Factories/StudentProgressFactory.php` targeting Sensei 4.x progress table and verify lesson completion comments.
+- [x] 5.3 Implement student quiz submission and attempt migration from Sensei 4.x `sensei_lms_quiz_submissions` table into `wp_tutor_quiz_attempts` and verify student grade reports.
 - [x] 5.4 Connect enrollment and progress batch AJAX actions in `assets/js/admin.js` and `classes/SenseiToTutorMigration.php` and verify progress bar animates accurately from 0% to 100%.
 - [x] 5.5 Conduct security audit for Feature 5 (validate student user IDs, verify authorization for progress endpoints, protect against user impersonation) and verify regression safety for LD/LP/LIF enrollments.
 

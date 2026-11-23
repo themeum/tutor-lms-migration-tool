@@ -84,21 +84,21 @@ The system SHALL extract Sensei `question` posts linked via `_quiz_id` and inser
 - **THEN** it is mapped respectively to `true_false`, `short_answer`, or `open_ended` question types
 
 ### Requirement: Student Course Enrollment Migration
-The system SHALL migrate student course enrollments from `sensei_lms_progress` (or legacy `sensei_course_status` comments) into Tutor LMS `tutor_enrolled` posts in batches, linking student user ID, course ID, and original enrollment timestamp.
+The system SHALL migrate student course enrollments from Sensei 4.x `sensei_lms_progress` table into Tutor LMS `tutor_enrolled` posts in batches, linking student user ID, course ID, and original enrollment timestamp.
 
 #### Scenario: Batch enrollment transfer
 - **WHEN** the enrollments migration step executes for a batch of student course registrations
 - **THEN** `tutor_enrolled` posts are inserted for active students with `post_status` set to `'completed'` and metadata recording the enrollment source
 
 ### Requirement: Student Lesson Completion and Progress Migration
-The system SHALL transfer lesson completion records from Sensei progress records into Tutor LMS `tutor_lesson_completed` comment records for each student and lesson pair.
+The system SHALL transfer lesson completion records from Sensei 4.x `sensei_lms_progress` table (`type='lesson'`, `status='complete'`) into Tutor LMS `tutor_lesson_completed` comment records for each student and lesson pair.
 
 #### Scenario: Lesson completion migration
 - **WHEN** a student has completed a Sensei lesson
 - **THEN** a `tutor_lesson_completed` comment is created linking the user ID and Tutor lesson ID with completion timestamp
 
 ### Requirement: Quiz Attempt History and Grading Migration
-The system SHALL migrate student quiz submissions and grades from `sensei_lms_quiz_submissions` and `sensei_lms_quiz_grades` into `tutor_quiz_attempts` and `tutor_quiz_attempt_answers`.
+The system SHALL migrate student quiz submissions and grades from Sensei 4.x `sensei_lms_quiz_submissions` table into `tutor_quiz_attempts`.
 
 #### Scenario: Quiz submission history transfer
 - **WHEN** a student has finished a quiz submission with an assigned grade

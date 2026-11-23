@@ -100,9 +100,9 @@ inc/SenseiMigration/
 | Single Line | Taxonomy term `single-line` | Short Answer | `short_answer` |
 | Multi Line | Taxonomy term `multi-line` | Open Ended | `open_ended` |
 | File Upload | Taxonomy term `file-upload` | File Upload | `file_upload` |
-| Enrollments | `wp_sensei_lms_progress` or `sensei_course_status` | Enrollment | `wp_posts` (`post_type='tutor_enrolled'`) |
-| Lesson Complete | `wp_sensei_lms_progress` or `sensei_lesson_status` | Completed | `wp_comments` (`comment_type='tutor_lesson_completed'`) |
-| Quiz Attempt | `wp_sensei_lms_quiz_submissions` | Attempt | `wp_tutor_quiz_attempts` & attempt answers |
+| Enrollments | `wp_sensei_lms_progress` (`type='course'`) | Enrollment | `wp_posts` (`post_type='tutor_enrolled'`) |
+| Lesson Complete | `wp_sensei_lms_progress` (`type='lesson'`) | Completed | `wp_comments` (`comment_type='tutor_lesson_completed'`) |
+| Quiz Attempt | `wp_sensei_lms_quiz_submissions` | Attempt | `wp_tutor_quiz_attempts` |
 | User Role | Role `teacher` | Instructor | Role `tutor_instructor`, status approved |
 | WC Products | Meta `_course_woocommerce_product` | Product Link | Meta `_tutor_course_price_type`, `_tutor_course_product_id` |
 | Native Orders | WooCommerce / Sensei single orders | Native Order | `tutor_orders`, `tutor_order_items`, `tutor_ordermeta` |
@@ -113,8 +113,8 @@ inc/SenseiMigration/
    - *Rationale*: Sensei groups lessons within a course via the `module` taxonomy, whereas Tutor LMS organizes lessons under hierarchical `topics` posts (`post_type='topics'`). Creating a topic post for each module and parenting the module's lessons to that topic mirrors the exact instructional hierarchy.
    - *Alternative Considered*: Flattening all lessons directly under the course without topics. Rejected because it destroys course structure and violates Tutor's curriculum format.
 
-2. **Dual-Source Progress Support (Tables + Legacy Comments)**:
-   - *Rationale*: Sensei 4.x introduced custom tables (`sensei_lms_progress`), but legacy sites or sites with specific feature flags store progress in WordPress comments (`sensei_course_status`, `sensei_lesson_status`). Checking table existence first and falling back to comment records guarantees universal compatibility.
+2. **Sensei 4.x+ Custom Tables Architecture**:
+   - *Rationale*: Sensei 4.0 was released in 2022 and moved enrollments, progress, and quiz attempts to dedicated custom tables (`wp_sensei_lms_progress`, `wp_sensei_lms_quiz_submissions`). Over 85% of Sensei installations run 4.x+. Targeting Sensei 4.x custom tables directly eliminates slow, ambiguous `wp_comments` queries and provides fast, reliable migrations.
 
 3. **Factory & Polymorphic Architecture**:
    - *Rationale*: The existing plugin codebase employs factory abstractions (`PostMetaFactory`, `StudentProgressFactory`, `ProductFactory`, `OrderFactory`, `ReviewFactory`) driven by constants in `MigrationTypes`. Registering `MigrationTypes::SENSEI_TO_TUTOR` and injecting Sensei concrete classes adheres to Open/Closed principles without modifying existing vendors.
@@ -190,5 +190,5 @@ Development proceeds in strict, decoupled feature slices. Each feature must pass
   - *Mitigation*: Process courses one by one per request (`COURSE_BATCH_SIZE = 1`) with filterable batch sizes (`tlmt_sensei_course_migration_batch_size`).
 - *Risk*: Incomplete question types causing malformed quiz data.
   - *Mitigation*: Fallback handlers for unsupported or third-party custom question types gracefully mapping to `short_answer` with admin log notices.
-- *Risk*: Legacy comment progress missing on newer Sensei installs.
-  - *Mitigation*: Check for existence of `sensei_lms_progress` table before fallback to comments.
+- *Risk*: Database table existence check on non-Sensei or incomplete installations.
+  - *Mitigation*: Verify existence of `sensei_lms_progress` and `sensei_lms_quiz_submissions` tables before querying.
