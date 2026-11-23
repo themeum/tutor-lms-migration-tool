@@ -20,8 +20,6 @@ interface Order {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @throws \Throwable
-	 *
 	 * @param \WP_Post|null $order the order post to migrate.
 	 * @param int           $course_id the course id of the order.
 	 *

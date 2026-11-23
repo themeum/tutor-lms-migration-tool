@@ -129,6 +129,7 @@ class Utils {
 				$order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
 				$table_exists         = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_items_table ) );
 				if ( $table_exists ) {
+					// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 					return (int) $wpdb->get_var(
 						$wpdb->prepare(
 							"SELECT COUNT(DISTINCT oi.order_id)
@@ -139,6 +140,7 @@ class Utils {
 							$product_ids
 						)
 					);
+					// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				}
 			}
 		}

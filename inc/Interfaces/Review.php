@@ -19,8 +19,6 @@ interface Review {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @throws \Throwable
-	 *
 	 * @param \WP_Comment|\WP_Post|int $review the review to migrate or course ID.
 	 *
 	 * @return void|int wp_json response or count

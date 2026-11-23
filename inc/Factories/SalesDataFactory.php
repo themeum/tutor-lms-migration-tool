@@ -53,6 +53,6 @@ abstract class SalesDataFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

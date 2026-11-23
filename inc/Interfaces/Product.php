@@ -23,8 +23,6 @@ interface Product {
 	 * @param integer $course_id the course id.
 	 * @param string  $course_title the course title.
 	 *
-	 * @throws \Throwable
-	 *
 	 * @return void
 	 */
 	public function migrate( int $course_id, string $course_title );
