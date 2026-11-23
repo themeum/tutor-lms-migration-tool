@@ -15,6 +15,15 @@
         <exclude name="WordPress.Security.NonceVerification.Missing"/>
     </rule>
 
+    <!-- Enforce correct text domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="tutor-lms-migration-tool"/>
+            </property>
+        </properties>
+    </rule>
+
     <!-- Exclude third-party vendor directories -->
     <exclude-pattern>*/vendor/*</exclude-pattern>
     <exclude-pattern>*/node_modules/*</exclude-pattern>

@@ -10,8 +10,10 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
+use Themeum\TutorLMSMigrationTool\LDMigration\Subscriptions\Helper as SubscriptionHelper;
+use TUTOR\Course;
 
 /**
  * Handle course meta migration
@@ -52,7 +54,7 @@ class CourseMeta implements PostMeta {
 			$meta = $this->ld_to_tutor_meta_map( $migrate_able_meta );
 			if ( is_array( $meta ) && count( $meta ) ) {
 				try {
-					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, true, false );
+					QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, false, false );
 				} catch ( \Throwable $th ) {
 					throw $th;
 				}
@@ -110,7 +112,7 @@ class CourseMeta implements PostMeta {
 		$ld_tutor_meta_map = array(
 			'_tutor_course_price_type'        => 'sfwd-courses_course_price_type',
 			'_tutor_course_material_includes' => 'sfwd-courses_course_materials',
-			'tutor_course_regular_price'      => 'sfwd-courses_course_price',
+			Course::COURSE_PRICE_META         => 'sfwd-courses_course_price',
 		);
 
 		$course_settings = array();
@@ -149,21 +151,36 @@ class CourseMeta implements PostMeta {
 		$ld_keys = array_keys( $meta );
 		foreach ( $ld_tutor_meta_map as $key => $value ) {
 			if ( in_array( $value, $ld_keys ) ) {
-				$tutor_meta_map[ $key ] = $meta[ $value ];
+				$tutor_meta_map[ $key ] = sanitize_textarea_field( $meta[ $value ] );
 			}
 		}
 
+		// Add separate meta.
+		$video_preview   = get_post_meta( $this->post_id, '_learndash_course_grid_enable_video_preview', true );
+		$video_source    = get_post_meta( $this->post_id, '_learndash_course_grid_video_embed_code', true );
+		$course_duration = get_post_meta( $this->post_id, '_learndash_course_grid_duration', true );
+		if ( $video_preview && $video_source ) {
+			$tutor_meta_map['_video'] = maybe_serialize( tlmt_get_video_source_by_url( $video_source ) );
+		}
+
+		$tutor_meta_map['_course_duration'] = maybe_serialize( tlmt_get_time_duration_in_hour_min( $course_duration ) );
+
 		// Price type.
-		$price_type = $tutor_meta_map['_tutor_course_price_type'];
+		$price_type = $tutor_meta_map['_tutor_course_price_type'] ?? '';
 		if ( 'open' === $price_type ) {
 			$tutor_meta_map['_tutor_course_price_type'] = 'free';
 			// Set visibility public.
 			$tutor_meta_map['_tutor_is_public_course'] = 'yes';
 		} elseif ( 'paynow' === $price_type ) {
 			$tutor_meta_map['_tutor_course_price_type'] = 'paid';
+		} elseif ( 'subscribe' === $price_type ) {
+			$tutor_meta_map['_tutor_course_price_type'] = 'paid';
+			if ( SubscriptionHelper::is_subscription_migration_available() ) {
+				$tutor_meta_map['tutor_course_selling_option'] = 'subscription';
+			}
 		} elseif ( 'closed' === $price_type && $has_tutor_pro ) {
 			$course_settings['pause_enrollment'] = 'yes';
-			if ( ! empty( $tutor_meta_map['tutor_course_regular_price'] ) ) {
+			if ( ! empty( $tutor_meta_map[ Course::COURSE_PRICE_META ] ) ) {
 				$tutor_meta_map['_tutor_course_price_type'] = 'paid';
 			} else {
 				$tutor_meta_map['_tutor_course_price_type'] = 'free';

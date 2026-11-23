@@ -48,19 +48,36 @@ final class TutorLMSMigrationTool {
 	 * Register hook and dependencies.
 	 */
 	public function __construct() {
+		add_action( 'plugins_loaded', array( $this, 'init' ), 9 );
+	}
+
+	/**
+	 * Initialize all the scripts
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return void
+	 */
+	public function init() {
+		$has_req_version = version_compare( TUTOR_VERSION, TLMT_TUTOR_CORE_REQ_VERSION, '>=' );
+
 		include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 		$this->load_assets();
 		add_filter( 'plugin_action_links_' . plugin_basename( TLMT_FILE ), array( $this, 'plugin_action_links' ) );
 
-		if ( $this->check_installed() ) {
-			$this->used_classes();
-			$this->classes_initialize();
+		if ( $has_req_version ) {
+			if ( $this->check_installed() ) {
+				$this->used_classes();
+				$this->classes_initialize();
+			} else {
+				add_action( 'wp_ajax_install_tutor_plugin', array( $this, 'install_tutor_plugin' ) );
+				add_action( 'admin_action_activate_tutor_free', array( $this, 'activate_tutor_free' ) );
+			}
 		} else {
-			add_action( 'wp_ajax_install_tutor_plugin', array( $this, 'install_tutor_plugin' ) );
-			add_action( 'admin_action_activate_tutor_free', array( $this, 'activate_tutor_free' ) );
+			add_action( 'admin_notices', array( $this, 'check_if_ld_lp_is_activated' ) );
+			add_action( 'admin_notices', array( $this, 'free_plugin_installed_but_inactive_notice' ) );
 		}
-		add_action( 'admin_notices', array( $this, 'check_if_ld_lp_is_activated' ) );
 	}
 
 	/**
@@ -87,16 +104,7 @@ final class TutorLMSMigrationTool {
 	 * @return bool
 	 */
 	public function check_installed() {
-		$default     = true;
-		$source_file = WP_PLUGIN_DIR . '/tutor/tutor.php';
-		if ( file_exists( $source_file ) && ! is_plugin_active( 'tutor/tutor.php' ) ) {
-			$default = false;
-			add_action( 'admin_notices', array( $this, 'free_plugin_installed_but_inactive_notice' ) );
-		} elseif ( ! file_exists( $source_file ) ) {
-			$default = false;
-			add_action( 'admin_notices', array( $this, 'free_plugin_not_installed' ) );
-		}
-		return $default;
+		return true;
 	}
 
 	/**
@@ -105,6 +113,10 @@ final class TutorLMSMigrationTool {
 	 * @return void
 	 */
 	public function free_plugin_installed_but_inactive_notice() {
+		$has_req_version = version_compare( TUTOR_VERSION, TLMT_TUTOR_CORE_REQ_VERSION, '>=' );
+		if ( $has_req_version ) {
+			return;
+		}
 		?>
 		<div class="notice notice-error tutor-install-notice">
 			<div class="tutor-install-notice-inner">
@@ -113,11 +125,8 @@ final class TutorLMSMigrationTool {
 				</div>
 				<div class="tutor-install-notice-content">
 					<h2><?php esc_html_e( 'Thanks for using Tutor LMS - Migration Tool', 'tutor-lms-migration-tool' ); ?></h2>
-					<p><?php echo sprintf( __( 'You must have <a href="%s" target="_blank">Tutor</a> core version installed and activated on this website in order to use Tutor LMS - Migration Tool.', 'tutor-lms-migration-tool' ), esc_url( 'https://wordpress.org/plugins/tutor/' ) );//phpcs:ignore ?></p>
+					<p><?php echo sprintf( __( 'You must have <a href="%s" target="_blank">Tutor LMS version >= %s</a> installed and activated on this website in order to use Tutor LMS - Migration Tool.', 'tutor-lms-migration-tool' ), esc_url( 'https://wordpress.org/plugins/tutor/' ), TLMT_TUTOR_CORE_REQ_VERSION );//phpcs:ignore ?></p>
 					<a href="https://www.themeum.com/product/tutor-lms/" target="_blank"><?php esc_html_e( 'Learn more about Tutor', 'tutor-lms-migration-tool' ); ?></a>
-				</div>
-				<div class="tutor-install-notice-button">
-					<a  class="button button-primary" href="<?php echo esc_url( add_query_arg( array( 'action' => 'activate_tutor_free' ), admin_url() ) ); ?>"><?php esc_html_e( 'Activate Tutor', 'tutor-lms-migration-tool' ); ?></a>
 				</div>
 			</div>
 		</div>
@@ -138,11 +147,11 @@ final class TutorLMSMigrationTool {
 				</div>
 				<div class="tutor-install-notice-content">
 					<h2><?php esc_html_e( 'Thanks for using Tutor LMS - Migration Tool', 'tutor-lms-migration-tool' ); ?></h2>
-					<p><?php echo sprintf( __( 'You must have <a href="%s" target="_blank">Tutor</a> core version installed and activated on this website in order to use Tutor LMS - Migration Tool.', 'tutor-lms-migration-tool' ), esc_url( 'https://wordpress.org/plugins/tutor/' ) );//phpcs:ignore ?></p>
+					<p><?php echo sprintf( __( 'You must have <a href="%s" target="_blank">Tutor LMS version >= %s</a> installed and activated on this website in order to use Tutor LMS - Migration Tool.', 'tutor-lms-migration-tool' ), esc_url( 'https://wordpress.org/plugins/tutor/' ), TLMT_TUTOR_CORE_REQ_VERSION );//phpcs:ignore ?></p>
 					<a href="https://www.themeum.com/product/tutor-lms/" target="_blank"><?php esc_html_e( 'Learn more about Tutor', 'tutor-lms-migration-tool' ); ?></a>
 				</div>
 				<div class="tutor-install-notice-button">
-					<a class="install-tutor-button button button-primary" data-slug="tutor" href="<?php echo esc_url( add_query_arg( array( 'action' => 'install_tutor_plugin' ), admin_url() ) ); ?>"><?php esc_html_e( 'Install Tutor', 'tutor-lms-migration-tool' ); ?></a>
+					<a class="install-tutor-button button button-primary" data-slug="tutor" href="<?php echo esc_url( add_query_arg( array( 'action' => 'install_tutor_plugin' ), admin_url() ) ); ?>"><?php esc_html_e( 'Install Tutor LMS', 'tutor-lms-migration-tool' ); ?></a>
 				</div>
 			</div>
 			<div id="tutor_install_msg"></div>

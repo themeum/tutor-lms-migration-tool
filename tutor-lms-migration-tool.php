@@ -4,13 +4,14 @@
  * Plugin URI: https://www.themeum.com/
  * Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
  * Author: Themeum
- * Version: 2.3.0
+ * Version: 2.6.0
  * Author URI: http://themeum.com
  * Requires at least: 5.3
- * Tested up to: 6.6
+ * Tested up to: 7.1
  * Requires PHP: 7.4
  * License: GPLv2 or later
  * Text Domain: tutor-lms-migration-tool
+ * Requires Plugins: tutor
  *
  * @package TutorLMSMigrationTool
  */
@@ -22,7 +23,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Themeum\TutorLMSMigrationTool\Init;
-use TutorLMSMigrationTool\TLMT\Dependency;
 
 /**
  * Defining Constant
@@ -30,14 +30,14 @@ use TutorLMSMigrationTool\TLMT\Dependency;
  * @since v.1.0.0
  */
 
-define( 'TLMT_VERSION', '2.3.0' );
+define( 'TLMT_VERSION', '2.6.0' );
 define( 'TLMT_FILE', __FILE__ );
 define( 'TLMT_PATH', plugin_dir_path( TLMT_FILE ) );
 define( 'TLMT_URL', plugin_dir_url( TLMT_FILE ) );
 define( 'TLMT_BASENAME', plugin_basename( TLMT_FILE ) );
 define( 'TLMT_PLUGIN_NAME', 'Tutor LMS - Migration Tool' );
-define( 'TLMT_TUTOR_CORE_REQ_VERSION', '2.0.10' );
-define( 'TLMT_TUTOR_CORE_LATEST_VERSION', 'v2.0.10' );
+define( 'TLMT_TUTOR_CORE_REQ_VERSION', '3.6.0' );
+define( 'TLMT_TUTOR_CORE_LATEST_VERSION', '3.6.0' );
 
 register_activation_hook( __FILE__, 'tutor_migration_tool_activate' );
 
@@ -84,16 +84,10 @@ register_uninstall_hook( __FILE__, 'tutor_migration_tool_deleted' );
 TutorLMSMigrationTool::instance();
 
 // Init.
-new Init();
-
 add_action(
 	'plugins_loaded',
 	function() {
-		$dependency = new Dependency();
-		if ( ! $dependency->is_tutor_core_has_req_verion() ) {
-			add_action( 'admin_notices', array( $dependency, 'show_admin_notice' ) );
-			return;
-		}
+		new Init();
 	}
 );
 
@@ -126,10 +120,7 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		add_action(
 			'wp_login',
 			function( $user_login, $user ) {
-				// We want $user.
-				if ( in_array( 'lp_teacher', $user->roles ) ) {
-					$user->set_role( 'tutor_instructor' );
-				}
+				Utils::convert_lp_teacher_to_tutor_instructor( $user );
 			},
 			10,
 			2

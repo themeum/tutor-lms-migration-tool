@@ -1,6 +1,6 @@
 <?php
 /**
- * Review interface.
+ * Review Interface.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -10,20 +10,20 @@
 
 namespace Themeum\TutorLMSMigrationTool\Interfaces;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-
 /**
- * Interface Review
+ * Reviews interface for review migration class.
  */
 interface Review {
-
 	/**
-	 * Migrate reviews/ratings for a course or all courses.
+	 * Migrate course reviews to tutor.
 	 *
-	 * @param int $course_id Course post ID (optional, 0 for all).
-	 * @return int Number of migrated reviews.
+	 * @since 2.3.0
+	 *
+	 * @throws \Throwable
+	 *
+	 * @param \WP_Comment|\WP_Post|int $review the review to migrate or course ID.
+	 *
+	 * @return void|int wp_json response or count
 	 */
-	public function migrate( int $course_id = 0 ): int;
+	public function migrate( $review );
 }

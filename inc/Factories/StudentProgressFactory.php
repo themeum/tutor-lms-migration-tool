@@ -11,13 +11,12 @@
 namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
-use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress;
+use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
+use Themeum\TutorLMSMigrationTool\LDMigration\StudentProgress as LDStudentProgress;
+use Themeum\TutorLMSMigrationTool\LIFMigration\StudentProgress as LIFStudentProgress;
+use Themeum\TutorLMSMigrationTool\LPMigration\StudentProgress as LPStudentProgress;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
 use Themeum\TutorLMSMigrationTool\SenseiMigration\StudentProgress as SenseiStudentProgress;
-
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
 
 /**
  * Creates student progress objects based on migration type.
@@ -25,21 +24,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class StudentProgressFactory {
 
 	/**
-	 * Create student progress instance.
+	 * Creates student progress objects based on migration type
 	 *
-	 * @param string $migration_type Migration type.
+	 * @since 2.3.0
+	 * @since 2.5.0 Added LearnPress student progress migration.
+	 * @since 2.6.0 Added LifterLMS student progress migration.
+	 *
+	 * @param string $migration_type Type of migration.
+	 *
 	 * @throws InvalidArgumentException If invalid migration type provided.
-	 * @return StudentProgress
+	 *
+	 * @return StudentProgressInterface Student progress object for the specified type
 	 */
-	public static function create( string $migration_type ): StudentProgress {
+	public static function create( $migration_type ): StudentProgressInterface {
 		switch ( $migration_type ) {
+			case MigrationTypes::LD_TO_TUTOR:
+				return new LDStudentProgress();
+			case MigrationTypes::LP_TO_TUTOR:
+				return new LPStudentProgress();
+			case MigrationTypes::LIF_TO_TUTOR:
+				return new LIFStudentProgress();
 			case MigrationTypes::SENSEI_TO_TUTOR:
 				return new SenseiStudentProgress();
-
 			default:
 				break;
 		}
 
-		throw new InvalidArgumentException( esc_html__( 'Invalid migration type for student progress', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

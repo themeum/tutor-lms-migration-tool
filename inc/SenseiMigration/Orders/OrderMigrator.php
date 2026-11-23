@@ -10,8 +10,6 @@
 
 namespace Themeum\TutorLMSMigrationTool\SenseiMigration\Orders;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\Order;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -19,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles migration of Sensei course purchases from WooCommerce orders.
  */
-class OrderMigrator implements Order {
+class OrderMigrator {
 
 	/**
 	 * Migrate orders in batches.

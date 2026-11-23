@@ -1,6 +1,6 @@
 <?php
 /**
- * Order Factory.
+ * Order Factory class.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -12,34 +12,47 @@ namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
 use Themeum\TutorLMSMigrationTool\Interfaces\Order;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\EDDOrder as LD_EDD_Order;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\TutorOrder as LD_Tutor_Order;
+use Themeum\TutorLMSMigrationTool\LDMigration\Order\WCOrder as LD_WC_Order;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
-use Themeum\TutorLMSMigrationTool\SenseiMigration\Orders\OrderMigrator as SenseiOrderMigrator;
-
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
 
 /**
- * Creates Order migrator objects based on migration type.
+ * OrderFactory class which gives order migration object based on monetization type.
  */
 abstract class OrderFactory {
-
 	/**
-	 * Create Order instance.
+	 * Create review migration objects based on migration type.
 	 *
-	 * @param string $migration_type Migration type.
-	 * @throws InvalidArgumentException If invalid type provided.
+	 * @since 2.3.0
+	 *
+	 * @param string $monetization_type the type of monetization.
+	 * @param string $migration_type type of migration (LD to Tutor etc).
+	 *
+	 * @throws InvalidArgumentException If invalid argument passed.
+	 *
 	 * @return Order
 	 */
-	public static function create( string $migration_type ): Order {
+	public static function create( string $monetization_type, string $migration_type ): Order {
 		switch ( $migration_type ) {
-			case MigrationTypes::SENSEI_TO_TUTOR:
-				return new SenseiOrderMigrator();
+			case MigrationTypes::LD_TO_TUTOR:
+				if ( 'tutor' === $monetization_type || '-1' === $monetization_type || 'free' === $monetization_type ) {
+					return new LD_Tutor_Order();
+				}
 
+				if ( tutor_utils()->has_edd() && 'edd' === $monetization_type ) {
+					return new LD_EDD_Order();
+				}
+
+				if ( tutor_utils()->has_wc() && 'wc' === $monetization_type ) {
+					return new LD_WC_Order();
+				}
+
+				break;
 			default:
 				break;
 		}
 
-		throw new InvalidArgumentException( esc_html__( 'Invalid migration type for orders', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

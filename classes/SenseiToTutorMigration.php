@@ -389,8 +389,8 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 			// 6. Monetization Product Attachment
 			$monetize_by      = function_exists( 'tutils' ) ? tutils()->get_option( 'monetize_by' ) : 'wc';
-			$product_migrator = ProductFactory::create( MigrationTypes::SENSEI_TO_TUTOR, $monetize_by );
-			$product_migrator->attach( $course_id );
+			$product_migrator = ProductFactory::create( $monetize_by, MigrationTypes::SENSEI_TO_TUTOR );
+			$product_migrator->migrate( $course_id, get_the_title( $course_id ) );
 
 			// 7. Student Enrollments
 			$enrollments = new Enrollments();
@@ -638,7 +638,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
 			$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : 50;
 
-			$order_migrator = OrderFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
+			$order_migrator = new \Themeum\TutorLMSMigrationTool\SenseiMigration\Orders\OrderMigrator();
 			$result         = $order_migrator->migrate( $offset, $limit );
 
 			wp_send_json_success(

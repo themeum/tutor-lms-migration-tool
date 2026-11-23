@@ -1,6 +1,6 @@
 <?php
 /**
- * Product interface.
+ * Products Interface.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -10,20 +10,22 @@
 
 namespace Themeum\TutorLMSMigrationTool\Interfaces;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-
 /**
- * Interface Product
+ * Product interface for product migration class.
  */
 interface Product {
 
 	/**
-	 * Attach or migrate monetization product for a course.
+	 * Product migration method.
 	 *
-	 * @param int $course_id Course post ID.
-	 * @return int Attached product ID or 0.
+	 * @since 2.3.0
+	 *
+	 * @param integer $course_id the course id.
+	 * @param string  $course_title the course title.
+	 *
+	 * @throws \Throwable
+	 *
+	 * @return void
 	 */
-	public function attach( int $course_id ): int;
+	public function migrate( int $course_id, string $course_title );
 }

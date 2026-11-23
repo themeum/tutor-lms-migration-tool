@@ -24,11 +24,16 @@ class Reviews implements Review {
 	/**
 	 * Migrate Sensei reviews to Tutor LMS course ratings.
 	 *
-	 * @param int $course_id Optional course post ID (0 for all).
+	 * @param int|\WP_Comment|\WP_Post $review Optional course post ID or review object (0 for all).
 	 * @return int Number of reviews migrated.
 	 */
-	public function migrate( int $course_id = 0 ): int {
+	public function migrate( $review = 0 ) {
 		global $wpdb;
+
+		$course_id = is_numeric( $review ) ? (int) $review : 0;
+		if ( is_object( $review ) && isset( $review->comment_post_ID ) ) {
+			$course_id = (int) $review->comment_post_ID;
+		}
 
 		$course_clause = $course_id > 0 ? $wpdb->prepare( ' AND c.comment_post_ID = %d', $course_id ) : '';
 

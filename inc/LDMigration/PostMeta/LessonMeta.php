@@ -10,8 +10,8 @@
 
 namespace Themeum\TutorLMSMigrationTool\LDMigration\PostMeta;
 
-use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 use Tutor\Helpers\QueryHelper;
+use Themeum\TutorLMSMigrationTool\Interfaces\PostMeta;
 
 /**
  * Handle course meta migration
@@ -44,10 +44,9 @@ class LessonMeta implements PostMeta {
 		$this->post_id = $post_id;
 
 		$meta = $this->get_meta();
-
 		if ( is_array( $meta ) && count( $meta ) ) {
 			try {
-				QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, true, false );
+				QueryHelper::insert_multiple_rows( $wpdb->postmeta, $meta, false, false );
 			} catch ( \Throwable $th ) {
 				throw $th;
 			}
@@ -73,9 +72,14 @@ class LessonMeta implements PostMeta {
 
 		if ( isset( $meta['sfwd-lessons_lesson_video_enabled'] ) && 'on' === $meta['sfwd-lessons_lesson_video_enabled'] ) {
 			if ( ! empty( $meta['sfwd-lessons_lesson_video_url'] ) ) {
-				$tutor_meta['_video'] = array(
-					'source_external_url' => $meta['sfwd-lessons_lesson_video_url'],
-				);
+				$video_info = tlmt_get_video_source_by_url( $meta['sfwd-lessons_lesson_video_url'] );
+
+				$lesson_duration = tlmt_get_time_duration_in_hour_min( get_post_meta( $this->post_id, '_learndash_course_grid_duration', true ) );
+
+				$video_info['runtime']['hours']   = $lesson_duration['hours'];
+				$video_info['runtime']['minutes'] = $lesson_duration['minutes'];
+
+				$tutor_meta['_video'] = maybe_serialize( $video_info );
 			}
 		}
 
@@ -136,4 +140,5 @@ class LessonMeta implements PostMeta {
 
 		return array_intersect_key( $ld_meta, array_flip( $migrate_able_meta ) );
 	}
+
 }

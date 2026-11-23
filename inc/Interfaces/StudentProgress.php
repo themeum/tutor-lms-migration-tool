@@ -1,6 +1,6 @@
 <?php
 /**
- * StudentProgress interface
+ * Student Progress Interface
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -10,21 +10,18 @@
 
 namespace Themeum\TutorLMSMigrationTool\Interfaces;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-
-/**
- * Interface StudentProgress
- */
 interface StudentProgress {
 
 	/**
-	 * Migrate student progress for a course or user.
+	 * Migrate student progress
 	 *
-	 * @param int $course_id Course ID.
-	 * @param int $user_id   User ID (optional, 0 for all students of course).
-	 * @return int Number of progress records migrated.
+	 * @since 2.3.0
+	 * @since 4.0.0 param $course_id added.
+	 *
+	 * @param int $course_id the course id.
+	 * @param int $user_id   the user id (optional).
+	 *
+	 * @return void|int
 	 */
-	public function migrate( int $course_id, int $user_id = 0 ): int;
+	public function migrate( int $course_id, int $user_id = 0 );
 }

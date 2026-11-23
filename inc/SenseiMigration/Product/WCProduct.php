@@ -22,6 +22,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WCProduct implements Product {
 
 	/**
+	 * Product migration method conforming to Product interface.
+	 *
+	 * @param int    $course_id    Tutor course post ID.
+	 * @param string $course_title Course title.
+	 * @return void
+	 */
+	public function migrate( int $course_id, string $course_title = '' ) {
+		$this->attach( $course_id );
+	}
+
+	/**
 	 * Attach WooCommerce product to Tutor course.
 	 *
 	 * @param int $course_id Tutor course post ID.
