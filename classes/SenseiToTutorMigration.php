@@ -145,6 +145,9 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				case 'courses':
 					$this->sensei_migrate_course_to_tutor();
 					break;
+				case 'enrollments':
+					$this->migrate_sensei_enrollments();
+					break;
 				case 'orders':
 					$this->migrate_sensei_orders();
 					break;
@@ -699,6 +702,65 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			}
 
 			return $standalone;
+		}
+
+		/**
+		 * Sensei enrollments and student progress migration handler.
+		 *
+		 * Processes Sensei course enrollments from the sensei_lms_progress table in
+		 * batches, creating tutor_enrolled posts and migrating lesson completions and
+		 * quiz attempt history for each enrolled student.
+		 *
+		 * @return void
+		 */
+		public function migrate_sensei_enrollments() {
+			global $wpdb;
+
+			$is_first_batch = ! empty( $_POST['sensei_enrollment_migration_start'] );
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				delete_option( '_tutor_sensei_enrollment_migration_total' );
+			}
+
+			$limit  = isset( $_POST['batch_size'] ) ? max( 1, (int) $_POST['batch_size'] ) : 50;
+			$offset = (int) get_option( '_tutor_migrated_items_count', 0 );
+
+			$enrollments_migrator = new \Themeum\TutorLMSMigrationTool\SenseiMigration\Enrollments();
+			$result               = $enrollments_migrator->migrate_batch( $offset, $limit );
+
+			// Retrieve or seed the total enrollment count so the progress bar has an upper bound.
+			$total = (int) get_option( '_tutor_sensei_enrollment_migration_total', 0 );
+			if ( $total < 1 ) {
+				$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) === $progress_table ) {
+					// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$total = (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$progress_table} WHERE type = 'course' AND user_id > 0" );
+					// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				}
+				if ( $total > 0 ) {
+					update_option( '_tutor_sensei_enrollment_migration_total', $total, false );
+				}
+			}
+
+			// Advance the offset by one full batch so the next call scans the next window.
+			$processed = $offset + $limit;
+			update_option( '_tutor_migrated_items_count', $processed );
+
+			$has_more = ! empty( $result['has_more'] );
+			if ( ! $has_more ) {
+				delete_option( '_tutor_sensei_enrollment_migration_total' );
+			}
+
+			wp_send_json_success(
+				array(
+					'step'           => 'enrollments',
+					'migrated'       => min( $processed, max( $total, $processed ) ),
+					'migrated_count' => min( $processed, max( $total, $processed ) ),
+					'total'          => $total > 0 ? $total : 1,
+					'remaining'      => $result['remaining'],
+					'has_more'       => $has_more,
+				)
+			);
 		}
 
 		/**

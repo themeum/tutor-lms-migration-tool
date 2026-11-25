@@ -147,6 +147,17 @@ class Utils {
 		return 0;
 	}
 
+	public function sensei_enrollments_count() {
+		global $wpdb;
+		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) !== $progress_table ) {
+			return 0;
+		}
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$progress_table} WHERE type = 'course' AND user_id > 0" );
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
 	public function sensei_reviews_count() {
 		global $wpdb;
 		return (int) $wpdb->get_var(

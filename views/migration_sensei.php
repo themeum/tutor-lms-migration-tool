@@ -20,9 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	$tutor_migration_history = $utils->fetch_history( 'sensei' );
 	$courses_count           = $utils->sensei_course_count();
+	$enrollments_count       = $utils->sensei_enrollments_count();
 	$orders_count            = $utils->sensei_orders_count();
 	$reviews_count           = $utils->sensei_reviews_count();
-	$items_count             = $courses_count + $orders_count + $reviews_count;
+	$items_count             = $courses_count + $enrollments_count + $orders_count + $reviews_count;
 	?>
 
 	<div id="tutor-migration-wrapper">
@@ -75,6 +76,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 												</div>
 												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
 													<?php esc_html_e( 'Transfer courses, modules (topics), lessons, quizzes, questions, etc. to Tutor LMS.', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
+											</div>
+										</div>
+									</label>
+								</div>
+								<div id="sectionEnrollments" class="tutor-py-16">
+									<label for="enrollments">
+										<div class="lp-migration-singlebox">
+											<div class="lp-migration-singlebox-checkbox">
+												<span class="j-spinner"></span>
+											</div>
+											<div class="lp-migration-singlebox-desc">
+												<div class="tutor-fs-6 tutor-fw-medium tutor-color-black tutor-mb-4 tutor-course-content-title">
+													<?php esc_html_e( 'Enrollments & Progress', 'tutor-lms-migration-tool' ); ?>
+												</div>
+												<div class="tutor-color-muted tutor-fs-6 tutor-fw-normal tutor-pb-16">
+													<?php esc_html_e( 'Migrate all student enrollments along with lesson completion and quiz attempt history.', 'tutor-lms-migration-tool' ); ?>
 												</div>
 												<div class="tutor-progress tutor-mb-8" data-percent="0" style="--tutor-progress: 0%;"></div>
 											</div>

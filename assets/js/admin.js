@@ -398,6 +398,12 @@ jQuery(document).ready(function ($) {
     }
 
     function migrate_subscriptions($formData, final_types) {
+        // Sensei LMS has no subscriptions concept — skip directly to reviews.
+        if (final_types === 'sensei') {
+            migrate_reviews($formData, final_types);
+            return;
+        }
+
         if (!$('#sectionSubscriptions').length) {
             migrate_reviews($formData, final_types);
             return;
