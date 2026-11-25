@@ -68,20 +68,38 @@ class QuestionMigrator {
 
 			$tutor_type = $this->map_question_type( $sensei_type, count( $right_answers ) );
 
+			// Skip question types that have no equivalent in Tutor LMS.
+			if ( '' === $tutor_type ) {
+				continue;
+			}
+
+			$explanation = (string) get_post_meta( $question_id, '_question_explanation', true );
+
+			$point = $grade > 0 ? (int) round( $grade ) : 1;
+
 			$question_data = array(
 				'quiz_id'              => $tutor_quiz_id,
 				'question_title'       => sanitize_text_field( $question->post_title ),
 				'question_description' => wp_kses_post( $question->post_content ),
+				'answer_explanation'   => wp_kses_post( $explanation ),
 				'question_type'        => $tutor_type,
-				'question_mark'        => $grade > 0 ? $grade : 1.00,
-				'question_settings'    => maybe_serialize( array() ),
+				'question_mark'        => $point,
+				'question_settings'    => maybe_serialize(
+					array(
+						'question_type'      => $tutor_type,
+						'question_mark'      => $point,
+						'answer_required'    => '0',
+						'randomize_question' => in_array( $tutor_type, array( 'single_choice', 'multiple_choice' ), true ) ? '1' : '0',
+						'show_question_mark' => '1',
+					)
+				),
 				'question_order'       => $order,
 			);
 
 			$inserted = $wpdb->insert(
 				$wpdb->prefix . 'tutor_quiz_questions',
 				$question_data,
-				array( '%d', '%s', '%s', '%s', '%f', '%s', '%d' )
+				array( '%d', '%s', '%s', '%s', '%s', '%f', '%s', '%d' )
 			);
 
 			if ( ! $inserted ) {
@@ -198,7 +216,7 @@ class QuestionMigrator {
 				return 'open_ended';
 
 			case 'file-upload':
-				return 'image_answering';
+				return ''; // No matching Tutor type — skip during migration.
 
 			default:
 				return 'single_choice';

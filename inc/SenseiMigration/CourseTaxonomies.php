@@ -58,8 +58,8 @@ class CourseTaxonomies {
 			return;
 		}
 
-		$category_tax = defined( 'Tutor\Models\CourseModel::COURSE_CATEGORY' ) ? CourseModel::COURSE_CATEGORY : 'course-category';
-		$tag_tax      = defined( 'Tutor\Models\CourseModel::COURSE_TAG' ) ? CourseModel::COURSE_TAG : 'course-tag';
+		$category_tax = class_exists( 'Tutor\Models\CourseModel' ) ? CourseModel::COURSE_CATEGORY : 'course-category';
+		$tag_tax      = class_exists( 'Tutor\Models\CourseModel' ) ? CourseModel::COURSE_TAG : 'course-tag';
 
 		$this->migrate_taxonomy(
 			$course_id,

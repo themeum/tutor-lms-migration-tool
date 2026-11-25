@@ -153,7 +153,6 @@ jQuery(document).ready(function ($) {
             if (final_types === 'sensei') {
                 requestData += '&batch=1&batch_size=10';
             }
-            }
 
             $.ajax({
                 url: ajaxurl,
@@ -328,7 +327,6 @@ jQuery(document).ready(function ($) {
             var requestData = $formData + '&migrate_type=orders';
             if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
                 requestData += '&' + final_types + '_order_migration_start=1';
-            }
             }
 
             $.ajax({

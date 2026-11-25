@@ -36,6 +36,7 @@ class CourseMeta implements PostMeta {
 		$this->migrate_prerequisites( $post_id );
 		$this->migrate_monetization( $post_id );
 		$this->migrate_featured( $post_id );
+		$this->migrate_duration( $post_id );
 	}
 
 	/**
@@ -118,6 +119,64 @@ class CourseMeta implements PostMeta {
 		if ( 'featured' === $featured || 'yes' === $featured || 'on' === $featured ) {
 			update_post_meta( $post_id, '_tutor_is_featured', 'yes' );
 		}
+	}
+
+	/**
+	 * Migrate course duration by summing Sensei per-lesson lengths.
+	 *
+	 * Sensei stores duration per-lesson as _lesson_length (minutes). Tutor stores
+	 * it on the course as _course_duration: array( 'hours' => int, 'minutes' => int ).
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $post_id Course ID.
+	 * @return void
+	 */
+	private function migrate_duration( int $post_id ) {
+		// Skip if already set.
+		if ( ! empty( get_post_meta( $post_id, '_course_duration', true ) ) ) {
+			return;
+		}
+
+		$lessons = get_posts(
+			array(
+				'post_type'      => array( 'lesson', tutor()->lesson_post_type ),
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'meta_query'     => array(
+					array(
+						'key'   => '_lesson_course',
+						'value' => $post_id,
+					),
+				),
+			)
+		);
+
+		if ( empty( $lessons ) ) {
+			return;
+		}
+
+		$total_minutes = 0;
+		foreach ( $lessons as $lesson_id ) {
+			$length = get_post_meta( (int) $lesson_id, '_lesson_length', true );
+			if ( is_numeric( $length ) && (int) $length > 0 ) {
+				$total_minutes += (int) $length;
+			}
+		}
+
+		if ( $total_minutes <= 0 ) {
+			return;
+		}
+
+		update_post_meta(
+			$post_id,
+			'_course_duration',
+			array(
+				'hours'   => (int) floor( $total_minutes / 60 ),
+				'minutes' => $total_minutes % 60,
+			)
+		);
 	}
 
 	/**

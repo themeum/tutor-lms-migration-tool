@@ -24,6 +24,8 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Migrate student progress for a course or user.
 	 *
+	 * @since 2.3.0
+	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID (optional, 0 for all students of course).
 	 * @return int Total progress items migrated.
@@ -41,6 +43,8 @@ class StudentProgress implements StudentProgressInterface {
 
 	/**
 	 * Migrate lesson completions for a course from Sensei 4.x progress table.
+	 *
+	 * @since 2.3.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID (optional).
@@ -77,7 +81,6 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $lessons ) );
 
-		// Sensei 4.x: lesson completion stored in sensei_lms_progress where type = 'lesson' and status = 'complete'.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$completions = $wpdb->get_results(
 			"SELECT post_id AS lesson_id, user_id, COALESCE(completed_at, updated_at, created_at) AS completed_at
@@ -107,11 +110,13 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Mark a lesson completed in Tutor LMS for a student.
 	 *
-	 * @param int    $lesson_id     Lesson ID.
-	 * @param int    $course_id     Course ID.
-	 * @param int    $user_id       Student User ID.
-	 * @param string $completed_at  Completion timestamp.
-	 * @return bool True if inserted, false if already complete or on failure.
+	 * @since 2.3.0
+	 *
+	 * @param int    $lesson_id    Lesson ID.
+	 * @param int    $course_id    Course ID.
+	 * @param int    $user_id      Student User ID.
+	 * @param string $completed_at Completion timestamp.
+	 * @return bool True if newly marked complete, false if already complete or on failure.
 	 */
 	public function mark_lesson_complete( int $lesson_id, int $course_id, int $user_id, string $completed_at = '' ): bool {
 		global $wpdb;
@@ -125,7 +130,7 @@ class StudentProgress implements StudentProgressInterface {
 			return false;
 		}
 
-		// Check if already completed.
+		// Check if already marked complete via comment record.
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT comment_ID FROM {$wpdb->comments}
@@ -141,7 +146,7 @@ class StudentProgress implements StudentProgressInterface {
 		$time = ! empty( $completed_at ) ? strtotime( $completed_at ) : time();
 		$date = ! empty( $completed_at ) ? $completed_at : current_time( 'mysql' );
 
-		// Mark lesson complete in Tutor LMS user meta.
+		// Always keep user meta in sync.
 		update_user_meta( $user_id, '_tutor_completed_lesson_id_' . $lesson_id, $time );
 
 		if ( $exists ) {
@@ -168,11 +173,18 @@ class StudentProgress implements StudentProgressInterface {
 			return true;
 		}
 
-		return true;
+		// wp_insert_comment() failed — user meta was updated but comment record was not created.
+		return false;
 	}
 
 	/**
 	 * Migrate quiz attempts from Sensei 4.x submissions table to Tutor LMS.
+	 *
+	 * Each Sensei submission row is migrated as a separate Tutor attempt, preserving
+	 * full attempt history. The Sensei submission ID is stored in attempt_info to
+	 * guarantee per-submission idempotency on re-runs.
+	 *
+	 * @since 2.3.0
 	 *
 	 * @param int $course_id Course ID.
 	 * @param int $user_id   User ID (optional).
@@ -209,24 +221,28 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $quizzes ) );
 
-		// Query Sensei 4.x quiz submissions table.
+		// Query ALL Sensei submissions — each row is one attempt, preserving full history.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$attempts = $wpdb->get_results(
-			"SELECT id, quiz_id, user_id, final_grade, created_at AS attempt_date
+			"SELECT id AS submission_id, quiz_id, user_id, final_grade, created_at AS attempt_date
 			FROM {$submissions_table}
 			WHERE quiz_id IN ({$format_ids})
-			AND user_id > 0" . $user_clause
+			AND user_id > 0" . $user_clause . '
+			ORDER BY id ASC'
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( ! empty( $attempts ) ) {
 			foreach ( $attempts as $row ) {
-				$qid          = (int) $row->quiz_id;
-				$uid          = (int) $row->user_id;
-				$attempt_date = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
-				$grade        = null !== $row->final_grade ? (float) $row->final_grade : 0.0;
+				$qid                 = (int) $row->quiz_id;
+				$uid                 = (int) $row->user_id;
+				$sensei_submission_id = (int) $row->submission_id;
+				$attempt_date        = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
+				$grade               = null !== $row->final_grade ? (float) $row->final_grade : 0.0;
 
-				if ( $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, $grade ) ) {
+				$attempt_id = $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, $grade, $sensei_submission_id );
+				if ( $attempt_id > 0 ) {
+					$this->migrate_submission_answers( $attempt_id, $sensei_submission_id, $qid, $uid );
 					++$migrated_count;
 				}
 			}
@@ -238,28 +254,53 @@ class StudentProgress implements StudentProgressInterface {
 	/**
 	 * Record a single quiz attempt into tutor_quiz_attempts table.
 	 *
-	 * @param int    $quiz_id      Tutor quiz ID.
-	 * @param int    $course_id    Course ID.
-	 * @param int    $user_id      Student User ID.
-	 * @param string $attempt_date Date string.
-	 * @param float  $grade        Grade percentage from Sensei submission (0-100).
-	 * @return bool
+	 * Uses the Sensei submission ID stored in attempt_info for per-submission
+	 * idempotency, allowing multiple attempts per user per quiz.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $quiz_id              Tutor quiz ID.
+	 * @param int    $course_id            Course ID.
+	 * @param int    $user_id              Student User ID.
+	 * @param string $attempt_date         Date string.
+	 * @param float  $grade                Grade percentage from Sensei submission (0–100).
+	 * @param int    $sensei_submission_id Sensei submission primary key for idempotency.
+	 * @return int Inserted attempt_id on success, 0 if already exists or on failure.
 	 */
-	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', float $grade = 0.0 ): bool {
+	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', float $grade = 0.0, int $sensei_submission_id = 0 ): int {
 		global $wpdb;
 
-		// Check for existing attempt to ensure idempotency.
-		$existing_attempt = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT attempt_id FROM {$wpdb->prefix}tutor_quiz_attempts WHERE quiz_id = %d AND user_id = %d AND course_id = %d LIMIT 1",
-				$quiz_id,
-				$user_id,
-				$course_id
-			)
-		);
+		// Per-submission idempotency: check if this exact Sensei submission was already imported.
+		if ( $sensei_submission_id > 0 ) {
+			$marker   = $wpdb->esc_like( '"_sensei_submission_id";i:' . $sensei_submission_id . ';' );
+			$existing = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT attempt_id FROM {$wpdb->prefix}tutor_quiz_attempts
+					WHERE quiz_id = %d AND user_id = %d AND attempt_info LIKE %s
+					LIMIT 1",
+					$quiz_id,
+					$user_id,
+					'%' . $marker . '%'
+				)
+			);
+		} else {
+			// Fallback: deduplicate by date when no submission ID is available.
+			$date     = ! empty( $attempt_date ) ? $attempt_date : current_time( 'mysql' );
+			$existing = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT attempt_id FROM {$wpdb->prefix}tutor_quiz_attempts
+					WHERE quiz_id = %d AND user_id = %d AND course_id = %d AND attempt_started_at = %s
+					LIMIT 1",
+					$quiz_id,
+					$user_id,
+					$course_id,
+					$date
+				)
+			);
+		}
 
-		if ( $existing_attempt ) {
-			return true;
+		if ( $existing ) {
+			return 0;
 		}
 
 		// Calculate total questions and marks for this quiz.
@@ -275,16 +316,19 @@ class StudentProgress implements StudentProgressInterface {
 		$total_questions = ! empty( $questions_data ) ? (int) $questions_data->total_q : 0;
 		$total_marks     = ! empty( $questions_data ) ? (float) $questions_data->total_m : 0.00;
 
-		// Passmark threshold.
+		// Passmark threshold from quiz options.
 		$passmark = 80;
 		$opts     = get_post_meta( $quiz_id, 'tutor_quiz_option', true );
 		if ( ! empty( $opts['passing_grade'] ) ) {
 			$passmark = (int) $opts['passing_grade'];
 		}
 
+		// Convert Sensei percentage grade to earned marks.
 		$earned_marks = ( $grade > 0 && $total_marks > 0 ) ? ( $grade / 100 * $total_marks ) : (float) $grade;
 		$result       = ( $grade >= $passmark ) ? 'pass' : 'fail';
 		$date         = ! empty( $attempt_date ) ? $attempt_date : current_time( 'mysql' );
+
+		$attempt_info = array( '_sensei_submission_id' => $sensei_submission_id );
 
 		$inserted = $wpdb->insert(
 			$wpdb->prefix . 'tutor_quiz_attempts',
@@ -296,7 +340,7 @@ class StudentProgress implements StudentProgressInterface {
 				'total_answered_questions' => $total_questions,
 				'total_marks'              => $total_marks > 0 ? $total_marks : 100.00,
 				'earned_marks'             => $earned_marks,
-				'attempt_info'             => maybe_serialize( array() ),
+				'attempt_info'             => maybe_serialize( $attempt_info ),
 				'attempt_status'           => 'attempt_ended',
 				'attempt_ip'               => '',
 				'attempt_started_at'       => $date,
@@ -307,6 +351,99 @@ class StudentProgress implements StudentProgressInterface {
 			array( '%d', '%d', '%d', '%d', '%d', '%f', '%f', '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
 		);
 
-		return (bool) $inserted;
+		return $inserted ? (int) $wpdb->insert_id : 0;
+	}
+
+	/**
+	 * Migrate per-answer data for a quiz attempt from Sensei to Tutor LMS.
+	 *
+	 * Reads from sensei_lms_quiz_submission_answers (Sensei 4.x) and inserts
+	 * into tutor_quiz_attempt_answers. Requires that questions were migrated
+	 * with _sensei_question_id stored in question_settings.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $attempt_id           Tutor attempt ID (tutor_quiz_attempts.attempt_id).
+	 * @param int $sensei_submission_id Sensei submission ID.
+	 * @param int $quiz_id              Tutor quiz post ID.
+	 * @param int $user_id              Student user ID.
+	 * @return void
+	 */
+	private function migrate_submission_answers( int $attempt_id, int $sensei_submission_id, int $quiz_id, int $user_id ): void {
+		global $wpdb;
+
+		if ( $attempt_id <= 0 || $sensei_submission_id <= 0 ) {
+			return;
+		}
+
+		$answers_table = $wpdb->prefix . 'sensei_lms_quiz_submission_answers';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $answers_table ) ) !== $answers_table ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$answers = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT question_id, value, points
+				FROM {$answers_table}
+				WHERE submission_id = %d",
+				$sensei_submission_id
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( empty( $answers ) ) {
+			return;
+		}
+
+		// Question types requiring manual review (is_correct stays NULL).
+		$manual_review_types = array( 'short_answer', 'open_ended' );
+
+		foreach ( $answers as $row ) {
+			$sensei_question_id = (int) $row->question_id;
+
+			// Look up the Tutor question by the sensei_question_id stored in question_settings.
+			$marker        = $wpdb->esc_like( '"_sensei_question_id";i:' . $sensei_question_id . ';' );
+			$tutor_question = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT question_id, question_mark, question_type
+					FROM {$wpdb->prefix}tutor_quiz_questions
+					WHERE quiz_id = %d AND question_settings LIKE %s
+					LIMIT 1",
+					$quiz_id,
+					'%' . $marker . '%'
+				)
+			);
+
+			if ( ! $tutor_question ) {
+				continue;
+			}
+
+			$question_mark = (float) $tutor_question->question_mark;
+			$given_answer  = ! empty( $row->value ) ? (string) $row->value : '';
+			$achieved_mark = null !== $row->points ? (float) $row->points : 0.0;
+
+			// Determine is_correct from points; NULL for manual-review types.
+			if ( in_array( $tutor_question->question_type, $manual_review_types, true ) ) {
+				$is_correct = null;
+			} else {
+				$is_correct = $achieved_mark > 0 ? 1 : 0;
+			}
+
+			$wpdb->insert(
+				$wpdb->prefix . 'tutor_quiz_attempt_answers',
+				array(
+					'user_id'         => $user_id,
+					'quiz_id'         => $quiz_id,
+					'question_id'     => (int) $tutor_question->question_id,
+					'quiz_attempt_id' => $attempt_id,
+					'given_answer'    => $given_answer,
+					'question_mark'   => $question_mark,
+					'achieved_mark'   => $achieved_mark,
+					'minus_mark'      => 0,
+					'is_correct'      => $is_correct,
+				)
+			);
+		}
 	}
 }

@@ -61,21 +61,25 @@ class QuizMigrator {
 		if ( '' === $passmark || false === $passmark ) {
 			$passmark = get_post_meta( $sensei_quiz_id, '_pass_percentage', true );
 		}
-		$enable_reset = get_post_meta( $sensei_quiz_id, '_enable_quiz_reset', true );
-		$random_order = get_post_meta( $sensei_quiz_id, '_random_question_order', true );
-		$time_limit   = get_post_meta( $sensei_quiz_id, '_quiz_time_limit', true );
+		$enable_reset         = get_post_meta( $sensei_quiz_id, '_enable_quiz_reset', true );
+		$random_order         = get_post_meta( $sensei_quiz_id, '_random_question_order', true );
+		$time_limit           = get_post_meta( $sensei_quiz_id, '_quiz_time_limit', true );
+		$show_correct_answers = get_post_meta( $sensei_quiz_id, '_failed_show_correct_answers', true );
+
+		$allow_retakes  = ! empty( $enable_reset );
+		$reveal_answers = 'yes' === $show_correct_answers;
 
 		$quiz_settings = array(
 			'time_limit'                    => array(
 				'time_type'  => 'minutes',
 				'time_value' => is_numeric( $time_limit ) ? (int) $time_limit : 0,
 			),
-			'feedback_mode'                 => 'default',
-			'retry_mode'                    => 'default',
-			'attempts_allowed'              => ! empty( $enable_reset ) ? 0 : 1,
+			'feedback_mode'                 => $reveal_answers ? 'reveal' : 'default',
+			'retry_mode'                    => $allow_retakes ? 'retry' : 'default',
+			'attempts_allowed'              => $allow_retakes ? 0 : 1,
 			'passing_grade'                 => is_numeric( $passmark ) && (int) $passmark > 0 ? (int) $passmark : 80,
 			'max_questions_for_answer'      => 0,
-			'questions_order'               => ! empty( $random_order ) ? 'rand' : 'sorting',
+			'questions_order'               => ! empty( $random_order ) && '0' !== (string) $random_order ? 'rand' : 'sorting',
 			'question_layout_view'          => 'question_pagination',
 			'hide_question_number_overview' => 0,
 			'short_answer_characters_limit' => 0,
@@ -88,11 +92,12 @@ class QuizMigrator {
 			$wpdb->posts,
 			array(
 				'post_type'   => $quiz_post_type,
+				'post_status' => 'publish',
 				'post_parent' => $topic_id,
 				'menu_order'  => $order,
 			),
 			array( 'ID' => $sensei_quiz_id ),
-			array( '%s', '%d', '%d' ),
+			array( '%s', '%s', '%d', '%d' ),
 			array( '%d' )
 		);
 

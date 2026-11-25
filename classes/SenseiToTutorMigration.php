@@ -165,9 +165,6 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 		public function sensei_migrate_course_to_tutor() {
 			global $wpdb;
 
-			tutor_utils()->checking_nonce();
-			Utils::check_course_access();
-
 			$is_batch   = isset( $_POST['batch'] ) && '1' === (string) sanitize_text_field( wp_unslash( $_POST['batch'] ) );
 			$batch_size = isset( $_POST['batch_size'] ) ? max( 1, (int) $_POST['batch_size'] ) : 10;
 
@@ -312,9 +309,9 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 						do_action( 'tlmt_lesson_migrated', $lesson_id, MigrationTypes::SENSEI_TO_TUTOR );
 
-						// Migrate lesson quiz if present.
+						// Migrate lesson quiz if present and has questions.
 						$quiz_id = $this->get_lesson_quiz_id( $lesson_id );
-						if ( $quiz_id > 0 ) {
+						if ( $quiz_id > 0 && $this->quiz_has_questions( $quiz_id ) ) {
 							$migrated_quiz_ids[] = $quiz_id;
 							++$lesson_order;
 							$quiz_migrator->migrate( $quiz_id, $topic_id, $course_id, $lesson_id, $lesson_order );
@@ -364,9 +361,9 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 						do_action( 'tlmt_lesson_migrated', $orphan_id, MigrationTypes::SENSEI_TO_TUTOR );
 
-						// Migrate orphan lesson quiz if present.
+						// Migrate orphan lesson quiz if present and has questions.
 						$quiz_id = $this->get_lesson_quiz_id( $orphan_id );
-						if ( $quiz_id > 0 ) {
+						if ( $quiz_id > 0 && $this->quiz_has_questions( $quiz_id ) ) {
 							$migrated_quiz_ids[] = $quiz_id;
 							++$orphan_order;
 							$quiz_migrator->migrate( $quiz_id, $default_topic_id, $course_id, $orphan_id, $orphan_order );
@@ -403,12 +400,16 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				}
 			}
 
-			// 3. Update Course post type to Tutor course post type
+			// 3. Update Course post type to Tutor course post type and strip Sensei content from description.
+			$clean_content = $this->strip_sensei_content( $course->post_content );
 			$wpdb->update(
 				$wpdb->posts,
-				array( 'post_type' => $course_post_type ),
+				array(
+					'post_type'    => $course_post_type,
+					'post_content' => $clean_content,
+				),
 				array( 'ID' => $course_id ),
-				array( '%s' ),
+				array( '%s', '%s' ),
 				array( '%d' )
 			);
 			clean_post_cache( $course_id );
@@ -594,6 +595,48 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 		}
 
 		/**
+		 * Check whether a Sensei quiz has at least one question.
+		 *
+		 * @param int $quiz_id Sensei quiz post ID.
+		 * @return bool
+		 */
+		private function quiz_has_questions( int $quiz_id ): bool {
+			$questions = get_posts(
+				array(
+					'post_type'      => array( 'question', 'multiple_question' ),
+					'post_status'    => 'any',
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+					'meta_query'     => array(
+						array(
+							'key'   => '_quiz_id',
+							'value' => $quiz_id,
+						),
+					),
+				)
+			);
+
+			return ! empty( $questions );
+		}
+
+		/**
+		 * Strip Sensei-specific Gutenberg blocks and shortcodes from post content.
+		 *
+		 * @param string $content Raw post content.
+		 * @return string Cleaned content.
+		 */
+		private function strip_sensei_content( string $content ): string {
+			// Remove Sensei Gutenberg blocks (including nested content).
+			$content = preg_replace( '/<!--\s*wp:sensei-lms\/[^>]*-->.*?<!--\s*\/wp:sensei-lms\/[^>]*-->/s', '', $content );
+			// Remove self-closing Sensei blocks.
+			$content = preg_replace( '/<!--\s*wp:sensei-lms\/[^>]*\/-->/s', '', $content );
+			// Remove common Sensei shortcodes.
+			$content = preg_replace( '/\[course_lessons[^\]]*\]/', '', $content );
+			$content = preg_replace( '/\[sensei_[^\]]*\]/', '', $content );
+			return trim( $content );
+		}
+
+		/**
 		 * Get quiz ID associated with a lesson.
 		 *
 		 * @param int $lesson_id Lesson post ID.
@@ -717,28 +760,46 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 		 * @return void
 		 */
 		public function migrate_sensei_reviews() {
-			global $wpdb;
-
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
-			$review_migrator = ReviewFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
-			$migrated        = $review_migrator->migrate( 0 );
+			$is_first_batch = ! empty( $_POST['sensei_review_migration_start'] );
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				delete_option( '_tutor_sensei_review_migration_total' );
+			}
 
-			$total_courses = (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = %s",
-					tutor()->course_post_type
-				)
-			);
+			$limit  = isset( $_POST['batch_size'] ) ? max( 1, (int) $_POST['batch_size'] ) : 100;
+			$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : (int) get_option( '_tutor_migrated_items_count', 0 );
+
+			$review_migrator = ReviewFactory::create( MigrationTypes::SENSEI_TO_TUTOR );
+			$migrated_batch  = $review_migrator->migrate( 0, $offset, $limit );
+
+			$migrated_count = $offset + $migrated_batch;
+			update_option( '_tutor_migrated_items_count', $migrated_count );
+
+			$total_reviews = (int) get_option( '_tutor_sensei_review_migration_total', 0 );
+			if ( $total_reviews < 1 ) {
+				$total_reviews = $review_migrator->get_total_count();
+				if ( $total_reviews > 0 ) {
+					update_option( '_tutor_sensei_review_migration_total', $total_reviews, false );
+				}
+			}
+
+			$has_more = $migrated_batch >= $limit;
+			if ( ! $has_more ) {
+				delete_option( '_tutor_sensei_review_migration_total' );
+			}
 
 			wp_send_json_success(
 				array(
-					'step'               => 'reviews',
-					'migrated'           => $migrated,
-					'totalCourseCount'   => $total_courses > 0 ? $total_courses : 1,
-					'total_course_count' => $total_courses > 0 ? $total_courses : 1,
-					'failed'             => array(),
+					'step'           => 'reviews',
+					'migrated'       => $migrated_count,
+					'migrated_count' => $migrated_count,
+					'total'          => $total_reviews > 0 ? $total_reviews : 1,
+					'remaining'      => max( 0, $total_reviews - $migrated_count ),
+					'has_more'       => $has_more,
+					'failed'         => array(),
 				)
 			);
 		}

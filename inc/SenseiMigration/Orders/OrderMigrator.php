@@ -151,10 +151,13 @@ class OrderMigrator {
 		global $wpdb;
 
 		$results = $wpdb->get_results(
-			"SELECT post_id AS course_id, meta_value AS product_id
-			FROM {$wpdb->postmeta}
-			WHERE meta_key = '_course_woocommerce_product'
-			AND meta_value > 0"
+			$wpdb->prepare(
+				"SELECT post_id AS course_id, meta_value AS product_id
+				FROM {$wpdb->postmeta}
+				WHERE meta_key = %s
+				AND meta_value > 0",
+				'_course_woocommerce_product'
+			)
 		);
 
 		$map = array();
