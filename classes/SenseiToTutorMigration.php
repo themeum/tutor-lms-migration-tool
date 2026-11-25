@@ -53,6 +53,10 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			$migration_type   = isset( $_POST['migration_type'] ) ? sanitize_text_field( wp_unslash( $_POST['migration_type'] ) ) : '';
 			$migration_vendor = isset( $_POST['migration_vendor'] ) ? sanitize_text_field( wp_unslash( $_POST['migration_vendor'] ) ) : '';
 
+			if ( 'sensei' !== $migration_vendor ) {
+				return;
+			}
+
 			$tutor_migration_table_data = array(
 				'migration_type'   => $migration_type,
 				'migration_vendor' => $migration_vendor,
@@ -64,6 +68,8 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				$wpdb->prefix . 'tutor_migration',
 				$tutor_migration_table_data
 			);
+
+			Utils::convert_all_sensei_teachers_to_tutor_instructors();
 		}
 
 		/**
@@ -165,6 +171,19 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			$is_batch   = isset( $_POST['batch'] ) && '1' === (string) sanitize_text_field( wp_unslash( $_POST['batch'] ) );
 			$batch_size = isset( $_POST['batch_size'] ) ? max( 1, (int) $_POST['batch_size'] ) : 10;
 
+			$is_first_batch = ! empty( $_POST['sensei_course_migration_start'] );
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				$remaining_total = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = %s",
+						'course'
+					)
+				);
+				update_option( '_tutor_sensei_course_migration_total', $remaining_total, false );
+				Utils::convert_all_sensei_teachers_to_tutor_instructors();
+			}
+
 			$limit_clause = $is_batch ? $wpdb->prepare( ' LIMIT %d', $batch_size ) : '';
 
 			$courses = $wpdb->get_results(
@@ -192,11 +211,24 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 				)
 			);
 
+			$total_courses = (int) get_option( '_tutor_sensei_course_migration_total', 0 );
+			if ( $total_courses < 1 ) {
+				$total_courses = $migrated_count + $remaining;
+			}
+
+			$has_more = $remaining > 0;
+			if ( ! $has_more ) {
+				delete_option( '_tutor_sensei_course_migration_total' );
+			}
+
 			wp_send_json_success(
 				array(
-					'has_more'       => $remaining > 0,
-					'remaining'      => $remaining,
-					'migrated_count' => $migrated_count,
+					'has_more'           => $has_more,
+					'remaining'          => $remaining,
+					'migrated'           => $migrated_count,
+					'migrated_count'     => $migrated_count,
+					'total'              => $total_courses,
+					'total_course_count' => $total_courses,
 				)
 			);
 		}
@@ -635,18 +667,46 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			tutor_utils()->checking_nonce();
 			Utils::check_course_access();
 
-			$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
-			$limit  = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : 50;
+			$is_first_batch = ! empty( $_POST['sensei_order_migration_start'] );
+			if ( $is_first_batch ) {
+				delete_option( '_tutor_migrated_items_count' );
+				delete_option( '_tutor_sensei_order_migration_total' );
+			}
+
+			$limit = isset( $_POST['limit'] ) ? max( 1, (int) $_POST['limit'] ) : 50;
+			if ( isset( $_POST['batch_size'] ) ) {
+				$limit = max( 1, (int) $_POST['batch_size'] );
+			}
+
+			$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : (int) get_option( '_tutor_migrated_items_count', 0 );
 
 			$order_migrator = new \Themeum\TutorLMSMigrationTool\SenseiMigration\Orders\OrderMigrator();
 			$result         = $order_migrator->migrate( $offset, $limit );
 
+			$migrated_count = $offset + (int) $result['migrated'];
+			update_option( '_tutor_migrated_items_count', $migrated_count );
+
+			$total_orders = (int) get_option( '_tutor_sensei_order_migration_total', 0 );
+			if ( $total_orders < 1 ) {
+				$total_orders = (int) ( $result['total'] ?? ( $result['migrated'] + $result['remaining'] ) );
+				if ( $total_orders > 0 ) {
+					update_option( '_tutor_sensei_order_migration_total', $total_orders, false );
+				}
+			}
+
+			$has_more = ! empty( $result['has_more'] );
+			if ( ! $has_more ) {
+				delete_option( '_tutor_sensei_order_migration_total' );
+			}
+
 			wp_send_json_success(
 				array(
-					'step'      => 'orders',
-					'migrated'  => $result['migrated'],
-					'remaining' => $result['remaining'],
-					'has_more'  => $result['has_more'],
+					'step'           => 'orders',
+					'migrated'       => $migrated_count,
+					'migrated_count' => $migrated_count,
+					'total'          => $total_orders,
+					'remaining'      => $result['remaining'],
+					'has_more'       => $has_more,
 				)
 			);
 		}
@@ -674,10 +734,11 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 
 			wp_send_json_success(
 				array(
-					'step'             => 'reviews',
-					'migrated'         => $migrated,
-					'totalCourseCount' => $total_courses > 0 ? $total_courses : 1,
-					'failed'           => array(),
+					'step'               => 'reviews',
+					'migrated'           => $migrated,
+					'totalCourseCount'   => $total_courses > 0 ? $total_courses : 1,
+					'total_course_count' => $total_courses > 0 ? $total_courses : 1,
+					'failed'             => array(),
 				)
 			);
 		}

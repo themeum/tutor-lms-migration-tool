@@ -24,16 +24,17 @@ class OrderMigrator {
 	 *
 	 * @param int $offset Offset number.
 	 * @param int $limit  Batch limit.
-	 * @return array{migrated: int, remaining: int, has_more: bool}
+	 * @return array{migrated: int, total: int, remaining: int, has_more: bool}
 	 */
 	public function migrate( int $offset = 0, int $limit = 50 ): array {
 		global $wpdb;
 
-		// 1. Get WooCommerce product IDs linked to Sensei courses
+		// 1. Get WooCommerce product IDs linked to Sensei courses.
 		$course_product_map = $this->get_course_product_map();
 		if ( empty( $course_product_map ) ) {
 			return array(
 				'migrated'  => 0,
+				'total'     => 0,
 				'remaining' => 0,
 				'has_more'  => false,
 			);
@@ -42,11 +43,11 @@ class OrderMigrator {
 		$product_ids = array_keys( $course_product_map );
 		$format_pids = implode( ',', array_map( 'intval', $product_ids ) );
 
-		// 2. Query WooCommerce order items associated with these products.
+		// 2. Query distinct WooCommerce orders associated with these products.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		$items = $wpdb->get_results(
+		$orders = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT oi.order_id, oim.meta_value AS product_id, p.post_date, p.post_status
+				"SELECT DISTINCT oi.order_id, p.post_date
 				FROM {$wpdb->prefix}woocommerce_order_items oi
 				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim
 					ON oi.order_item_id = oim.order_item_id
@@ -63,13 +64,10 @@ class OrderMigrator {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		$migrated = 0;
-		if ( ! empty( $items ) ) {
-			foreach ( $items as $item ) {
-				$pid       = (int) $item->product_id;
-				$course_id = $course_product_map[ $pid ] ?? 0;
-				$order_id  = (int) $item->order_id;
-
-				if ( $course_id <= 0 ) {
+		if ( ! empty( $orders ) ) {
+			foreach ( $orders as $order ) {
+				$order_id = (int) $order->order_id;
+				if ( $order_id <= 0 ) {
 					continue;
 				}
 
@@ -79,29 +77,48 @@ class OrderMigrator {
 					continue;
 				}
 
-				// Ensure student enrollment without duplicate trigger.
-				if ( function_exists( 'tutor_utils' ) && ! tutor_utils()->is_enrolled( $course_id, $customer_id ) ) {
-					$order_date = ! empty( $item->post_date ) ? $item->post_date : current_time( 'mysql' );
-					/* translators: %d: Order ID */
-					$order_title = sprintf( __( 'Course Enrolled (Order #%d)', 'tutor-lms-migration-tool' ), $order_id );
-					wp_insert_post(
-						array(
-							'post_type'   => 'tutor_enrolled',
-							'post_title'  => $order_title,
-							'post_status' => 'completed',
-							'post_author' => $customer_id,
-							'post_parent' => $course_id,
-							'post_date'   => $order_date,
-						)
-					);
-					update_user_meta( $customer_id, '_is_tutor_student', $order_date );
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+				$product_rows = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT oim.meta_value
+						FROM {$wpdb->prefix}woocommerce_order_items oi
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim
+							ON oi.order_item_id = oim.order_item_id
+							AND oim.meta_key IN ('_product_id', '_variation_id')
+						WHERE oi.order_id = %d
+						AND oim.meta_value IN ({$format_pids})",
+						$order_id
+					)
+				);
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+
+				if ( ! empty( $product_rows ) ) {
+					$order_date = ! empty( $order->post_date ) ? $order->post_date : current_time( 'mysql' );
+					foreach ( $product_rows as $pid ) {
+						$course_id = $course_product_map[ (int) $pid ] ?? 0;
+						if ( $course_id > 0 && function_exists( 'tutor_utils' ) && ! tutor_utils()->is_enrolled( $course_id, $customer_id ) ) {
+							/* translators: %d: Order ID */
+							$order_title = sprintf( __( 'Course Enrolled (Order #%d)', 'tutor-lms-migration-tool' ), $order_id );
+							wp_insert_post(
+								array(
+									'post_type'   => 'tutor_enrolled',
+									'post_title'  => $order_title,
+									'post_status' => 'completed',
+									'post_author' => $customer_id,
+									'post_parent' => $course_id,
+									'post_date'   => $order_date,
+								)
+							);
+							update_user_meta( $customer_id, '_is_tutor_student', $order_date );
+						}
+					}
 				}
 
 				++$migrated;
 			}
 		}
 
-		// Calculate remaining count.
+		// Calculate total count.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$total_count = (int) $wpdb->get_var(
 			"SELECT COUNT(DISTINCT oi.order_id)
@@ -115,10 +132,11 @@ class OrderMigrator {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
-		$remaining = max( 0, $total_count - ( $offset + $limit ) );
+		$remaining = max( 0, $total_count - ( $offset + count( $orders ) ) );
 
 		return array(
 			'migrated'  => $migrated,
+			'total'     => $total_count,
 			'remaining' => $remaining,
 			'has_more'  => $remaining > 0,
 		);

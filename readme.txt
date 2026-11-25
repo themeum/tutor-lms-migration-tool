@@ -5,7 +5,7 @@ Tags: LMS, migration, course, elearning, education
 Requires at least: 5.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.0
+Stable tag: 2.7.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -203,7 +203,7 @@ You can find the complete documentation and step-by-step migration guides in our
 
 == Changelog ==
 
-= 2.6.0 - 01 September, 2026 =
+= 2.7.0 - 27 November, 2026
 
 New: Sensei LMS to Tutor LMS migration support added (Sensei 4.x+).
 New: Sensei courses, modules, and taxonomies (course-category, tags) migration to Tutor LMS courses, topics, and categories.
@@ -212,6 +212,9 @@ New: Sensei quizzes and question types (multiple-choice, true/false, gap-fill/fi
 New: Sensei student course enrollments and student progress (lesson completion, quiz attempts) migration.
 New: Sensei WooCommerce monetization, order records, and course reviews migration.
 New: Sensei teacher role migration to Tutor LMS approved instructors.
+
+= 2.6.0 - 01 September, 2026 =
+
 New: Added support for importing LifterLMS course taxonomies, metadata, and reviews.
 New: Introduced a dedicated Enrollments section for migrating LifterLMS enrollment data.
 New: Added support for migrating learner progress from LifterLMS to Tutor LMS.

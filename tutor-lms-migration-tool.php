@@ -86,7 +86,7 @@ TutorLMSMigrationTool::instance();
 // Init.
 add_action(
 	'plugins_loaded',
-	function() {
+	function () {
 		new Init();
 	}
 );
@@ -101,9 +101,9 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 	if ( count( $ld_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				// We want $user.
-				if ( in_array( 'wdm_instructor', $user->roles ) ) {
+				if ( in_array( 'wdm_instructor', (array) $user->roles, true ) ) {
 					$user->set_role( 'tutor_instructor' );
 				}
 			},
@@ -112,14 +112,13 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		);
 	}
 
-
 	// Migrate Learnpress Instructor to Tutor Instructor.
 	$lp_migration_history = $utils->fetch_history( 'lp' );
 
 	if ( count( $lp_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				Utils::convert_lp_teacher_to_tutor_instructor( $user );
 			},
 			10,
@@ -127,17 +126,15 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		);
 	}
 
-
-
 	// Migrate Lifter Instructor to Tutor Instructor.
 	$lifter_migration_history = $utils->fetch_history( 'lif' );
 
 	if ( count( $lifter_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				// We want $user .
-				if ( in_array( 'instructor', $user->roles ) ) {
+				if ( in_array( 'instructor', (array) $user->roles, true ) ) {
 					$user->set_role( 'tutor_instructor' );
 				}
 			},
@@ -152,7 +149,7 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 	if ( count( $sensei_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				// We want $user.
 				if ( in_array( 'teacher', (array) $user->roles, true ) ) {
 					Utils::convert_sensei_teacher_to_tutor_instructor( $user );
