@@ -86,11 +86,12 @@ class QuestionMigrator {
 				'question_mark'        => $point,
 				'question_settings'    => maybe_serialize(
 					array(
-						'question_type'      => $tutor_type,
-						'question_mark'      => $point,
-						'answer_required'    => '0',
-						'randomize_question' => in_array( $tutor_type, array( 'single_choice', 'multiple_choice' ), true ) ? '1' : '0',
-						'show_question_mark' => '1',
+						'question_type'       => $tutor_type,
+						'question_mark'       => $point,
+						'answer_required'     => '0',
+						'randomize_question'  => in_array( $tutor_type, array( 'single_choice', 'multiple_choice' ), true ) ? '1' : '0',
+						'show_question_mark'  => '1',
+						'_sensei_question_id' => $question_id,
 					)
 				),
 				'question_order'       => $order,

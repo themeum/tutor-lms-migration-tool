@@ -86,7 +86,7 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 					'desc'      => __( 'Sensei LMS Migration', 'tutor-lms-migration-tool' ),
 					'template'  => 'migration_sensei',
 					'view_path' => TLMT_PATH . 'views/',
-					'icon'      => 'tutor-icon-brand-sensei',
+					'icon'      => 'tutor-icon-export',
 					'blocks'    => array(
 						'block' => array(),
 					),

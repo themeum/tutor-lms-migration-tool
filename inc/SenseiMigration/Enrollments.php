@@ -139,6 +139,15 @@ class Enrollments {
 		);
 
 		if ( $enroll_id && ! is_wp_error( $enroll_id ) ) {
+			// Force 'completed' status via direct DB write, bypassing any Tutor hooks
+			// that flip paid-course enrollments to 'cancel' when no WC order exists.
+			$wpdb->update(
+				$wpdb->posts,
+				array( 'post_status' => 'completed' ),
+				array( 'ID' => $enroll_id ),
+				array( '%s' ),
+				array( '%d' )
+			);
 			clean_post_cache( $enroll_id );
 			update_post_meta( $enroll_id, '_tutor_enrolled_by', 'sensei_migration' );
 			update_user_meta( $user_id, '_is_tutor_student', $enrolled_date );
