@@ -7,6 +7,7 @@
  * @link https://themeum.com
  * @since 2.3.0
  */
+
 namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
@@ -16,6 +17,8 @@ use Themeum\TutorLMSMigrationTool\LDMigration\Product\TutorProduct as LD_Tutor_P
 use Themeum\TutorLMSMigrationTool\LDMigration\Product\WCProduct as LD_WC_Product;
 use Themeum\TutorLMSMigrationTool\LIFMigration\Product\NativePricing as LIF_Tutor_Product;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\Product\NativePricing as SenseiNativePricing;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\Product\WCProduct as SenseiWCProduct;
 
 /**
  * Provides product object for migration.
@@ -31,7 +34,7 @@ abstract class ProductFactory {
 	 * @param string $monetization_type the monetization type such as tutor, wc etc.
 	 * @param string $migration_type    the migration type such as ld_to_tutor.
 	 *
-	 * @throws InvalidArgumentException
+	 * @throws InvalidArgumentException If invalid argument passed.
 	 *
 	 * @return Product
 	 */
@@ -53,9 +56,15 @@ abstract class ProductFactory {
 					return new LIF_Tutor_Product();
 				}
 				break;
+			case MigrationTypes::SENSEI_TO_TUTOR:
+				if ( 'tutor' === $monetization_type || 'native' === $monetization_type ) {
+					return new SenseiNativePricing();
+				}
+				return new SenseiWCProduct();
 			default:
 				break;
 		}
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
+
+		throw new InvalidArgumentException( esc_html__( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

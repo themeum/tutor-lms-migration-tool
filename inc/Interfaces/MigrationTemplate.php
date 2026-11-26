@@ -76,5 +76,4 @@ interface MigrationTemplate {
 	 * @return int
 	 */
 	public function get_item_id( $item ): int;
-
 }

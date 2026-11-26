@@ -1,6 +1,6 @@
 <?php
 /**
- * PostMeta Factory
+ * StudentProgress Factory.
  *
  * @package TutorLMSMigrationTool
  * @author Themeum <support@themeum.com>
@@ -11,14 +11,15 @@
 namespace Themeum\TutorLMSMigrationTool\Factories;
 
 use InvalidArgumentException;
-use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
 use Themeum\TutorLMSMigrationTool\LDMigration\StudentProgress as LDStudentProgress;
 use Themeum\TutorLMSMigrationTool\LIFMigration\StudentProgress as LIFStudentProgress;
 use Themeum\TutorLMSMigrationTool\LPMigration\StudentProgress as LPStudentProgress;
-use Themeum\TutorLMSMigrationTool\Interfaces\StudentProgress as StudentProgressInterface;
+use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\StudentProgress as SenseiStudentProgress;
 
 /**
- * Create the post meta objects based on migration type and meta type
+ * Creates student progress objects based on migration type.
  */
 abstract class StudentProgressFactory {
 
@@ -43,10 +44,12 @@ abstract class StudentProgressFactory {
 				return new LPStudentProgress();
 			case MigrationTypes::LIF_TO_TUTOR:
 				return new LIFStudentProgress();
+			case MigrationTypes::SENSEI_TO_TUTOR:
+				return new SenseiStudentProgress();
 			default:
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) ); //phpcs:ignore
+		throw new InvalidArgumentException( esc_html__( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

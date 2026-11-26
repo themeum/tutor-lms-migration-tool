@@ -20,6 +20,9 @@ use Themeum\TutorLMSMigrationTool\LDMigration\PostMeta\QuizMeta;
 use Themeum\TutorLMSMigrationTool\LIFMigration\CourseMeta as LifCourseMeta;
 use Themeum\TutorLMSMigrationTool\LIFMigration\LessonMeta as LifLessonMeta;
 use Themeum\TutorLMSMigrationTool\MigrationTypes;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\CourseMeta as SenseiCourseMeta;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\LessonMeta as SenseiLessonMeta;
+use Themeum\TutorLMSMigrationTool\SenseiMigration\Quizzes\QuizMeta as SenseiQuizMeta;
 
 /**
  * Create the post meta objects based on migration type and meta type
@@ -64,10 +67,22 @@ abstract class PostMetaFactory {
 						break;
 				}
 				break;
+			case MigrationTypes::SENSEI_TO_TUTOR:
+				switch ( $meta_type ) {
+					case ContentTypes::COURSE_META:
+						return new SenseiCourseMeta();
+					case ContentTypes::LESSON_META:
+						return new SenseiLessonMeta();
+					case ContentTypes::QUIZ_META:
+						return new SenseiQuizMeta();
+					default:
+						break;
+				}
+				break;
 			default:
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

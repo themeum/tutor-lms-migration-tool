@@ -19,6 +19,6 @@
     ],
     "require": {},
     "scripts": {
-        "build": "composer i --no-dev && wp dist-archive . ."
+        "build": "rm -f *.zip && composer i --no-dev && wp dist-archive . ."
     }
 }

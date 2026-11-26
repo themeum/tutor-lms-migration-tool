@@ -19,8 +19,9 @@ interface StudentProgress {
 	 * @since 4.0.0 param $course_id added.
 	 *
 	 * @param int $course_id the course id.
+	 * @param int $user_id   the user id (optional).
 	 *
-	 * @return void
+	 * @return void|int
 	 */
-	public function migrate( int $course_id );
+	public function migrate( int $course_id, int $user_id = 0 );
 }

@@ -29,14 +29,14 @@ abstract class OrderFactory {
 	 * @param string $monetization_type the type of monetization.
 	 * @param string $migration_type type of migration (LD to Tutor etc).
 	 *
-	 * @throws InvalidArgumentException
+	 * @throws InvalidArgumentException If invalid argument passed.
 	 *
 	 * @return Order
 	 */
 	public static function create( string $monetization_type, string $migration_type ): Order {
 		switch ( $migration_type ) {
 			case MigrationTypes::LD_TO_TUTOR:
-				if ( 'tutor' === $monetization_type || $monetization_type == '-1' || $monetization_type == 'free' ) {
+				if ( 'tutor' === $monetization_type || '-1' === $monetization_type || 'free' === $monetization_type ) {
 					return new LD_Tutor_Order();
 				}
 
@@ -53,6 +53,6 @@ abstract class OrderFactory {
 				break;
 		}
 
-		throw new InvalidArgumentException( __( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
+		throw new InvalidArgumentException( esc_html__( 'Invalid argument passed', 'tutor-lms-migration-tool' ) );
 	}
 }

@@ -7,6 +7,7 @@
  * @link https://themeum.com
  * @since 2.3.0
  */
+
 namespace Themeum\TutorLMSMigrationTool\Interfaces;
 
 /**
@@ -18,8 +19,6 @@ interface Order {
 	 * Migrate orders from learndash to tutor.
 	 *
 	 * @since 2.3.0
-	 *
-	 * @throws \Throwable
 	 *
 	 * @param \WP_Post|null $order the order post to migrate.
 	 * @param int           $course_id the course id of the order.

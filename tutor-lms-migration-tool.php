@@ -4,7 +4,7 @@
  * Plugin URI: https://www.themeum.com/
  * Description: A migration toolkit that allows you to migrate data from other LMS platforms to Tutor LMS.
  * Author: Themeum
- * Version: 2.6.0
+ * Version: 2.7.0
  * Author URI: http://themeum.com
  * Requires at least: 5.3
  * Tested up to: 7.1
@@ -30,7 +30,7 @@ use Themeum\TutorLMSMigrationTool\Init;
  * @since v.1.0.0
  */
 
-define( 'TLMT_VERSION', '2.6.0' );
+define( 'TLMT_VERSION', '2.7.0' );
 define( 'TLMT_FILE', __FILE__ );
 define( 'TLMT_PATH', plugin_dir_path( TLMT_FILE ) );
 define( 'TLMT_URL', plugin_dir_url( TLMT_FILE ) );
@@ -86,7 +86,7 @@ TutorLMSMigrationTool::instance();
 // Init.
 add_action(
 	'plugins_loaded',
-	function() {
+	function () {
 		new Init();
 	}
 );
@@ -101,9 +101,9 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 	if ( count( $ld_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				// We want $user.
-				if ( in_array( 'wdm_instructor', $user->roles ) ) {
+				if ( in_array( 'wdm_instructor', (array) $user->roles, true ) ) {
 					$user->set_role( 'tutor_instructor' );
 				}
 			},
@@ -112,14 +112,13 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		);
 	}
 
-
 	// Migrate Learnpress Instructor to Tutor Instructor.
 	$lp_migration_history = $utils->fetch_history( 'lp' );
 
 	if ( count( $lp_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				Utils::convert_lp_teacher_to_tutor_instructor( $user );
 			},
 			10,
@@ -127,18 +126,33 @@ if ( is_plugin_active( 'tutor/tutor.php' ) ) {
 		);
 	}
 
-
-
 	// Migrate Lifter Instructor to Tutor Instructor.
 	$lifter_migration_history = $utils->fetch_history( 'lif' );
 
 	if ( count( $lifter_migration_history ) ) {
 		add_action(
 			'wp_login',
-			function( $user_login, $user ) {
+			function ( $user_login, $user ) {
 				// We want $user .
-				if ( in_array( 'instructor', $user->roles ) ) {
+				if ( in_array( 'instructor', (array) $user->roles, true ) ) {
 					$user->set_role( 'tutor_instructor' );
+				}
+			},
+			10,
+			2
+		);
+	}
+
+	// Migrate Sensei Teacher to Tutor Instructor.
+	$sensei_migration_history = $utils->fetch_history( 'sensei' );
+
+	if ( count( $sensei_migration_history ) ) {
+		add_action(
+			'wp_login',
+			function ( $user_login, $user ) {
+				// We want $user.
+				if ( in_array( 'teacher', (array) $user->roles, true ) ) {
+					Utils::convert_sensei_teacher_to_tutor_instructor( $user );
 				}
 			},
 			10,

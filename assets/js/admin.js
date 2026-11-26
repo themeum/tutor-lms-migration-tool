@@ -56,7 +56,7 @@ jQuery(document).ready(function ($) {
      */
     var checkProgress;
     function isBatchedMigrationVendor(vendor) {
-        return vendor === 'ld' || vendor === 'lp' || vendor === 'lif';
+        return vendor === 'ld' || vendor === 'lp' || vendor === 'lif' || vendor === 'sensei';
     }
     function get_live_progress_course_migrating_info(final_types = 'lp') {
         $.ajax({
@@ -130,6 +130,10 @@ jQuery(document).ready(function ($) {
             final_types = 'lif';
             migration_vendor = 'lif';
         }
+        if ($that.attr('action') == 'sensei_migrate_all_data_to_tutor') {
+            final_types = 'sensei';
+            migration_vendor = 'sensei';
+        }
 
         function finishCourseMigrationStep() {
             clearTimeout(countReviewsProgress);
@@ -145,6 +149,9 @@ jQuery(document).ready(function ($) {
             var requestData = $formData + '&migrate_type=courses';
             if (isFirstBatch && isBatchedMigrationVendor(final_types)) {
                 requestData += '&' + final_types + '_course_migration_start=1';
+            }
+            if (final_types === 'sensei') {
+                requestData += '&batch=1&batch_size=10';
             }
 
             $.ajax({
@@ -391,6 +398,12 @@ jQuery(document).ready(function ($) {
     }
 
     function migrate_subscriptions($formData, final_types) {
+        // Sensei LMS has no subscriptions concept — skip directly to reviews.
+        if (final_types === 'sensei') {
+            migrate_reviews($formData, final_types);
+            return;
+        }
+
         if (!$('#sectionSubscriptions').length) {
             migrate_reviews($formData, final_types);
             return;
@@ -482,7 +495,6 @@ jQuery(document).ready(function ($) {
             countReviewsProgress = setTimeout(reviews_migration_progress_bar, 300, complete);
         }
     }
-
     function migrate_reviews($formData, final_types) {
         final_types = final_types || migration_vendor || 'ld';
 
