@@ -96,20 +96,50 @@ class OrderMigrator {
 					$order_date = ! empty( $order->post_date ) ? $order->post_date : current_time( 'mysql' );
 					foreach ( $product_rows as $pid ) {
 						$course_id = $course_product_map[ (int) $pid ] ?? 0;
-						if ( $course_id > 0 && function_exists( 'tutor_utils' ) && ! tutor_utils()->is_enrolled( $course_id, $customer_id ) ) {
-							/* translators: %d: Order ID */
-							$order_title = sprintf( __( 'Course Enrolled (Order #%d)', 'tutor-lms-migration-tool' ), $order_id );
-							wp_insert_post(
-								array(
-									'post_type'   => 'tutor_enrolled',
-									'post_title'  => $order_title,
-									'post_status' => 'completed',
-									'post_author' => $customer_id,
-									'post_parent' => $course_id,
-									'post_date'   => $order_date,
+						if ( $course_id > 0 ) {
+							// Check for existing completed enrollment directly — avoids polluting Tutor caches.
+							$already_enrolled = $wpdb->get_var(
+								$wpdb->prepare(
+									"SELECT ID FROM {$wpdb->posts}
+									WHERE post_type = 'tutor_enrolled'
+									AND post_author = %d
+									AND post_parent = %d
+									AND post_status = 'completed'
+									LIMIT 1",
+									$customer_id,
+									$course_id
 								)
 							);
-							update_user_meta( $customer_id, '_is_tutor_student', $order_date );
+
+							if ( ! $already_enrolled ) {
+								/* translators: %d: Order ID */
+								$order_title = sprintf( __( 'Course Enrolled (Order #%d)', 'tutor-lms-migration-tool' ), $order_id );
+								$enroll_id   = wp_insert_post(
+									array(
+										'post_type'   => 'tutor_enrolled',
+										'post_title'  => $order_title,
+										'post_status' => 'completed',
+										'post_author' => $customer_id,
+										'post_parent' => $course_id,
+										'post_date'   => $order_date,
+									)
+								);
+
+								if ( $enroll_id && ! is_wp_error( $enroll_id ) ) {
+									// Force completed status via direct DB write, bypassing Tutor hooks
+									// that flip paid-course enrollments to 'cancel' without a native order.
+									$wpdb->update(
+										$wpdb->posts,
+										array( 'post_status' => 'completed' ),
+										array( 'ID' => $enroll_id ),
+										array( '%s' ),
+										array( '%d' )
+									);
+									clean_post_cache( $enroll_id );
+									update_post_meta( $enroll_id, '_tutor_enrolled_by', 'sensei_migration' );
+									update_user_meta( $customer_id, '_is_tutor_student', $order_date );
+								}
+							}
 						}
 					}
 				}

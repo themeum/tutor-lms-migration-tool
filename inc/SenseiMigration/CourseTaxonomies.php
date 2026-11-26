@@ -43,9 +43,13 @@ class CourseTaxonomies {
 	/**
 	 * Cached map of source term ID => Tutor term ID, keyed by source taxonomy.
 	 *
+	 * Instance property (not static) so each course migration starts with a
+	 * clean map and cannot inherit stale cross-course term mappings from earlier
+	 * courses processed in the same batch request.
+	 *
 	 * @var array<string, array<int, int>>
 	 */
-	private static $term_id_map = array();
+	private $term_id_map = array();
 
 	/**
 	 * Migrate course-specific categories and tags for a course.
@@ -122,8 +126,8 @@ class CourseTaxonomies {
 	private function ensure_tutor_term( \WP_Term $term, string $source_tax, string $destination_tax, bool $hierarchical ): int {
 		$source_term_id = (int) $term->term_id;
 
-		if ( isset( self::$term_id_map[ $source_tax ][ $source_term_id ] ) ) {
-			return self::$term_id_map[ $source_tax ][ $source_term_id ];
+		if ( isset( $this->term_id_map[ $source_tax ][ $source_term_id ] ) ) {
+			return $this->term_id_map[ $source_tax ][ $source_term_id ];
 		}
 
 		$parent_tutor_id = 0;
@@ -151,7 +155,7 @@ class CourseTaxonomies {
 				}
 			}
 
-			self::$term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
+			$this->term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
 			return $tutor_term_id;
 		}
 
@@ -169,7 +173,7 @@ class CourseTaxonomies {
 			$by_name = term_exists( $term->name, $destination_tax );
 			if ( $by_name ) {
 				$tutor_term_id                                       = (int) ( is_array( $by_name ) ? $by_name['term_id'] : $by_name );
-				self::$term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
+				$this->term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
 				return $tutor_term_id;
 			}
 
@@ -177,7 +181,7 @@ class CourseTaxonomies {
 		}
 
 		$tutor_term_id                                       = (int) $result['term_id'];
-		self::$term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
+		$this->term_id_map[ $source_tax ][ $source_term_id ] = $tutor_term_id;
 
 		return $tutor_term_id;
 	}

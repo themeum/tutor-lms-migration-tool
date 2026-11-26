@@ -10,6 +10,8 @@
 
 namespace Themeum\TutorLMSMigrationTool\SenseiMigration\Quizzes;
 
+use Themeum\TutorLMSMigrationTool\ErrorHandler;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -70,6 +72,16 @@ class QuestionMigrator {
 
 			// Skip question types that have no equivalent in Tutor LMS.
 			if ( '' === $tutor_type ) {
+				ErrorHandler::set_error(
+					'quiz',
+					sprintf(
+						/* translators: 1: Sensei question ID, 2: Sensei quiz ID, 3: question type */
+						__( 'Skipped question #%1$d in quiz #%2$d: type "%3$s" has no Tutor LMS equivalent.', 'tutor-lms-migration-tool' ),
+						$question_id,
+						$sensei_quiz_id,
+						$sensei_type
+					)
+				);
 				continue;
 			}
 
