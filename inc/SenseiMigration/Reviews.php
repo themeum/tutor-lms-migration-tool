@@ -57,6 +57,9 @@ class Reviews implements Review {
 				INNER JOIN {$wpdb->commentmeta} cm
 					ON cm.comment_id = c.comment_ID
 					AND cm.meta_key IN ('rating', '_rating', '_sensei_rating', 'sensei_rating')
+				INNER JOIN {$wpdb->posts} p
+					ON p.ID = c.comment_post_ID
+					AND p.post_type IN ('course', 'courses')
 				WHERE c.comment_type IN ('review', 'comment', 'sensei_review')
 				AND c.user_id > 0" . $course_clause . '
 				ORDER BY c.comment_ID ASC
@@ -81,6 +84,9 @@ class Reviews implements Review {
 			}
 			if ( empty( $raw_rating ) ) {
 				$raw_rating = get_comment_meta( $cid, '_sensei_rating', true );
+			}
+			if ( empty( $raw_rating ) ) {
+				$raw_rating = get_comment_meta( $cid, 'sensei_rating', true );
 			}
 
 			$rating = is_numeric( $raw_rating ) ? max( 1, min( 5, (int) $raw_rating ) ) : 5;
@@ -126,6 +132,9 @@ class Reviews implements Review {
 			INNER JOIN {$wpdb->commentmeta} cm
 				ON cm.comment_id = c.comment_ID
 				AND cm.meta_key IN ('rating', '_rating', '_sensei_rating', 'sensei_rating')
+			INNER JOIN {$wpdb->posts} p
+				ON p.ID = c.comment_post_ID
+				AND p.post_type IN ('course', 'courses')
 			WHERE c.comment_type IN ('review', 'comment', 'sensei_review')
 			AND c.user_id > 0" . $course_clause
 		);
