@@ -111,7 +111,13 @@ class OrderMigrator {
 								)
 							);
 
-							if ( ! $already_enrolled ) {
+							if ( $already_enrolled ) {
+								// Enrollment exists (possibly migrated from free progress records).
+								// Backfill the order link if it was never set.
+								if ( ! get_post_meta( (int) $already_enrolled, '_tutor_enrolled_by_order_id', true ) ) {
+									update_post_meta( (int) $already_enrolled, '_tutor_enrolled_by_order_id', $order_id );
+								}
+							} else {
 								/* translators: %d: Order ID */
 								$order_title = sprintf( __( 'Course Enrolled (Order #%d)', 'tutor-lms-migration-tool' ), $order_id );
 								$enroll_id   = wp_insert_post(
@@ -137,6 +143,8 @@ class OrderMigrator {
 									);
 									clean_post_cache( $enroll_id );
 									update_post_meta( $enroll_id, '_tutor_enrolled_by', 'sensei_migration' );
+									// Link WC order → enrollment so Tutor reports and EnrollmentModel::get_enrolled_info() return the correct order_id.
+									update_post_meta( $enroll_id, '_tutor_enrolled_by_order_id', $order_id );
 									update_user_meta( $customer_id, '_is_tutor_student', $order_date );
 								}
 							}
