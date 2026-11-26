@@ -298,11 +298,12 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 							$wpdb->posts,
 							array(
 								'post_type'   => $lesson_post_type,
+								'post_status' => 'publish',
 								'post_parent' => $topic_id,
 								'menu_order'  => $lesson_order,
 							),
 							array( 'ID' => $lesson_id ),
-							array( '%s', '%d', '%d' ),
+							array( '%s', '%s', '%d', '%d' ),
 							array( '%d' )
 						);
 
@@ -350,11 +351,12 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 							$wpdb->posts,
 							array(
 								'post_type'   => $lesson_post_type,
+								'post_status' => 'publish',
 								'post_parent' => $default_topic_id,
 								'menu_order'  => $orphan_order,
 							),
 							array( 'ID' => $orphan_id ),
-							array( '%s', '%d', '%d' ),
+							array( '%s', '%s', '%d', '%d' ),
 							array( '%d' )
 						);
 
@@ -417,9 +419,21 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			);
 			clean_post_cache( $course_id );
 
-			// 3a. Link instructor to course via user meta (Tutor requires _tutor_instructor_course_id).
+			// 3a. Ensure the course author is a Tutor instructor and link them to this course.
+			// Sensei course authors may hold any WP role (author, editor, teacher, etc.);
+			// promote all of them so the Tutor grading/quiz dashboard works correctly.
 			$author_id = (int) $course->post_author;
 			if ( $author_id > 0 ) {
+				if ( function_exists( 'tutor_utils' ) ) {
+					$instructor_status = get_user_meta( $author_id, '_tutor_instructor_status', true );
+					if ( 'approved' !== $instructor_status ) {
+						tutor_utils()->add_instructor_role( $author_id );
+						update_user_meta( $author_id, '_is_tutor_instructor', tutor_time() );
+						update_user_meta( $author_id, '_tutor_instructor_status', 'approved' );
+						update_user_meta( $author_id, '_tutor_instructor_approved', tutor_time() );
+					}
+				}
+
 				$already_linked = (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(umeta_id) FROM {$wpdb->usermeta}

@@ -73,6 +73,10 @@ class LessonMeta implements PostMeta {
 			} elseif ( preg_match( '/^https?:\/\/(www\.)?vimeo\.com\/.+/i', $raw_video ) ) {
 				$video['source']       = 'vimeo';
 				$video['source_vimeo'] = esc_url_raw( $raw_video );
+			} elseif ( preg_match( '/^https?:\/\/.+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?$/i', $raw_video ) ) {
+				$safe_url                 = esc_url( $raw_video );
+				$video['source']          = 'embedded';
+				$video['source_embedded'] = '<video controls style="max-width:100%"><source src="' . $safe_url . '" type="video/mp4"></video>';
 			} else {
 				$video['source']          = 'embedded';
 				$video['source_embedded'] = $this->sanitize_embedded_video( $raw_video );
@@ -138,8 +142,6 @@ class LessonMeta implements PostMeta {
 
 		$normalized   = strtolower( trim( (string) $complexity ) );
 		$mapped_level = isset( $complexity_map[ $normalized ] ) ? $complexity_map[ $normalized ] : 'all_levels';
-
-		update_post_meta( $post_id, '_lesson_complexity', sanitize_text_field( $complexity ) );
 
 		$course_id = (int) get_post_meta( $post_id, '_tutor_course_id_for_lesson', true );
 		if ( $course_id > 0 ) {

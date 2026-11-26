@@ -202,10 +202,18 @@ class OrderMigrator {
 					}
 				}
 
+				// Only create/update enrollments for statuses that grant course access.
+				$clean_status    = strtolower( trim( str_replace( 'wc-', '', $wc_status ) ) );
+				$grants_access   = in_array( $clean_status, array( 'completed', 'processing', 'on-hold' ), true );
+
 				// Ensure tutor_enrolled posts exist and are linked to the native order.
 				foreach ( $items as $item ) {
 					$course_id = (int) $item['course_id'];
 					if ( $course_id <= 0 ) {
+						continue;
+					}
+
+					if ( ! $grants_access ) {
 						continue;
 					}
 

@@ -45,6 +45,13 @@ class FillInBlanksTransformer {
 			$gap   = trim( $parts[1] ?? '', " \t\n\r\0\x0B[]{}" );
 			$post  = trim( $parts[2] ?? '' );
 
+			// Sensei allows pipe-separated alternative answers for a single gap (e.g. "Paris|France").
+			// Tutor LMS uses "|" as a gap separator, not an alternatives separator, so only the
+			// first (canonical) answer is kept to avoid multi-gap mis-interpretation.
+			if ( strpos( $gap, '|' ) !== false ) {
+				$gap = trim( explode( '|', $gap )[0] );
+			}
+
 			$sentence = trim( $pre . ' {dash} ' . $post );
 			return array(
 				'answer_title'         => $sentence,

@@ -68,6 +68,12 @@ class CourseMeta implements PostMeta {
 		} elseif ( preg_match( '/^https?:\/\/(www\.)?vimeo\.com\/.+/i', $raw_video ) ) {
 			$video['source']       = 'vimeo';
 			$video['source_vimeo'] = esc_url_raw( $raw_video );
+		} elseif ( preg_match( '/^https?:\/\/.+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?$/i', $raw_video ) ) {
+			// Direct video file URL: wrap in an HTML5 <video> tag so the Tutor embedded
+			// player can render it rather than showing the URL as plain unplayable text.
+			$safe_url                 = esc_url( $raw_video );
+			$video['source']          = 'embedded';
+			$video['source_embedded'] = '<video controls style="max-width:100%"><source src="' . $safe_url . '" type="video/mp4"></video>';
 		} else {
 			$video['source']          = 'embedded';
 			$video['source_embedded'] = $this->sanitize_embedded_video( $raw_video );
@@ -96,6 +102,14 @@ class CourseMeta implements PostMeta {
 	 * @return void
 	 */
 	private function migrate_monetization( int $post_id ) {
+		// Sensei _open_access = 'yes' means the course is freely accessible without enrollment.
+		// Map to Tutor free pricing so anyone can enroll at no cost.
+		$open_access = get_post_meta( $post_id, '_open_access', true );
+		if ( in_array( $open_access, array( 'yes', '1', 'on' ), true ) ) {
+			update_post_meta( $post_id, '_tutor_course_price_type', 'free' );
+			return;
+		}
+
 		$wc_product_id = (int) get_post_meta( $post_id, '_course_woocommerce_product', true );
 		if ( $wc_product_id > 0 ) {
 			update_post_meta( $post_id, '_tutor_course_price_type', 'paid' );

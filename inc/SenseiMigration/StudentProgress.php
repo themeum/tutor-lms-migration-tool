@@ -37,8 +37,115 @@ class StudentProgress implements StudentProgressInterface {
 
 		$lessons_migrated  = $this->migrate_lesson_completions( $course_id, $user_id );
 		$attempts_migrated = $this->migrate_quiz_attempts( $course_id, $user_id );
+		$this->migrate_course_completions( $course_id, $user_id );
 
 		return $lessons_migrated + $attempts_migrated;
+	}
+
+	/**
+	 * Mark course completion in Tutor LMS for every student who finished the course in Sensei.
+	 *
+	 * Checks the HPPS progress table first; falls back to wp_comments for default storage.
+	 * Creates a Tutor 'course_completed' comment only when one does not already exist.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int $course_id Course ID.
+	 * @param int $user_id   Optional student user ID. 0 = all students.
+	 * @return void
+	 */
+	private function migrate_course_completions( int $course_id, int $user_id = 0 ): void {
+		global $wpdb;
+
+		$user_clause = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
+
+		$completions = array();
+
+		// Try HPPS custom table first.
+		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) === $progress_table ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$completions = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id,
+						COALESCE(completed_at, updated_at, created_at) AS completed_at
+					FROM {$progress_table}
+					WHERE type = 'course'
+					AND post_id = %d
+					AND status = 'complete'
+					AND user_id > 0" . $user_clause,
+					$course_id
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// Fall back to Sensei comment storage when HPPS is not active.
+		if ( empty( $completions ) ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$completions = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, comment_date AS completed_at
+					FROM {$wpdb->comments}
+					WHERE comment_post_ID = %d
+					AND comment_type = 'sensei_course_status'
+					AND comment_approved = 'complete'
+					AND user_id > 0" . $user_clause,
+					$course_id
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( empty( $completions ) ) {
+			return;
+		}
+
+		foreach ( $completions as $row ) {
+			$uid  = (int) $row->user_id;
+			$date = ! empty( $row->completed_at ) ? $row->completed_at : current_time( 'mysql' );
+
+			if ( $uid <= 0 ) {
+				continue;
+			}
+
+			// Skip if Tutor already has a course_completed record for this user+course.
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT comment_ID FROM {$wpdb->comments}
+					WHERE comment_post_ID = %d
+					AND user_id = %d
+					AND comment_type = 'course_completed'
+					AND comment_agent = 'TutorLMSPlugin'
+					LIMIT 1",
+					$course_id,
+					$uid
+				)
+			);
+
+			if ( $exists ) {
+				continue;
+			}
+
+			// Generate a unique hash as Tutor LMS does in CourseModel::mark_course_as_completed().
+			$hash = substr( md5( $date . $course_id . $uid . wp_generate_password( 8 ) ), 0, 16 );
+
+			$wpdb->insert(
+				$wpdb->comments,
+				array(
+					'comment_post_ID'  => $course_id,
+					'comment_author'   => $uid,
+					'comment_date'     => $date,
+					'comment_date_gmt' => get_gmt_from_date( $date ),
+					'comment_content'  => $hash,
+					'comment_approved' => 'approved',
+					'comment_agent'    => 'TutorLMSPlugin',
+					'comment_type'     => 'course_completed',
+					'user_id'          => $uid,
+				),
+				array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
+			);
+		}
 	}
 
 	/**
@@ -52,11 +159,6 @@ class StudentProgress implements StudentProgressInterface {
 	 */
 	public function migrate_lesson_completions( int $course_id, int $user_id = 0 ): int {
 		global $wpdb;
-
-		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) !== $progress_table ) {
-			return 0;
-		}
 
 		$lessons = get_posts(
 			array(
@@ -81,16 +183,36 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $lessons ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		$completions = $wpdb->get_results(
-			"SELECT post_id AS lesson_id, user_id, COALESCE(completed_at, updated_at, created_at) AS completed_at
-			FROM {$progress_table}
-			WHERE type = 'lesson'
-			AND post_id IN ({$format_ids})
-			AND status = 'complete'
-			AND user_id > 0" . $user_clause
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$completions = array();
+
+		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $progress_table ) ) === $progress_table ) {
+			// HPPS: custom progress table.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+			$completions = $wpdb->get_results(
+				"SELECT post_id AS lesson_id, user_id, COALESCE(completed_at, updated_at, created_at) AS completed_at
+				FROM {$progress_table}
+				WHERE type = 'lesson'
+				AND post_id IN ({$format_ids})
+				AND status = 'complete'
+				AND user_id > 0" . $user_clause
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		// Fallback: Sensei default comment-based lesson completion storage.
+		if ( empty( $completions ) ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+			$completions = $wpdb->get_results(
+				"SELECT comment_post_ID AS lesson_id, user_id, comment_date AS completed_at
+				FROM {$wpdb->comments}
+				WHERE comment_type = 'sensei_lesson_status'
+				AND comment_approved = 'complete'
+				AND comment_post_ID IN ({$format_ids})
+				AND user_id > 0" . $user_clause
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		}
 
 		if ( ! empty( $completions ) ) {
 			foreach ( $completions as $row ) {
@@ -193,11 +315,10 @@ class StudentProgress implements StudentProgressInterface {
 	public function migrate_quiz_attempts( int $course_id, int $user_id = 0 ): int {
 		global $wpdb;
 
-		$submissions_table = $wpdb->prefix . 'sensei_lms_quiz_submissions';
-		$answers_table     = $wpdb->prefix . 'sensei_lms_quiz_submission_answers';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table ) ) !== $submissions_table ) {
-			return 0;
-		}
+		$submissions_table    = $wpdb->prefix . 'sensei_lms_quiz_submissions';
+		$answers_table        = $wpdb->prefix . 'sensei_lms_quiz_submission_answers';
+		$use_hpps             = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table ) ) === $submissions_table;
+		$answers_table_exists = $use_hpps && $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $answers_table ) ) === $answers_table;
 
 		$quizzes = get_posts(
 			array(
@@ -222,18 +343,49 @@ class StudentProgress implements StudentProgressInterface {
 		$user_clause    = $user_id > 0 ? $wpdb->prepare( ' AND user_id = %d', $user_id ) : '';
 		$format_ids     = implode( ',', array_map( 'intval', $quizzes ) );
 
-		// Query ALL Sensei submissions — each row is one attempt, preserving full history.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		$attempts = $wpdb->get_results(
-			"SELECT id AS submission_id, quiz_id, user_id, final_grade, created_at AS attempt_date
-			FROM {$submissions_table}
-			WHERE quiz_id IN ({$format_ids})
-			AND user_id > 0" . $user_clause . '
-			ORDER BY id ASC'
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$attempts = array();
+
+		if ( $use_hpps ) {
+			// HPPS: each submissions row = one attempt, preserving full attempt history.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+			$attempts = $wpdb->get_results(
+				"SELECT id AS submission_id, quiz_id, user_id, final_grade, created_at AS attempt_date
+				FROM {$submissions_table}
+				WHERE quiz_id IN ({$format_ids})
+				AND user_id > 0" . $user_clause . '
+				ORDER BY id ASC'
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		// Fallback: Sensei default comment-based quiz status storage.
+		// Each comment_type='sensei_quiz_status' row = one completed quiz attempt.
+		// Grade is stored in commentmeta with key 'grade' as a percentage.
+		if ( empty( $attempts ) ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+			$comment_rows = $wpdb->get_results(
+				"SELECT c.comment_ID AS submission_id, c.comment_post_ID AS quiz_id,
+					c.user_id, c.comment_date AS attempt_date
+				FROM {$wpdb->comments} c
+				WHERE c.comment_type = 'sensei_quiz_status'
+				AND c.comment_post_ID IN ({$format_ids})
+				AND c.user_id > 0" . $user_clause . '
+				ORDER BY c.comment_ID ASC'
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+
+			foreach ( $comment_rows as $cr ) {
+				$grade_pct         = (float) get_comment_meta( (int) $cr->submission_id, 'grade', true );
+				$cr->final_grade   = $grade_pct;
+				$cr->submission_id = 0; // No HPPS submission — no per-answer data available.
+				$attempts[]        = $cr;
+			}
+		}
 
 		if ( ! empty( $attempts ) ) {
+			// Build question maps per quiz once to avoid per-answer SQL LIKE lookups.
+			$question_maps = array();
+
 			foreach ( $attempts as $row ) {
 				$qid                  = (int) $row->quiz_id;
 				$uid                  = (int) $row->user_id;
@@ -243,7 +395,7 @@ class StudentProgress implements StudentProgressInterface {
 
 				// Count how many answers Sensei actually recorded for this submission.
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$actual_answered = $sensei_submission_id > 0 ? (int) $wpdb->get_var(
+				$actual_answered = ( $sensei_submission_id > 0 && $answers_table_exists ) ? (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(*) FROM {$answers_table} WHERE submission_id = %d",
 						$sensei_submission_id
@@ -261,7 +413,11 @@ class StudentProgress implements StudentProgressInterface {
 				}
 
 				if ( $attempt_id > 0 ) {
-					$this->migrate_submission_answers( $attempt_id, $sensei_submission_id, $qid, $uid );
+					// Build the question map once per quiz ID to avoid repeated DB lookups.
+					if ( ! isset( $question_maps[ $qid ] ) ) {
+						$question_maps[ $qid ] = $this->build_question_map( $qid );
+					}
+					$this->migrate_submission_answers( $attempt_id, $sensei_submission_id, $qid, $uid, $question_maps[ $qid ] );
 				}
 
 				if ( $is_new ) {
@@ -414,6 +570,42 @@ class StudentProgress implements StudentProgressInterface {
 	}
 
 	/**
+	 * Build a map of Sensei question post ID → Tutor question row for a given quiz.
+	 *
+	 * Uses PHP-side deserialization of question_settings to avoid the esc_like/prepare
+	 * double-escaping issue that causes SQL LIKE to miss the "_sensei_question_id" key.
+	 *
+	 * @param int $quiz_id Tutor quiz post ID.
+	 * @return array<int, object> Map of sensei_question_id => stdClass{question_id, question_mark, question_type}.
+	 */
+	private function build_question_map( int $quiz_id ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT question_id, question_mark, question_type, question_settings
+				FROM {$wpdb->prefix}tutor_quiz_questions
+				WHERE quiz_id = %d",
+				$quiz_id
+			)
+		);
+
+		$map = array();
+		foreach ( $rows as $row ) {
+			$settings = maybe_unserialize( $row->question_settings );
+			if ( ! is_array( $settings ) ) {
+				continue;
+			}
+			$sensei_id = isset( $settings['_sensei_question_id'] ) ? (int) $settings['_sensei_question_id'] : 0;
+			if ( $sensei_id > 0 ) {
+				$map[ $sensei_id ] = $row;
+			}
+		}
+
+		return $map;
+	}
+
+	/**
 	 * Migrate per-answer data for a quiz attempt from Sensei to Tutor LMS.
 	 *
 	 * Reads from sensei_lms_quiz_submission_answers (Sensei 4.x) and inserts
@@ -422,13 +614,14 @@ class StudentProgress implements StudentProgressInterface {
 	 *
 	 * @since 2.3.0
 	 *
-	 * @param int $attempt_id           Tutor attempt ID (tutor_quiz_attempts.attempt_id).
-	 * @param int $sensei_submission_id Sensei submission ID.
-	 * @param int $quiz_id              Tutor quiz post ID.
-	 * @param int $user_id              Student user ID.
+	 * @param int   $attempt_id           Tutor attempt ID (tutor_quiz_attempts.attempt_id).
+	 * @param int   $sensei_submission_id Sensei submission ID.
+	 * @param int   $quiz_id              Tutor quiz post ID.
+	 * @param int   $user_id              Student user ID.
+	 * @param array $question_map         Pre-built map from build_question_map(); omit to auto-build.
 	 * @return void
 	 */
-	private function migrate_submission_answers( int $attempt_id, int $sensei_submission_id, int $quiz_id, int $user_id ): void {
+	private function migrate_submission_answers( int $attempt_id, int $sensei_submission_id, int $quiz_id, int $user_id, array $question_map = array() ): void {
 		global $wpdb;
 
 		if ( $attempt_id <= 0 || $sensei_submission_id <= 0 ) {
@@ -455,24 +648,17 @@ class StudentProgress implements StudentProgressInterface {
 			return;
 		}
 
-		// Question types requiring manual review (is_correct stays NULL).
+		// Build question map on first use (passed in by caller to avoid per-submission rebuilds).
+		if ( empty( $question_map ) ) {
+			$question_map = $this->build_question_map( $quiz_id );
+		}
+
+		// Question types requiring manual review (is_correct deferred to 0 pending review).
 		$manual_review_types = array( 'short_answer', 'open_ended' );
 
 		foreach ( $answers as $row ) {
 			$sensei_question_id = (int) $row->question_id;
-
-			// Look up the Tutor question by the sensei_question_id stored in question_settings.
-			$marker        = $wpdb->esc_like( '"_sensei_question_id";i:' . $sensei_question_id . ';' );
-			$tutor_question = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT question_id, question_mark, question_type
-					FROM {$wpdb->prefix}tutor_quiz_questions
-					WHERE quiz_id = %d AND question_settings LIKE %s
-					LIMIT 1",
-					$quiz_id,
-					'%' . $marker . '%'
-				)
-			);
+			$tutor_question     = $question_map[ $sensei_question_id ] ?? null;
 
 			if ( ! $tutor_question ) {
 				continue;
@@ -482,12 +668,8 @@ class StudentProgress implements StudentProgressInterface {
 			$given_answer  = ! empty( $row->value ) ? (string) $row->value : '';
 			$achieved_mark = null !== $row->points ? (float) $row->points : 0.0;
 
-			// Determine is_correct from points; NULL for manual-review types.
-			if ( in_array( $tutor_question->question_type, $manual_review_types, true ) ) {
-				$is_correct = null;
-			} else {
-				$is_correct = $achieved_mark > 0 ? 1 : 0;
-			}
+			// Manual-review types: set is_correct = 0 (unreviewed); auto-graded types use points.
+			$is_correct = in_array( $tutor_question->question_type, $manual_review_types, true ) ? 0 : ( $achieved_mark > 0 ? 1 : 0 );
 
 			// Skip if this answer row already exists (re-run safety).
 			$already = $wpdb->get_var(
@@ -516,7 +698,8 @@ class StudentProgress implements StudentProgressInterface {
 					'achieved_mark'   => $achieved_mark,
 					'minus_mark'      => 0,
 					'is_correct'      => $is_correct,
-				)
+				),
+				array( '%d', '%d', '%d', '%d', '%s', '%f', '%f', '%d', '%d' )
 			);
 		}
 	}

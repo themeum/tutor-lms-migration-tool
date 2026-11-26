@@ -165,7 +165,10 @@ class Enrollments {
 	}
 
 	/**
-	 * Retrieve unmigrated enrollment records from Sensei 4.x progress table.
+	 * Retrieve enrollment records — HPPS progress table first, wp_comments fallback.
+	 *
+	 * Sensei default storage (non-HPPS) records each student course start as a
+	 * comment with comment_type = 'sensei_course_status'.
 	 *
 	 * @param int $offset Query offset.
 	 * @param int $limit  Query limit.
@@ -174,29 +177,43 @@ class Enrollments {
 	private function get_unmigrated_enrollments( int $offset = 0, int $limit = self::BATCH_SIZE ): array {
 		global $wpdb;
 
-		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
-		if ( ! $this->has_progress_table() ) {
-			return array();
+		if ( $this->has_progress_table() ) {
+			$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, post_id AS course_id, created_at AS enrolled_at
+					FROM {$progress_table}
+					WHERE type = 'course'
+					AND user_id > 0
+					ORDER BY id ASC
+					LIMIT %d, %d",
+					$offset,
+					$limit
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Fallback: Sensei default comment-based enrollment storage.
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT user_id, post_id AS course_id, created_at AS enrolled_at
-				FROM {$progress_table}
-				WHERE type = 'course'
-				AND user_id > 0
-				ORDER BY id ASC
+				"SELECT c.user_id, c.comment_post_ID AS course_id, c.comment_date AS enrolled_at
+				FROM {$wpdb->comments} c
+				INNER JOIN {$wpdb->posts} p ON p.ID = c.comment_post_ID
+				WHERE c.comment_type = 'sensei_course_status'
+				AND p.post_type IN ('course', 'courses')
+				AND c.user_id > 0
+				ORDER BY c.comment_ID ASC
 				LIMIT %d, %d",
 				$offset,
 				$limit
 			)
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
-	 * Get total remaining unmigrated enrollments count from Sensei 4.x progress table.
+	 * Get total remaining unmigrated enrollments count.
 	 *
 	 * @param int $processed Count already processed in past batches.
 	 * @return int
@@ -204,23 +221,31 @@ class Enrollments {
 	private function get_total_unmigrated_enrollments_count( int $processed = 0 ): int {
 		global $wpdb;
 
-		if ( ! $this->has_progress_table() ) {
-			return 0;
+		if ( $this->has_progress_table() ) {
+			$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$total = (int) $wpdb->get_var(
+				"SELECT COUNT(id) FROM {$progress_table} WHERE type = 'course' AND user_id > 0"
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return max( 0, $total - $processed );
 		}
 
-		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
-
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Fallback count from comments.
 		$total = (int) $wpdb->get_var(
-			"SELECT COUNT(id) FROM {$progress_table} WHERE type = 'course' AND user_id > 0"
+			"SELECT COUNT(c.comment_ID)
+			FROM {$wpdb->comments} c
+			INNER JOIN {$wpdb->posts} p ON p.ID = c.comment_post_ID
+			WHERE c.comment_type = 'sensei_course_status'
+			AND p.post_type IN ('course', 'courses')
+			AND c.user_id > 0"
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return max( 0, $total - $processed );
 	}
 
 	/**
-	 * Get enrollment records for a specific course from Sensei 4.x progress table.
+	 * Get enrollment records for a specific course — HPPS first, comments fallback.
 	 *
 	 * @param int $course_id Course ID.
 	 * @return array
@@ -228,28 +253,37 @@ class Enrollments {
 	private function get_course_enrollment_records( int $course_id ): array {
 		global $wpdb;
 
-		if ( ! $this->has_progress_table() ) {
-			return array();
+		if ( $this->has_progress_table() ) {
+			$progress_table = $wpdb->prefix . 'sensei_lms_progress';
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, post_id AS course_id, created_at AS enrolled_at
+					FROM {$progress_table}
+					WHERE type = 'course'
+					AND post_id = %d
+					AND user_id > 0",
+					$course_id
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
-		$progress_table = $wpdb->prefix . 'sensei_lms_progress';
-
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Fallback: comment-based enrollment for this course.
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT user_id, post_id AS course_id, created_at AS enrolled_at
-				FROM {$progress_table}
-				WHERE type = 'course'
-				AND post_id = %d
+				"SELECT user_id, comment_post_ID AS course_id, comment_date AS enrolled_at
+				FROM {$wpdb->comments}
+				WHERE comment_type = 'sensei_course_status'
+				AND comment_post_ID = %d
 				AND user_id > 0",
 				$course_id
 			)
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
-	 * Check whether the Sensei 4.x progress table exists.
+	 * Check whether the Sensei 4.x HPPS progress table exists.
 	 *
 	 * @return bool
 	 */

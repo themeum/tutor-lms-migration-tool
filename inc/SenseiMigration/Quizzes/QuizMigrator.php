@@ -66,7 +66,7 @@ class QuizMigrator {
 		$time_limit           = get_post_meta( $sensei_quiz_id, '_quiz_time_limit', true );
 		$show_correct_answers = get_post_meta( $sensei_quiz_id, '_failed_show_correct_answers', true );
 
-		$allow_retakes  = ! empty( $enable_reset );
+		$allow_retakes  = ! empty( $enable_reset ) && '0' !== (string) $enable_reset;
 		$reveal_answers = 'yes' === $show_correct_answers;
 
 		$quiz_settings = array(
@@ -75,7 +75,7 @@ class QuizMigrator {
 				'time_value' => is_numeric( $time_limit ) ? (int) $time_limit : 0,
 			),
 			'feedback_mode'                 => $reveal_answers ? 'reveal' : 'default',
-			'retry_mode'                    => $allow_retakes ? 'retry' : 'default',
+			'retry_mode'                    => $allow_retakes ? 'unlimited' : 'default',
 			'attempts_allowed'              => $allow_retakes ? 0 : 1,
 			'passing_grade'                 => is_numeric( $passmark ) && (int) $passmark > 0 ? (int) $passmark : 80,
 			'max_questions_for_answer'      => 0,
