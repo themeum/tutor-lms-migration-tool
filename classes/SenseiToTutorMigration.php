@@ -417,6 +417,24 @@ if ( ! class_exists( 'SenseiToTutorMigration' ) ) {
 			);
 			clean_post_cache( $course_id );
 
+			// 3a. Link instructor to course via user meta (Tutor requires _tutor_instructor_course_id).
+			$author_id = (int) $course->post_author;
+			if ( $author_id > 0 ) {
+				$already_linked = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(umeta_id) FROM {$wpdb->usermeta}
+						WHERE user_id = %d
+						AND meta_key = '_tutor_instructor_course_id'
+						AND meta_value = %d",
+						$author_id,
+						$course_id
+					)
+				);
+				if ( ! $already_linked ) {
+					add_user_meta( $author_id, '_tutor_instructor_course_id', $course_id );
+				}
+			}
+
 			// 4. Migrate course taxonomies (categories and tags)
 			( new CourseTaxonomies() )->migrate( $course_id );
 
