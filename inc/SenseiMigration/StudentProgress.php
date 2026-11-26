@@ -194,6 +194,7 @@ class StudentProgress implements StudentProgressInterface {
 		global $wpdb;
 
 		$submissions_table = $wpdb->prefix . 'sensei_lms_quiz_submissions';
+		$answers_table     = $wpdb->prefix . 'sensei_lms_quiz_submission_answers';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table ) ) !== $submissions_table ) {
 			return 0;
 		}
@@ -234,15 +235,36 @@ class StudentProgress implements StudentProgressInterface {
 
 		if ( ! empty( $attempts ) ) {
 			foreach ( $attempts as $row ) {
-				$qid                 = (int) $row->quiz_id;
-				$uid                 = (int) $row->user_id;
+				$qid                  = (int) $row->quiz_id;
+				$uid                  = (int) $row->user_id;
 				$sensei_submission_id = (int) $row->submission_id;
-				$attempt_date        = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
-				$grade               = null !== $row->final_grade ? (float) $row->final_grade : 0.0;
+				$attempt_date         = ! empty( $row->attempt_date ) ? $row->attempt_date : current_time( 'mysql' );
+				$grade                = null !== $row->final_grade ? (float) $row->final_grade : 0.0;
 
-				$attempt_id = $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, $grade, $sensei_submission_id );
+				// Count how many answers Sensei actually recorded for this submission.
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$actual_answered = $sensei_submission_id > 0 ? (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$answers_table} WHERE submission_id = %d",
+						$sensei_submission_id
+					)
+				) : 0;
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+				$attempt_id = $this->record_quiz_attempt( $qid, $course_id, $uid, $attempt_date, $grade, $sensei_submission_id, $actual_answered );
+				$is_new     = $attempt_id > 0;
+
+				// When the attempt already existed (interrupted migration), look up its ID
+				// so we can still migrate any answers that were not yet written.
+				if ( ! $is_new ) {
+					$attempt_id = $this->find_existing_attempt( $qid, $uid, $sensei_submission_id );
+				}
+
 				if ( $attempt_id > 0 ) {
 					$this->migrate_submission_answers( $attempt_id, $sensei_submission_id, $qid, $uid );
+				}
+
+				if ( $is_new ) {
 					++$migrated_count;
 				}
 			}
@@ -267,7 +289,7 @@ class StudentProgress implements StudentProgressInterface {
 	 * @param int    $sensei_submission_id Sensei submission primary key for idempotency.
 	 * @return int Inserted attempt_id on success, 0 if already exists or on failure.
 	 */
-	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', float $grade = 0.0, int $sensei_submission_id = 0 ): int {
+	public function record_quiz_attempt( int $quiz_id, int $course_id, int $user_id, string $attempt_date = '', float $grade = 0.0, int $sensei_submission_id = 0, int $actual_answered = -1 ): int {
 		global $wpdb;
 
 		// Per-submission idempotency: check if this exact Sensei submission was already imported.
@@ -330,6 +352,9 @@ class StudentProgress implements StudentProgressInterface {
 
 		$attempt_info = array( '_sensei_submission_id' => $sensei_submission_id );
 
+		// Use the actual answer count when provided; fall back to total_questions.
+		$answered_count = $actual_answered >= 0 ? $actual_answered : $total_questions;
+
 		$inserted = $wpdb->insert(
 			$wpdb->prefix . 'tutor_quiz_attempts',
 			array(
@@ -337,7 +362,7 @@ class StudentProgress implements StudentProgressInterface {
 				'quiz_id'                  => $quiz_id,
 				'user_id'                  => $user_id,
 				'total_questions'          => $total_questions,
-				'total_answered_questions' => $total_questions,
+				'total_answered_questions' => $answered_count,
 				'total_marks'              => $total_marks > 0 ? $total_marks : 100.00,
 				'earned_marks'             => $earned_marks,
 				'attempt_info'             => maybe_serialize( $attempt_info ),
@@ -352,6 +377,40 @@ class StudentProgress implements StudentProgressInterface {
 		);
 
 		return $inserted ? (int) $wpdb->insert_id : 0;
+	}
+
+	/**
+	 * Look up an existing Tutor attempt by Sensei submission ID or by quiz/user/date.
+	 *
+	 * Used when record_quiz_attempt() finds an existing row (returns 0) so that
+	 * migrate_submission_answers() can still run against the correct attempt_id.
+	 *
+	 * @param int $quiz_id              Tutor quiz ID.
+	 * @param int $user_id              Student user ID.
+	 * @param int $sensei_submission_id Sensei submission primary key.
+	 * @return int Attempt ID, or 0 if not found.
+	 */
+	private function find_existing_attempt( int $quiz_id, int $user_id, int $sensei_submission_id ): int {
+		global $wpdb;
+
+		if ( $sensei_submission_id > 0 ) {
+			$marker = $wpdb->esc_like( '"_sensei_submission_id";i:' . $sensei_submission_id . ';' );
+			$id     = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT attempt_id FROM {$wpdb->prefix}tutor_quiz_attempts
+					WHERE quiz_id = %d AND user_id = %d AND attempt_info LIKE %s
+					LIMIT 1",
+					$quiz_id,
+					$user_id,
+					'%' . $marker . '%'
+				)
+			);
+			if ( $id ) {
+				return (int) $id;
+			}
+		}
+
+		return 0;
 	}
 
 	/**
@@ -428,6 +487,21 @@ class StudentProgress implements StudentProgressInterface {
 				$is_correct = null;
 			} else {
 				$is_correct = $achieved_mark > 0 ? 1 : 0;
+			}
+
+			// Skip if this answer row already exists (re-run safety).
+			$already = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$wpdb->prefix}tutor_quiz_attempt_answers
+					WHERE quiz_attempt_id = %d AND question_id = %d
+					LIMIT 1",
+					$attempt_id,
+					(int) $tutor_question->question_id
+				)
+			);
+
+			if ( $already ) {
+				continue;
 			}
 
 			$wpdb->insert(
